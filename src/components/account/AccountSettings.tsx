@@ -135,7 +135,7 @@ function ProfileSection() {
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <span className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1.5">رقم الهاتف (اسم المستخدم)</span>
-            <div className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 py-3 text-sm text-[var(--color-text-secondary)] font-mono select-none">
+            <div dir="ltr" className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 py-3 text-sm text-[var(--color-text-secondary)] font-mono select-none text-right">
               {phone}
             </div>
           </div>
