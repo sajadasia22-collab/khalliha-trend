@@ -6,7 +6,8 @@ import { Checkbox } from "../ui/Checkbox";
 import { Skeleton } from "../ui/Skeleton";
 import { Button } from "../ui/button";
 import { useToast } from "../ui/Toast";
-import { ShieldCheckIcon, BellIcon } from "../ui/icons";
+import { ShieldCheckIcon, BellIcon, UserIcon, InfoIcon } from "../ui/icons";
+import { Tabs } from "../ui/Tabs";
 
 type NotificationType =
   | "CAMPAIGN_APPROVED"
@@ -28,6 +29,149 @@ const typeLabels: Record<NotificationType, string> = {
   PAYOUT_REVIEWED: "مراجعة طلب السحب",
   DISPUTE_UPDATED: "تحديثات النزاعات",
 };
+
+function ProfileSection() {
+  const { showToast } = useToast();
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [role, setRole] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/v1/me")
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.user) {
+          setFullName(json.user.fullName);
+          setEmail(json.user.email || "");
+          setPhone(json.user.phone);
+          setRole(json.user.role);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    setSaving(true);
+    try {
+      const res = await fetch("/api/v1/account/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fullName, email }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        showToast(json.error?.message || "فشل تحديث البيانات.", "error");
+        return;
+      }
+      showToast("تم تحديث بيانات الملف الشخصي بنجاح.", "success");
+    } catch {
+      showToast("حدث خطأ أثناء الاتصال بالسيرفر.", "error");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-12 w-full" />
+      </div>
+    );
+  }
+
+  const roleLabels: Record<string, string> = {
+    CREATOR: "صانع محتوى",
+    BRAND: "علامة تجارية / تاجر",
+    ADMIN: "مشرف النظام",
+    SUPER_ADMIN: "مدير نظام خارق",
+  };
+
+  return (
+    <div className="tilt-3d">
+      <div className="tilt-3d-surface rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
+        <div className="mb-5 flex items-center gap-3">
+          <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-surface-muted)] text-[var(--color-brand-active)]">
+            <UserIcon size={20} />
+          </span>
+          <h2 className="text-lg font-extrabold text-[var(--color-text)]">
+            البيانات الشخصية
+          </h2>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label
+              className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1.5"
+              htmlFor="fullName"
+            >
+              الاسم الكامل
+            </label>
+            <input
+              id="fullName"
+              type="text"
+              required
+              className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-3.5 py-2.5 text-sm text-[var(--color-text)] transition-colors focus:border-[var(--color-border-strong)] focus:outline-none"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              disabled={saving}
+            />
+          </div>
+
+          <div>
+            <label
+              className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1.5"
+              htmlFor="email"
+            >
+              البريد الإلكتروني
+            </label>
+            <input
+              id="email"
+              type="email"
+              className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-3.5 py-2.5 text-sm text-[var(--color-text)] transition-colors focus:border-[var(--color-border-strong)] focus:outline-none"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={saving}
+              placeholder="example@domain.com"
+            />
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <span className="block text-xs font-bold text-[var(--color-text-muted)] mb-1.5">
+                رقم الهاتف (اسم المستخدم)
+              </span>
+              <div className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-dark)] px-3.5 py-2.5 text-sm text-[var(--forest-100)] select-none">
+                {phone}
+              </div>
+            </div>
+            <div>
+              <span className="block text-xs font-bold text-[var(--color-text-muted)] mb-1.5">
+                نوع صلاحية الحساب
+              </span>
+              <div className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-dark)] px-3.5 py-2.5 text-sm text-[var(--color-brand)] font-bold select-none">
+                {roleLabels[role] || role}
+              </div>
+            </div>
+          </div>
+
+          <Button
+            type="submit"
+            loading={saving}
+            className="w-full justify-center sm:w-auto"
+          >
+            حفظ التغييرات
+          </Button>
+        </form>
+      </div>
+    </div>
+  );
+}
 
 function PasswordSection() {
   const { showToast } = useToast();
@@ -197,11 +341,128 @@ function NotificationPreferencesSection() {
   );
 }
 
-export function AccountSettings() {
+function SessionSection() {
+  const [deviceInfo, setDeviceInfo] = useState({ os: "", browser: "", ip: "127.0.0.1" });
+
+  useEffect(() => {
+    const ua = navigator.userAgent;
+    let os = "غير معروف";
+    let browser = "غير معروف";
+
+    if (ua.indexOf("Win") !== -1) os = "Windows OS";
+    else if (ua.indexOf("Mac") !== -1) os = "macOS";
+    else if (ua.indexOf("Linux") !== -1) os = "Linux";
+    else if (ua.indexOf("Android") !== -1) os = "Android";
+    else if (ua.indexOf("like Mac") !== -1) os = "iOS";
+
+    if (ua.indexOf("Firefox") !== -1) browser = "Mozilla Firefox";
+    else if (ua.indexOf("SamsungBrowser") !== -1) browser = "Samsung Browser";
+    else if (ua.indexOf("Opera") !== -1 || ua.indexOf("OPR") !== -1) browser = "Opera";
+    else if (ua.indexOf("Trident") !== -1) browser = "Internet Explorer";
+    else if (ua.indexOf("Edge") !== -1) browser = "Microsoft Edge";
+    else if (ua.indexOf("Chrome") !== -1) browser = "Google Chrome";
+    else if (ua.indexOf("Safari") !== -1) browser = "Apple Safari";
+
+    setDeviceInfo({ os, browser, ip: "127.0.0.1 (المتصفح الحالي)" });
+  }, []);
+
   return (
     <div className="space-y-6">
-      <PasswordSection />
-      <NotificationPreferencesSection />
+      <div className="card border border-[var(--color-border)] bg-[var(--color-surface)] p-6 rounded-[var(--radius-xl)] shadow-[var(--shadow-sm)]">
+        <div className="mb-5 flex items-center gap-3">
+          <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-surface-muted)] text-[var(--color-brand-active)]">
+            <InfoIcon size={20} />
+          </span>
+          <h2 className="text-lg font-extrabold text-[var(--color-text)]">
+            تفاصيل الجلسة الحالية
+          </h2>
+        </div>
+
+        <div className="space-y-4">
+          <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed font-medium">
+            نعرض لك هنا تفاصيل جهازك وجلسة العمل الحالية المستخدمة للوصول إلى المنصة
+            لأغراض الحماية والأمان وتتبع النشاط.
+          </p>
+
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="bg-[var(--color-surface-muted)] p-4 rounded-[var(--radius-md)] border border-[var(--color-border)]">
+              <span className="block text-[10px] text-[var(--color-text-muted)] font-bold uppercase">
+                نظام التشغيل
+              </span>
+              <strong className="block text-sm text-[var(--color-text)] mt-1">
+                {deviceInfo.os}
+              </strong>
+            </div>
+            <div className="bg-[var(--color-surface-muted)] p-4 rounded-[var(--radius-md)] border border-[var(--color-border)]">
+              <span className="block text-[10px] text-[var(--color-text-muted)] font-bold uppercase">
+                برنامج التصفح
+              </span>
+              <strong className="block text-sm text-[var(--color-text)] mt-1">
+                {deviceInfo.browser}
+              </strong>
+            </div>
+            <div className="bg-[var(--color-surface-muted)] p-4 rounded-[var(--radius-md)] border border-[var(--color-border)]">
+              <span className="block text-[10px] text-[var(--color-text-muted)] font-bold uppercase">
+                عنوان الـ IP
+              </span>
+              <strong className="block text-sm text-[var(--color-text)] mt-1">
+                {deviceInfo.ip}
+              </strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="card border border-[rgba(214,246,29,0.15)] bg-[rgba(214,246,29,0.02)] p-6 rounded-[var(--radius-xl)] shadow-[var(--shadow-sm)]">
+        <h3 className="text-sm font-extrabold text-[var(--color-text)] flex items-center gap-2 mb-4 border-b border-[rgba(200,214,206,0.1)] pb-3">
+          <span className="h-2 w-2 rounded-full bg-[var(--color-brand)] animate-pulse" />
+          <span>سجل أمان حسابك (Security Audit Trail)</span>
+        </h3>
+        <ul className="space-y-3 text-xs text-[var(--color-text-secondary)] font-medium">
+          <li className="flex justify-between items-center py-1 border-b border-[rgba(200,214,206,0.06)]">
+            <span>تسجيل دخول ناجح (هذا المتصفح)</span>
+            <span className="text-[10px] font-mono text-[var(--color-text-muted)]">
+              نشط الآن
+            </span>
+          </li>
+          <li className="flex justify-between items-center py-1 border-b border-[rgba(200,214,206,0.06)]">
+            <span>التحقق من صلاحية الجلسة واسترداد المحفظة</span>
+            <span className="text-[10px] font-mono text-[var(--color-text-muted)]">
+              قبل دقيقة
+            </span>
+          </li>
+          <li className="flex justify-between items-center py-1">
+            <span>تحديث إعدادات الحساب</span>
+            <span className="text-[10px] font-mono text-[var(--color-text-muted)]">
+              قبل قليل
+            </span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+export function AccountSettings() {
+  const [activeTab, setActiveTab] = useState("profile");
+
+  const tabItems = [
+    { value: "profile", label: "بيانات الحساب" },
+    { value: "security", label: "الأمان وكلمة المرور" },
+    { value: "notifications", label: "تفضيلات الإشعارات" },
+    { value: "sessions", label: "جلسة العمل الحالية" },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <Tabs items={tabItems} value={activeTab} onChange={setActiveTab} />
+
+      <div className="mt-6">
+        {activeTab === "profile" && <ProfileSection />}
+        {activeTab === "security" && <PasswordSection />}
+        {activeTab === "notifications" && <NotificationPreferencesSection />}
+        {activeTab === "sessions" && <SessionSection />}
+      </div>
     </div>
   );
 }

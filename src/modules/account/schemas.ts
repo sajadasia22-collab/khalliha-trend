@@ -20,3 +20,9 @@ export const updateNotificationPreferencesSchema = z.object({
 export type UpdateNotificationPreferencesInput = z.infer<
   typeof updateNotificationPreferencesSchema
 >;
+
+export const updateProfileSchema = z.object({
+  fullName: z.string().min(2, "الاسم الكامل يجب أن يكون حرفين على الأقل"),
+  email: z.string().email("البريد الإلكتروني غير صالح").optional().or(z.literal("")),
+});
+export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;

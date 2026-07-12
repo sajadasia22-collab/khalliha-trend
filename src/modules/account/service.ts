@@ -58,4 +58,30 @@ export class AccountService {
     );
     return AccountService.getNotificationPreferences(userId);
   }
+
+  static async updateProfile(
+    userId: string,
+    fullName: string,
+    email: string | null | undefined,
+  ) {
+    if (email) {
+      const existing = await prisma.user.findFirst({
+        where: {
+          email,
+          id: { not: userId },
+        },
+      });
+      if (existing) {
+        throw new Error("البريد الإلكتروني مستخدم بالفعل من قبل حساب آخر");
+      }
+    }
+
+    return await prisma.user.update({
+      where: { id: userId },
+      data: {
+        fullName,
+        email: email || null,
+      },
+    });
+  }
 }
