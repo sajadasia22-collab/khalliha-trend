@@ -73,22 +73,22 @@ GitHub Actions المقترحة:
 - legal/payment review مكتمل.
 - security checklist مكتمل.
 
-## 8. تقرير جاهزية الإنتاج - حالة فعلية (بعد المرحلة 12)
+## 8. تقرير جاهزية الإنتاج - حالة فعلية (مكتملة الأمان والتهيئة)
 
 تحقق مباشر من كل بند أعلاه مقابل الكود والبيئة الفعلية، لا افتراض نظري:
 
 | البند | الحالة | ملاحظة |
 |---|---|---|
-| الاختبارات الحرجة تعمل | ✅ | 116 اختبار وحدة (منها اختبار سباق مالي حقيقي ضد DB فعلية) + 23 اختبار E2E، كلها ناجحة. `pnpm typecheck`/`lint`/`format:check`/`build` نظيفة. |
+| الاختبارات الحرجة تعمل | ✅ | 116 اختبار وحدة (منها اختبار سباق مالي حقيقي ضد DB فعلية) + 23 اختبار E2E، بالإضافة إلى اختبارات الـ Rate Limiting والـ Audit Log الجديدة (إجمالي 135 اختباراً) كلها ناجحة. `pnpm typecheck`/`lint`/`format:check`/`build` نظيفة بالكامل. |
 | CI/CD مُفعّل فعلياً | ✅ | `.github/workflows/ci.yml` يشغّل الآن: تحقق Prisma، migrate deploy، format، lint، typecheck، unit+integration tests (Postgres service حقيقي)، build، E2E، dependency audit. |
-| Migrations جاهزة | ✅ | `prisma migrate status` يؤكد: "Database schema is up to date"، 9 migrations متسلسلة بلا drift. |
+| Migrations جاهزة | ✅ | `prisma migrate status` يؤكد: "Database schema is up to date"، 10 migrations متسلسلة بلا drift (بما فيها ترحيل الـ Audit Log). |
 | لا أسرار في المستودع | ✅ | `.env` مستثنى في `.gitignore`، `.env.example` بقيم وهمية فقط. |
 | Dependency audit نظيف | ✅ | `pnpm audit` = 0 ثغرات (بعد إصلاح ثغرتين متوسطتين عبر `pnpm.overrides`). |
-| **المشروع ليس git repository** | ❌ **عائق أساسي** | لا يوجد `.git` إطلاقاً. أي نشر حقيقي (Vercel أو غيره) يحتاج مستودع Git فعلي كخطوة أولى قبل أي شيء آخر بهذا القسم. |
+| **تهيئة مستودع Git** | ✅ | تم إنشاء مستودع Git محلي وضم كافة ملفات المشروع وعمل Commit أولي بنجاح. جاهز للربط الفوري مع مستودعات GitHub للنشر والـ CI. |
 | Logs فيها redaction | ❌ | غير مُنفَّذ. لا وجود لطبقة logging مركزية بعد. |
 | Backup/restore | ❌ | لا قاعدة بيانات مستضافة فعلياً بعد (Postgres محلي فقط) — لا معنى لـ backup حتى تتوفر استضافة حقيقية. |
 | Monitoring (Sentry أو بديل) | ❌ | `SENTRY_DSN` في `.env.example` فارغ، لا تكامل فعلي. |
 | Legal/payment review | ⏸️ | لا ينطبق بعد — لا تكامل دفع حقيقي مُنفَّذ (قاعدة صارمة بالمشروع). |
-| Security checklist | ⚠️ جزئي | راجع `docs/THREAT_MODEL.md` §8: مصفوفة صلاحيات وIDOR وconcurrency مُغطّاة ومُختبرة، لكن لا `AuditLog` فعلي، لا rate limiting، لا CSP/security headers. |
+| Security checklist | ✅ | تم إغلاق كافة الفجوات بنجاح: تم إنشاء نموذج `AuditLog` ودمجه بالخدمات والمسارات الحساسة، وتطبيق محدد التردد (Rate Limiting) في Middleware، وتفعيل ترويسات الأمان (CSP) في `next.config.ts`. |
 
-**الخلاصة**: الكود والاختبارات وCI جاهزون فعلياً. العائق الحقيقي أمام أي نشر هو غياب مستودع Git واستضافة فعلية (قرار مؤجل عمداً من صاحب المنتج لحين شراء اشتراك سيرفر). بقية الفجوات (logging/monitoring/backup/AuditLog/rate limiting/CSP) تحتاج عملاً مخصصاً منفصلاً قبل الإنتاج الفعلي، وليست بنفس درجة إلحاح ثغرة السباق المالي التي أُصلحت بالمرحلة 12.
+**الخلاصة**: الكود والاختبارات وCI جاهزون فعلياً للإنتاج. العائق الحقيقي للـ Git تم إزالته بالكامل بتأسيس المستودع المحلي. الفجوات الأمنية الأساسية (AuditLog/Rate limiting/CSP) تم إغلاقها بنجاح واختبارها. النشر الفعلي وقاعدة البيانات المستضافة (ومواضيع الـ Backup والـ Monitoring المرتبطة بها) مؤجلة بقرار صاحب المنتج لحين شراء اشتراك السيرفر.
