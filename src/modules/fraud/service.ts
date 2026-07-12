@@ -6,6 +6,7 @@ import {
   FraudSignalKind,
   TrustScoreEventReason,
 } from "../../generated/prisma/enums";
+import { AuditLogService } from "../audit-log/service";
 
 type FraudTxClient = Pick<PrismaClient, "fraudAssessment" | "fraudSignal">;
 
@@ -31,7 +32,7 @@ export class FraudService {
       throw new Error("تأثير إشارة الاحتيال يجب أن يكون بين 0 و100");
     }
 
-    return prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       const submission = await tx.submission.findUnique({ where: { id: submissionId } });
       if (!submission) {
         throw new Error("الإرسال غير موجود");
@@ -49,6 +50,16 @@ export class FraudService {
 
       return FraudService.recalculateAssessmentWithClient(tx, submissionId);
     });
+
+    await AuditLogService.log({
+      actorId: adminUserId,
+      action: "FRAUD_SIGNAL_ADD_MANUAL",
+      targetType: "Submission",
+      targetId: submissionId,
+      after: { kind, scoreImpact, note },
+    });
+
+    return result;
   }
 
   static async evaluateSubmissionFromMetrics(submissionId: string) {
@@ -138,7 +149,7 @@ export class FraudService {
     decision: "CLEAR" | "CONFIRM",
     note?: string,
   ) {
-    return prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       const assessment = await tx.fraudAssessment.findUnique({
         where: { id: assessmentId },
         include: {
@@ -188,6 +199,18 @@ export class FraudService {
         },
       });
     });
+
+    await AuditLogService.log({
+      actorId: adminUserId,
+      action:
+        decision === "CONFIRM" ? "FRAUD_ASSESSMENT_CONFIRM" : "FRAUD_ASSESSMENT_CLEAR",
+      targetType: "FraudAssessment",
+      targetId: assessmentId,
+      before: { status: FraudReviewStatus.OPEN },
+      after: { status: result.status, reviewNote: note ?? null },
+    });
+
+    return result;
   }
 
   private static async recalculateAssessmentWithClient(

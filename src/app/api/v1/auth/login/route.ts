@@ -5,13 +5,16 @@ import { getAuthSecret, signJWT } from "../../../../../lib/auth/jwt";
 import { prisma } from "../../../../../lib/prisma";
 import { hashPassword } from "../../../../../lib/auth/password";
 import { UserRole } from "../../../../../generated/prisma/client";
+import { AuditLogService } from "../../../../../modules/audit-log/service";
 
 const COOKIE_NAME = "khalliha_trend_session";
 
 export async function POST(request: Request) {
   const requestId = `req_${Math.random().toString(36).substring(2, 11)}`;
+  let loginIdentifier: string | undefined = undefined;
   try {
     const body = await request.json();
+    loginIdentifier = body?.identifier;
 
     // Validate inputs
     const parsed = loginSchema.safeParse(body);
@@ -187,9 +190,29 @@ export async function POST(request: Request) {
       maxAge: 7 * 24 * 60 * 60,
     });
 
+    await AuditLogService.log({
+      actorId: user.id,
+      actorEmail: user.email ?? undefined,
+      action: "USER_LOGIN_SUCCESS",
+      targetType: "User",
+      targetId: user.id,
+      ipAddress: request.headers.get("x-forwarded-for") || undefined,
+      userAgent: request.headers.get("user-agent") || undefined,
+    });
+
     return response;
   } catch (error) {
     const message = error instanceof Error ? error.message : "بيانات الاعتماد غير صالحة.";
+
+    await AuditLogService.log({
+      actorEmail: loginIdentifier || undefined,
+      action: "USER_LOGIN_FAILURE",
+      targetType: "User",
+      ipAddress: request.headers.get("x-forwarded-for") || undefined,
+      userAgent: request.headers.get("user-agent") || undefined,
+      before: { error: message },
+    });
+
     return NextResponse.json(
       {
         error: {

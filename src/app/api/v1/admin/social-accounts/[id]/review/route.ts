@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { getAuthSecret, verifyJWT } from "../../../../../../../lib/auth/jwt";
 import { errorResponse, newRequestId } from "../../../../../../../lib/api/response";
 import { SocialAccountService } from "../../../../../../../modules/social-accounts/service";
 import { reviewSocialAccountSchema } from "../../../../../../../modules/social-accounts/schemas";
+
+const COOKIE_NAME = "khalliha_trend_session";
 
 export async function POST(
   request: Request,
@@ -9,6 +13,25 @@ export async function POST(
 ) {
   const requestId = newRequestId();
   const { id } = await params;
+
+  const cookieStore = await cookies();
+  const token = cookieStore.get(COOKIE_NAME)?.value;
+  if (!token) {
+    return errorResponse("UNAUTHENTICATED", "الرجاء تسجيل الدخول أولاً.", 401, {
+      requestId,
+    });
+  }
+  const payload = (await verifyJWT(token, getAuthSecret())) as { userId?: string } | null;
+  if (!payload?.userId) {
+    return errorResponse(
+      "UNAUTHENTICATED",
+      "جلسة عمل غير صالحة أو منتهية الصلاحية.",
+      401,
+      {
+        requestId,
+      },
+    );
+  }
 
   const body = await request.json();
   const parsed = reviewSocialAccountSchema.safeParse(body);
@@ -22,6 +45,7 @@ export async function POST(
   try {
     const account = await SocialAccountService.review(
       id,
+      payload.userId,
       parsed.data.decision,
       parsed.data.rejectionReason,
     );

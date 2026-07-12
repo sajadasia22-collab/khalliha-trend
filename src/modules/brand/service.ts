@@ -1,6 +1,7 @@
 import { prisma } from "../../lib/prisma";
 import { BrandVerificationStatus } from "../../generated/prisma/enums";
 import type { UpdateBrandProfileInput } from "./schemas";
+import { AuditLogService } from "../audit-log/service";
 
 export class BrandProfileService {
   static async getForUser(userId: string) {
@@ -75,8 +76,8 @@ export class BrandProfileService {
       throw new Error("تمت مراجعة هذا الطلب مسبقاً");
     }
 
-    return prisma.$transaction(async (tx) => {
-      const updated = await tx.brandVerification.update({
+    const updated = await prisma.$transaction(async (tx) => {
+      const u = await tx.brandVerification.update({
         where: { id: verificationId },
         data: {
           status: decision,
@@ -93,7 +94,21 @@ export class BrandProfileService {
         });
       }
 
-      return updated;
+      return u;
     });
+
+    await AuditLogService.log({
+      actorId: reviewerUserId,
+      action:
+        decision === "APPROVED"
+          ? "BRAND_VERIFICATION_APPROVE"
+          : "BRAND_VERIFICATION_REJECT",
+      targetType: "BrandVerification",
+      targetId: verificationId,
+      before: { status: verification.status, note: verification.note },
+      after: { status: decision, note },
+    });
+
+    return updated;
   }
 }

@@ -3,6 +3,7 @@ import { CampaignStatus, NotificationType } from "../../generated/prisma/enums";
 import type { CreateCampaignInput } from "./schemas";
 import { FinancialService } from "../financial/service";
 import { NotificationService } from "../notifications/service";
+import { AuditLogService } from "../audit-log/service";
 
 async function getBrandIdForUser(userId: string): Promise<string> {
   const membership = await prisma.brandMember.findFirst({ where: { userId } });
@@ -221,6 +222,20 @@ export class CampaignService {
         reviewedByUserId: reviewerUserId,
         reviewedAt: now,
       },
+    });
+
+    await AuditLogService.log({
+      actorId: reviewerUserId,
+      action:
+        decision === "APPROVE"
+          ? "CAMPAIGN_APPROVE"
+          : decision === "REQUEST_CHANGES"
+            ? "CAMPAIGN_REQUEST_CHANGES"
+            : "CAMPAIGN_REJECT",
+      targetType: "Campaign",
+      targetId: campaignId,
+      before: { status: campaign.status, reviewNote: campaign.reviewNote },
+      after: { status: nextStatus, reviewNote: note ?? null },
     });
 
     const brandMembers = await prisma.brandMember.findMany({

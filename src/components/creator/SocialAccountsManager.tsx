@@ -115,7 +115,8 @@ export function SocialAccountsManager({
             لم تربط أي حساب اجتماعي بعد
           </p>
           <p className="text-xs font-medium text-[var(--color-text-secondary)]">
-            اضغط "إضافة حساب" لربط أول حساب لك — ويمكنك إضافة المزيد لاحقًا بنفس الطريقة.
+            اضغط &quot;إضافة حساب&quot; لربط أول حساب لك — ويمكنك إضافة المزيد لاحقًا بنفس
+            الطريقة.
           </p>
         </div>
       ) : (
@@ -164,7 +165,10 @@ export function SocialAccountsManager({
             </p>
           )}
           <div>
-            <label htmlFor="social-platform" className="mb-1.5 block text-xs font-bold text-[var(--color-text-secondary)]">
+            <label
+              htmlFor="social-platform"
+              className="mb-1.5 block text-xs font-bold text-[var(--color-text-secondary)]"
+            >
               المنصة
             </label>
             <div className="select-field-wrap">
@@ -191,7 +195,10 @@ export function SocialAccountsManager({
             </div>
           </div>
           <div>
-            <label htmlFor="social-handle" className="mb-1.5 block text-xs font-bold text-[var(--color-text-secondary)]">
+            <label
+              htmlFor="social-handle"
+              className="mb-1.5 block text-xs font-bold text-[var(--color-text-secondary)]"
+            >
               اسم المستخدم
             </label>
             <input
@@ -204,7 +211,10 @@ export function SocialAccountsManager({
             />
           </div>
           <div>
-            <label htmlFor="social-url" className="mb-1.5 block text-xs font-bold text-[var(--color-text-secondary)]">
+            <label
+              htmlFor="social-url"
+              className="mb-1.5 block text-xs font-bold text-[var(--color-text-secondary)]"
+            >
               رابط الحساب
             </label>
             <input

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getAuthSecret, verifyJWT } from "./lib/auth/jwt";
+import { RateLimiter } from "./lib/rate-limit";
 
 const COOKIE_NAME = "khalliha_trend_session";
 
@@ -10,6 +11,52 @@ export async function middleware(request: NextRequest) {
 
   const isApiRoute = pathname.startsWith("/api/");
   const secret = getAuthSecret();
+
+  // Rate Limiting for sensitive endpoints
+  if (isApiRoute) {
+    const ip =
+      request.headers.get("x-forwarded-for")?.split(",")[0].trim() || "127.0.0.1";
+
+    // Auth routes: login & register
+    if (
+      pathname.startsWith("/api/v1/auth/login") ||
+      pathname.startsWith("/api/v1/auth/register")
+    ) {
+      const allowed = RateLimiter.isAllowed(`rate-limit:auth:${ip}`, 10, 60 * 1000); // 10 requests/min
+      if (!allowed) {
+        return NextResponse.json(
+          {
+            error: {
+              code: "TOO_MANY_REQUESTS",
+              message: "لقد تجاوزت حد الطلبات المسموح به. يرجى المحاولة بعد دقيقة.",
+            },
+          },
+          { status: 429 },
+        );
+      }
+    }
+
+    // Financial routes: payouts & deposits POST
+    if (
+      request.method === "POST" &&
+      (pathname.startsWith("/api/v1/creator/payouts") ||
+        pathname.startsWith("/api/v1/brand/deposits"))
+    ) {
+      const allowed = RateLimiter.isAllowed(`rate-limit:financial:${ip}`, 20, 60 * 1000); // 20 requests/min
+      if (!allowed) {
+        return NextResponse.json(
+          {
+            error: {
+              code: "TOO_MANY_REQUESTS",
+              message:
+                "عمليات مالية متكررة جداً. يرجى الانتظار دقيقة قبل المحاولة مرة أخرى.",
+            },
+          },
+          { status: 429 },
+        );
+      }
+    }
+  }
 
   // 1. Verify token if present
   let payload: { role?: string; userId?: string } | null = null;
@@ -121,5 +168,6 @@ export const config = {
     "/api/v1/social-accounts/:path*",
     "/api/v1/disputes/:path*",
     "/api/v1/account/:path*",
+    "/api/v1/auth/:path*",
   ],
 };

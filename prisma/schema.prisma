@@ -109,6 +109,7 @@ model User {
   trustScoreEvents        TrustScoreEvent[]
   notifications           Notification[]
   notificationPreferences NotificationPreference[]
+  auditLogs               AuditLog[]
 }
 
 model CreatorProfile {
@@ -617,4 +618,23 @@ model NotificationPreference {
   user User @relation(fields: [userId], references: [id])
 
   @@unique([userId, type])
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  actorId      String?
+  actorEmail   String?
+  action       String
+  targetType   String
+  targetId     String?
+  before       Json?
+  after        Json?
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+
+  actor        User?    @relation(fields: [actorId], references: [id])
+
+  @@index([targetType, targetId])
+  @@index([createdAt])
 }

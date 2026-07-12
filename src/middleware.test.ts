@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { NextRequest } from "next/server";
 import { middleware } from "./middleware";
+import { RateLimiter } from "./lib/rate-limit";
 import { DEV_ONLY_FALLBACK_SECRET, signJWT } from "./lib/auth/jwt";
 
 const SECRET = DEV_ONLY_FALLBACK_SECRET;
@@ -91,5 +92,48 @@ describe("middleware route protection", () => {
     expect(response.headers.get("location")).toBe(
       "http://localhost:3000/brand/dashboard",
     );
+  });
+});
+
+describe("middleware rate limiting", () => {
+  beforeEach(() => {
+    RateLimiter.reset();
+  });
+
+  it("returns 429 TOO_MANY_REQUESTS when login rate limit is exceeded", async () => {
+    const loginRequest = () =>
+      new NextRequest("http://localhost:3000/api/v1/auth/login", { method: "POST" });
+
+    // Auth route limit is 10. Let's make 10 requests.
+    for (let i = 0; i < 10; i++) {
+      const response = await middleware(loginRequest());
+      expect(response.status).toBe(200);
+    }
+
+    // The 11th request should be rate limited and return status 429
+    const limitedResponse = await middleware(loginRequest());
+    expect(limitedResponse.status).toBe(429);
+    const json = await limitedResponse.json();
+    expect(json.error.code).toBe("TOO_MANY_REQUESTS");
+  });
+
+  it("returns 429 TOO_MANY_REQUESTS when financial POST rate limit is exceeded", async () => {
+    const token = await tokenFor("CREATOR");
+    const payoutRequest = () =>
+      new NextRequest("http://localhost:3000/api/v1/creator/payouts", {
+        method: "POST",
+        headers: { cookie: `${COOKIE_NAME}=${token}` },
+      });
+
+    // Financial route limit is 20. Let's make 20 requests.
+    for (let i = 0; i < 20; i++) {
+      const response = await middleware(payoutRequest());
+      expect(response.status).toBe(200);
+    }
+
+    const limitedResponse = await middleware(payoutRequest());
+    expect(limitedResponse.status).toBe(429);
+    const json = await limitedResponse.json();
+    expect(json.error.code).toBe("TOO_MANY_REQUESTS");
   });
 });

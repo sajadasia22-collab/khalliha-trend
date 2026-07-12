@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { AuthService } from "../../../../../modules/auth/service";
 import { registerSchema } from "../../../../../modules/auth/schemas";
 import { getAuthSecret, signJWT } from "../../../../../lib/auth/jwt";
+import { AuditLogService } from "../../../../../modules/audit-log/service";
 
 const COOKIE_NAME = "khalliha_trend_session";
 
@@ -66,6 +67,17 @@ export async function POST(request: Request) {
       sameSite: "lax",
       path: "/",
       maxAge: 7 * 24 * 60 * 60,
+    });
+
+    await AuditLogService.log({
+      actorId: user.id,
+      actorEmail: user.email ?? undefined,
+      action: "USER_REGISTER",
+      targetType: "User",
+      targetId: user.id,
+      ipAddress: request.headers.get("x-forwarded-for") || undefined,
+      userAgent: request.headers.get("user-agent") || undefined,
+      after: { role: user.role, status: user.status },
     });
 
     return response;

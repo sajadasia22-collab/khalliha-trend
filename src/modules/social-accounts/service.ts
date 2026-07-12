@@ -1,6 +1,7 @@
 import { prisma } from "../../lib/prisma";
 import { SocialAccountStatus } from "../../generated/prisma/enums";
 import type { CreateSocialAccountInput } from "./schemas";
+import { AuditLogService } from "../audit-log/service";
 
 function normalizeHandle(handle: string): string {
   return handle.trim().replace(/^@/, "").toLowerCase();
@@ -74,6 +75,7 @@ export class SocialAccountService {
 
   static async review(
     socialAccountId: string,
+    reviewerUserId: string,
     decision: "VERIFIED" | "REJECTED",
     rejectionReason?: string,
   ) {
@@ -87,7 +89,7 @@ export class SocialAccountService {
       throw new Error("تمت مراجعة هذا الحساب مسبقاً");
     }
 
-    return prisma.socialAccount.update({
+    const updated = await prisma.socialAccount.update({
       where: { id: socialAccountId },
       data: {
         status: decision,
@@ -95,5 +97,19 @@ export class SocialAccountService {
         verifiedAt: decision === "VERIFIED" ? new Date() : null,
       },
     });
+
+    await AuditLogService.log({
+      actorId: reviewerUserId,
+      action: decision === "VERIFIED" ? "SOCIAL_ACCOUNT_VERIFY" : "SOCIAL_ACCOUNT_REJECT",
+      targetType: "SocialAccount",
+      targetId: socialAccountId,
+      before: { status: account.status, rejectionReason: account.rejectionReason },
+      after: {
+        status: decision,
+        rejectionReason: decision === "REJECTED" ? rejectionReason : null,
+      },
+    });
+
+    return updated;
   }
 }

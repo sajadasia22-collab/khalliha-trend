@@ -7,6 +7,7 @@ import {
 } from "../../generated/prisma/enums";
 import type { CreateDisputeInput } from "./schemas";
 import { NotificationService } from "../notifications/service";
+import { AuditLogService } from "../audit-log/service";
 
 function clampScore(score: number) {
   return Math.max(0, Math.min(100, score));
@@ -37,8 +38,8 @@ export class DisputeService {
       throw new Error("لا تملك صلاحية فتح نزاع على هذا الإرسال");
     }
 
-    return prisma.$transaction(async (tx) => {
-      const dispute = await tx.dispute.create({
+    const dispute = await prisma.$transaction(async (tx) => {
+      const d = await tx.dispute.create({
         data: {
           submissionId: input.submissionId,
           openedByUserId: userId,
@@ -51,14 +52,24 @@ export class DisputeService {
 
       await tx.disputeMessage.create({
         data: {
-          disputeId: dispute.id,
+          disputeId: d.id,
           senderUserId: userId,
           body: input.description,
         },
       });
 
-      return dispute;
+      return d;
     });
+
+    await AuditLogService.log({
+      actorId: userId,
+      action: "DISPUTE_CREATE",
+      targetType: "Dispute",
+      targetId: dispute.id,
+      after: { reason: input.reason, title: input.title, description: input.description },
+    });
+
+    return dispute;
   }
 
   static async listForUser(userId: string) {
@@ -235,6 +246,15 @@ export class DisputeService {
         ),
       ),
     ]);
+
+    await AuditLogService.log({
+      actorId: adminUserId,
+      action: "DISPUTE_RESOLVE",
+      targetType: "Dispute",
+      targetId: disputeId,
+      before: { status: DisputeStatus.OPEN },
+      after: { status: result.status, resolutionNote },
+    });
 
     return result;
   }

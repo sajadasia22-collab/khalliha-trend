@@ -7,6 +7,7 @@ import {
 } from "../../generated/prisma/enums";
 import { normalizePostUrl } from "../../lib/post-url";
 import { NotificationService } from "../notifications/service";
+import { AuditLogService } from "../audit-log/service";
 
 export class SubmissionService {
   static async createSubmission(
@@ -205,6 +206,28 @@ export class SubmissionService {
         reviewNote: decision !== "APPROVE" ? note : null,
         reviewedByUserId: adminUserId,
         reviewedAt: new Date(),
+      },
+    });
+
+    await AuditLogService.log({
+      actorId: adminUserId,
+      action:
+        decision === "APPROVE"
+          ? "SUBMISSION_APPROVE"
+          : decision === "REQUEST_REVISION"
+            ? "SUBMISSION_REQUEST_REVISION"
+            : "SUBMISSION_REJECT",
+      targetType: "Submission",
+      targetId: submissionId,
+      before: {
+        status: submission.status,
+        rejectionReason: submission.rejectionReason,
+        reviewNote: submission.reviewNote,
+      },
+      after: {
+        status: nextStatus,
+        rejectionReason: decision === "REJECT" ? note : null,
+        reviewNote: decision !== "APPROVE" ? note : null,
       },
     });
 

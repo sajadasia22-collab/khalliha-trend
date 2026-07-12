@@ -9,6 +9,7 @@ import {
 } from "../../generated/prisma/enums";
 import { LedgerEngine } from "./ledger";
 import { NotificationService } from "../notifications/service";
+import { AuditLogService } from "../audit-log/service";
 
 export class FinancialService {
   private static getPlatformCommissionBps() {
@@ -120,6 +121,19 @@ export class FinancialService {
       "/brand/dashboard",
     );
 
+    await AuditLogService.log({
+      actorId: adminUserId,
+      action: "DEPOSIT_APPROVE",
+      targetType: "Deposit",
+      targetId: depositId,
+      before: { status: DepositStatus.PENDING },
+      after: {
+        status: DepositStatus.APPROVED,
+        reviewedByUserId: adminUserId,
+        ledgerTransactionId: result.ledgerTransactionId,
+      },
+    });
+
     return result;
   }
 
@@ -156,6 +170,15 @@ export class FinancialService {
       note ?? "راجع لوحة التحكم لمزيد من التفاصيل.",
       "/brand/dashboard",
     );
+
+    await AuditLogService.log({
+      actorId: adminUserId,
+      action: "DEPOSIT_REJECT",
+      targetType: "Deposit",
+      targetId: depositId,
+      before: { status: deposit.status, note: deposit.note },
+      after: { status: DepositStatus.REJECTED, reviewedByUserId: adminUserId, note },
+    });
 
     return updated;
   }
@@ -308,6 +331,20 @@ export class FinancialService {
       "/creator/dashboard",
     );
 
+    await AuditLogService.log({
+      actorId: adminUserId,
+      action: "PAYOUT_APPROVE",
+      targetType: "PayoutRequest",
+      targetId: payoutRequestId,
+      before: { status: PayoutStatus.PENDING },
+      after: {
+        status: PayoutStatus.APPROVED,
+        reviewedByUserId: adminUserId,
+        referenceNumber,
+        ledgerTransactionId: result.ledgerTransactionId,
+      },
+    });
+
     return result;
   }
 
@@ -376,6 +413,15 @@ export class FinancialService {
       note ?? "أُعيد المبلغ إلى محفظتك. راجع لوحة التحكم لمزيد من التفاصيل.",
       "/creator/dashboard",
     );
+
+    await AuditLogService.log({
+      actorId: adminUserId,
+      action: "PAYOUT_REJECT",
+      targetType: "PayoutRequest",
+      targetId: payoutRequestId,
+      before: { status: PayoutStatus.PENDING },
+      after: { status: PayoutStatus.REJECTED, reviewedByUserId: adminUserId, note },
+    });
 
     return result;
   }
