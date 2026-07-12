@@ -135,15 +135,22 @@ function ProfileSection() {
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <span className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1.5">رقم الهاتف (اسم المستخدم)</span>
-            <div dir="ltr" className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 py-3 text-sm text-[var(--color-text-secondary)] font-mono select-none text-right">
-              {phone}
-            </div>
+            <input
+              type="text"
+              disabled
+              dir="ltr"
+              value={phone}
+              className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 py-3 text-sm text-[var(--color-text-secondary)] font-mono cursor-not-allowed text-left"
+            />
           </div>
           <div>
             <span className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1.5">نوع صلاحية الحساب</span>
-            <div className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 py-3 text-sm text-[var(--color-brand-active)] font-bold select-none">
-              {roleLabels[role] || role}
-            </div>
+            <input
+              type="text"
+              disabled
+              value={roleLabels[role] || role}
+              className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 py-3 text-sm text-[var(--color-brand-active)] font-bold cursor-not-allowed text-right"
+            />
           </div>
         </div>
 
