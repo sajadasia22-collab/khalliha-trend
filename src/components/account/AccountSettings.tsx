@@ -98,12 +98,17 @@ function ProfileSection() {
         <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-surface-muted)] text-[var(--color-brand-active)]">
           <UserIcon size={20} />
         </span>
-        <h2 className="text-lg font-extrabold text-[var(--color-text)]">البيانات الشخصية</h2>
+        <h2 className="text-lg font-extrabold text-[var(--color-text)]">
+          البيانات الشخصية
+        </h2>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1.5" htmlFor="fullName">
+          <label
+            className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1.5"
+            htmlFor="fullName"
+          >
             الاسم الكامل
           </label>
           <input
@@ -118,7 +123,10 @@ function ProfileSection() {
         </div>
 
         <div>
-          <label className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1.5" htmlFor="email">
+          <label
+            className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1.5"
+            htmlFor="email"
+          >
             البريد الإلكتروني
           </label>
           <input
@@ -134,7 +142,9 @@ function ProfileSection() {
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <span className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1.5">رقم الهاتف (اسم المستخدم)</span>
+            <span className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1.5">
+              رقم الهاتف (اسم المستخدم)
+            </span>
             <input
               type="text"
               disabled
@@ -144,7 +154,9 @@ function ProfileSection() {
             />
           </div>
           <div>
-            <span className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1.5">نوع صلاحية الحساب</span>
+            <span className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1.5">
+              نوع صلاحية الحساب
+            </span>
             <input
               type="text"
               disabled
@@ -154,7 +166,11 @@ function ProfileSection() {
           </div>
         </div>
 
-        <Button type="submit" loading={saving} className="w-full justify-center sm:w-auto">
+        <Button
+          type="submit"
+          loading={saving}
+          className="w-full justify-center sm:w-auto"
+        >
           حفظ التغييرات
         </Button>
       </form>
@@ -358,26 +374,41 @@ function SessionSection() {
           <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-surface-muted)] text-[var(--color-brand-active)]">
             <InfoIcon size={20} />
           </span>
-          <h2 className="text-lg font-extrabold text-[var(--color-text)]">تفاصيل الجلسة الحالية</h2>
+          <h2 className="text-lg font-extrabold text-[var(--color-text)]">
+            تفاصيل الجلسة الحالية
+          </h2>
         </div>
 
         <div className="space-y-4">
           <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed font-medium">
-            نعرض لك هنا تفاصيل جهازك وجلسة العمل الحالية المستخدمة للوصول إلى المنصة لأغراض الحماية والأمان وتتبع النشاط.
+            نعرض لك هنا تفاصيل جهازك وجلسة العمل الحالية المستخدمة للوصول إلى المنصة
+            لأغراض الحماية والأمان وتتبع النشاط.
           </p>
 
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="bg-[var(--color-surface-muted)] p-4 rounded-[var(--radius-md)] border border-[var(--color-border)]">
-              <span className="block text-[10px] text-[var(--color-text-muted)] font-bold uppercase">نظام التشغيل</span>
-              <strong className="block text-sm text-[var(--color-text)] mt-1">{deviceInfo.os}</strong>
+              <span className="block text-[10px] text-[var(--color-text-muted)] font-bold uppercase">
+                نظام التشغيل
+              </span>
+              <strong className="block text-sm text-[var(--color-text)] mt-1">
+                {deviceInfo.os}
+              </strong>
             </div>
             <div className="bg-[var(--color-surface-muted)] p-4 rounded-[var(--radius-md)] border border-[var(--color-border)]">
-              <span className="block text-[10px] text-[var(--color-text-muted)] font-bold uppercase">برنامج التصفح</span>
-              <strong className="block text-sm text-[var(--color-text)] mt-1">{deviceInfo.browser}</strong>
+              <span className="block text-[10px] text-[var(--color-text-muted)] font-bold uppercase">
+                برنامج التصفح
+              </span>
+              <strong className="block text-sm text-[var(--color-text)] mt-1">
+                {deviceInfo.browser}
+              </strong>
             </div>
             <div className="bg-[var(--color-surface-muted)] p-4 rounded-[var(--radius-md)] border border-[var(--color-border)]">
-              <span className="block text-[10px] text-[var(--color-text-muted)] font-bold uppercase">عنوان الـ IP</span>
-              <strong className="block text-sm text-[var(--color-text)] mt-1">{deviceInfo.ip}</strong>
+              <span className="block text-[10px] text-[var(--color-text-muted)] font-bold uppercase">
+                عنوان الـ IP
+              </span>
+              <strong className="block text-sm text-[var(--color-text)] mt-1">
+                {deviceInfo.ip}
+              </strong>
             </div>
           </div>
         </div>
@@ -391,15 +422,21 @@ function SessionSection() {
         <ul className="space-y-3 text-xs text-[var(--color-text-secondary)] font-medium">
           <li className="flex justify-between items-center py-1 border-b border-[rgba(200,214,206,0.06)]">
             <span>تسجيل دخول ناجح (هذا المتصفح)</span>
-            <span className="text-[10px] font-mono text-[var(--color-text-muted)]">نشط الآن</span>
+            <span className="text-[10px] font-mono text-[var(--color-text-muted)]">
+              نشط الآن
+            </span>
           </li>
           <li className="flex justify-between items-center py-1 border-b border-[rgba(200,214,206,0.06)]">
             <span>التحقق من صلاحية الجلسة واسترداد المحفظة</span>
-            <span className="text-[10px] font-mono text-[var(--color-text-muted)]">قبل دقيقة</span>
+            <span className="text-[10px] font-mono text-[var(--color-text-muted)]">
+              قبل دقيقة
+            </span>
           </li>
           <li className="flex justify-between items-center py-1">
             <span>تحديث إعدادات الحساب</span>
-            <span className="text-[10px] font-mono text-[var(--color-text-muted)]">قبل قليل</span>
+            <span className="text-[10px] font-mono text-[var(--color-text-muted)]">
+              قبل قليل
+            </span>
           </li>
         </ul>
       </div>
@@ -420,7 +457,7 @@ export function AccountSettings() {
   return (
     <div className="space-y-6">
       <Tabs items={tabItems} value={activeTab} onChange={setActiveTab} />
-      
+
       <div className="mt-6">
         {activeTab === "profile" && <ProfileSection />}
         {activeTab === "security" && <PasswordSection />}

@@ -1,5 +1,6 @@
 import type { ComponentType } from "react";
 import {
+  Clipboard,
   ClipboardCheck,
   Wallet,
   Banknote,
@@ -59,6 +60,7 @@ function withDefaults(Icon: ComponentType<LucideProps>) {
   return Wrapped;
 }
 
+export const ClipboardIcon = withDefaults(Clipboard);
 export const ClipboardCheckIcon = withDefaults(ClipboardCheck);
 export const WalletIcon = withDefaults(Wallet);
 export const BanknoteIcon = withDefaults(Banknote);
