@@ -1,0 +1,103 @@
+{
+  "brand": {
+    "name": "خلّيها ترند",
+    "primary": "#D6F61D",
+    "dark": "#062619",
+    "background": "#E7EDE9"
+  },
+  "colors": {
+    "trend": {
+      "50": "#FBFFE8",
+      "100": "#F5FFC2",
+      "200": "#ECFF85",
+      "300": "#E3FA4E",
+      "400": "#D6F61D",
+      "500": "#C2DF15",
+      "600": "#9FB80E",
+      "700": "#788B0A",
+      "800": "#505D06",
+      "900": "#2A3103"
+    },
+    "forest": {
+      "50": "#E7EDE9",
+      "100": "#C8D6CE",
+      "200": "#9FB7A9",
+      "300": "#70937D",
+      "400": "#436D54",
+      "500": "#244C36",
+      "600": "#123828",
+      "700": "#062619",
+      "800": "#041B12",
+      "900": "#02110B",
+      "950": "#010806"
+    },
+    "mist": {
+      "50": "#FAFCFB",
+      "100": "#F4F8F5",
+      "200": "#EEF4F0",
+      "300": "#E7EDE9",
+      "400": "#D2DDD6",
+      "500": "#B8C8BE",
+      "600": "#91A698",
+      "700": "#6C8274",
+      "800": "#4D6054",
+      "900": "#2F3D34"
+    },
+    "semantic": {
+      "success": "{colors.forest.400}",
+      "warning": "{colors.trend.600}",
+      "error": "{colors.forest.800}",
+      "info": "{colors.mist.700}"
+    }
+  },
+  "semanticTokens": {
+    "brand": "{colors.trend.400}",
+    "brandHover": "{colors.trend.500}",
+    "brandActive": "{colors.trend.600}",
+    "background": "{colors.mist.300}",
+    "surface": "{colors.mist.50}",
+    "surfaceMuted": "{colors.mist.100}",
+    "surfaceDark": "{colors.forest.700}",
+    "surfaceDarkRaised": "{colors.forest.600}",
+    "text": "{colors.forest.700}",
+    "textSecondary": "{colors.forest.500}",
+    "textMuted": "{colors.forest.300}",
+    "textOnBrand": "{colors.forest.700}",
+    "textOnDark": "{colors.mist.50}",
+    "border": "{colors.mist.400}",
+    "borderStrong": "{colors.forest.200}",
+    "focus": "{colors.trend.400}"
+  },
+  "typography": {
+    "arabic": "IBM Plex Sans Arabic",
+    "arabicFallback": "Tajawal",
+    "latin": "Inter"
+  },
+  "radius": {
+    "sm": "8px",
+    "md": "12px",
+    "lg": "16px",
+    "xl": "24px",
+    "pill": "999px"
+  },
+  "spacing": [
+    "4px",
+    "8px",
+    "12px",
+    "16px",
+    "20px",
+    "24px",
+    "32px",
+    "40px",
+    "48px",
+    "64px",
+    "80px",
+    "96px"
+  ],
+  "motion": {
+    "fast": "150ms",
+    "normal": "250ms",
+    "slow": "400ms",
+    "easing": "cubic-bezier(.2,.8,.2,1)"
+  }
+}

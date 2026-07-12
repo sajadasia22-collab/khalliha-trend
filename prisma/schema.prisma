@@ -1,0 +1,620 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  BRAND
+  CREATOR
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  BANNED
+  PENDING_VERIFICATION
+}
+
+enum CampaignStatus {
+  DRAFT
+  PENDING_REVIEW
+  NEEDS_CHANGES
+  PENDING_FUNDING
+  SCHEDULED
+  ACTIVE
+  PAUSED
+  BUDGET_LOW
+  BUDGET_EXHAUSTED
+  COMPLETED
+  CANCELLED
+  REJECTED
+  ARCHIVED
+}
+
+enum Platform {
+  TIKTOK
+  INSTAGRAM
+  FACEBOOK
+  YOUTUBE
+}
+
+enum Currency {
+  IQD
+  USD
+}
+
+enum LedgerDirection {
+  DEBIT
+  CREDIT
+}
+
+enum SocialAccountStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum BrandVerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum CampaignCategory {
+  PRODUCT
+  BEAUTY
+  FOOD
+  FASHION
+  TECH
+  ENTERTAINMENT
+  GAMING
+  OTHER
+}
+
+enum SubmissionStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  REVISION_REQUESTED
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id           String     @id @default(cuid())
+  email        String?    @unique
+  phone        String?    @unique
+  passwordHash String?
+  fullName     String
+  role         UserRole
+  status       UserStatus @default(PENDING_VERIFICATION)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  creatorProfile          CreatorProfile?
+  brandMembers            BrandMember[]
+  wallets                 Wallet[]
+  capturedSnapshots       MetricsSnapshot[]
+  deposits                Deposit[]
+  payouts                 PayoutRequest[]
+  fraudSignals            FraudSignal[]
+  openedDisputes          Dispute[]                @relation("OpenedDisputes")
+  resolvedDisputes        Dispute[]                @relation("ResolvedDisputes")
+  disputeMessages         DisputeMessage[]
+  trustScoreEvents        TrustScoreEvent[]
+  notifications           Notification[]
+  notificationPreferences NotificationPreference[]
+}
+
+model CreatorProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  bio         String?
+  country     String   @default("IQ")
+  governorate String?
+  trustScore  Int      @default(50)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user             User                 @relation(fields: [userId], references: [id])
+  memberships      CampaignMembership[]
+  socialAccounts   SocialAccount[]
+  trustScoreEvents TrustScoreEvent[]
+}
+
+model BrandProfile {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  description String?
+  verifiedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  members       BrandMember[]
+  campaigns     Campaign[]
+  verifications BrandVerification[]
+}
+
+model BrandMember {
+  id        String   @id @default(cuid())
+  userId    String
+  brandId   String
+  role      String   @default("OWNER")
+  createdAt DateTime @default(now())
+
+  user  User         @relation(fields: [userId], references: [id])
+  brand BrandProfile @relation(fields: [brandId], references: [id])
+
+  @@unique([userId, brandId])
+}
+
+model Campaign {
+  id               String           @id @default(cuid())
+  brandId          String
+  title            String
+  summary          String
+  terms            String
+  category         CampaignCategory @default(OTHER)
+  thumbnailUrl     String?
+  minTrustScore    Int              @default(0)
+  status           CampaignStatus   @default(DRAFT)
+  currency         Currency         @default(IQD)
+  totalBudget      BigInt
+  reservedBudget   BigInt           @default(0)
+  startsAt         DateTime?
+  endsAt           DateTime?
+  reviewNote       String?
+  reviewedByUserId String?
+  reviewedAt       DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  brand       BrandProfile           @relation(fields: [brandId], references: [id])
+  rates       CampaignPlatformRate[]
+  assets      CampaignAsset[]
+  memberships CampaignMembership[]
+
+  @@index([status, startsAt, endsAt])
+  @@index([brandId])
+  @@index([category])
+}
+
+model CampaignAsset {
+  id         String   @id @default(cuid())
+  campaignId String
+  url        String
+  label      String
+  createdAt  DateTime @default(now())
+
+  campaign Campaign @relation(fields: [campaignId], references: [id])
+
+  @@index([campaignId])
+}
+
+model CampaignPlatformRate {
+  id                    String   @id @default(cuid())
+  campaignId            String
+  platform              Platform
+  cpmMinorUnits         BigInt
+  minimumQualifiedViews BigInt   @default(0)
+  maximumReward         BigInt
+  createdAt             DateTime @default(now())
+
+  campaign Campaign @relation(fields: [campaignId], references: [id])
+
+  @@unique([campaignId, platform])
+}
+
+model CampaignMembership {
+  id               String   @id @default(cuid())
+  campaignId       String
+  creatorProfileId String
+  termsSnapshot    Json
+  acceptedAt       DateTime @default(now())
+  createdAt        DateTime @default(now())
+
+  campaign       Campaign       @relation(fields: [campaignId], references: [id])
+  creatorProfile CreatorProfile @relation(fields: [creatorProfileId], references: [id])
+  submissions    Submission[]
+
+  @@unique([campaignId, creatorProfileId])
+}
+
+model Submission {
+  id                   String           @id @default(cuid())
+  campaignMembershipId String
+  socialAccountId      String
+  platform             Platform
+  postUrl              String
+  platformPostId       String
+  status               SubmissionStatus @default(SUBMITTED)
+  rejectionReason      String?
+  reviewNote           String?
+  reviewedByUserId     String?
+  reviewedAt           DateTime?
+  submittedAt          DateTime         @default(now())
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  campaignMembership CampaignMembership @relation(fields: [campaignMembershipId], references: [id])
+  socialAccount      SocialAccount      @relation(fields: [socialAccountId], references: [id])
+  metricsSnapshots   MetricsSnapshot[]
+  earnings           EarningAccrual[]
+  fraudSignals       FraudSignal[]
+  fraudAssessment    FraudAssessment?
+  disputes           Dispute[]
+
+  @@unique([platform, platformPostId])
+  @@index([campaignMembershipId, status])
+}
+
+model FinancialAccount {
+  id        String   @id @default(cuid())
+  name      String
+  currency  Currency @default(IQD)
+  createdAt DateTime @default(now())
+
+  walletEntries Wallet[]
+  entries       LedgerEntry[]
+}
+
+model Wallet {
+  id                 String   @id @default(cuid())
+  userId             String
+  financialAccountId String   @unique
+  currency           Currency @default(IQD)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user             User             @relation(fields: [userId], references: [id])
+  financialAccount FinancialAccount @relation(fields: [financialAccountId], references: [id])
+
+  @@unique([userId, currency])
+}
+
+model LedgerTransaction {
+  id             String   @id @default(cuid())
+  idempotencyKey String   @unique
+  type           String
+  currency       Currency
+  status         String
+  description    String?
+  createdAt      DateTime @default(now())
+
+  entries       LedgerEntry[]
+  deposit       Deposit?
+  payoutRequest PayoutRequest?
+}
+
+model LedgerEntry {
+  id            String          @id @default(cuid())
+  transactionId String
+  accountId     String
+  direction     LedgerDirection
+  amount        BigInt
+  createdAt     DateTime        @default(now())
+
+  transaction LedgerTransaction @relation(fields: [transactionId], references: [id])
+  account     FinancialAccount  @relation(fields: [accountId], references: [id])
+
+  @@index([accountId, createdAt])
+}
+
+model SocialAccount {
+  id               String              @id @default(cuid())
+  creatorProfileId String
+  platform         Platform
+  handle           String
+  profileUrl       String
+  status           SocialAccountStatus @default(PENDING)
+  rejectionReason  String?
+  verifiedAt       DateTime?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  creatorProfile CreatorProfile @relation(fields: [creatorProfileId], references: [id])
+  submissions    Submission[]
+
+  @@unique([platform, handle])
+  @@index([creatorProfileId])
+}
+
+model BrandVerification {
+  id               String                  @id @default(cuid())
+  brandId          String
+  status           BrandVerificationStatus @default(PENDING)
+  note             String?
+  reviewedByUserId String?
+  requestedAt      DateTime                @default(now())
+  reviewedAt       DateTime?
+
+  brand BrandProfile @relation(fields: [brandId], references: [id])
+
+  @@index([brandId, status])
+}
+
+enum EarningStatus {
+  ESTIMATED
+  PENDING_VERIFICATION
+  HELD
+  AVAILABLE
+  PAID
+  REVERSED
+}
+
+model MetricsSnapshot {
+  id                     String   @id @default(cuid())
+  submissionId           String
+  observedViews          BigInt
+  qualifiedViews         BigInt
+  disqualifiedViews      BigInt   @default(0)
+  disqualificationReason String?
+  source                 String   @default("MANUAL_ADMIN")
+  capturedByUserId       String?
+  capturedAt             DateTime @default(now())
+  createdAt              DateTime @default(now())
+
+  submission Submission       @relation(fields: [submissionId], references: [id])
+  capturedBy User?            @relation(fields: [capturedByUserId], references: [id])
+  earnings   EarningAccrual[]
+
+  @@index([submissionId])
+}
+
+model EarningAccrual {
+  id                String        @id @default(cuid())
+  submissionId      String
+  metricsSnapshotId String?
+  amount            BigInt
+  currency          Currency      @default(IQD)
+  status            EarningStatus @default(PENDING_VERIFICATION)
+  heldUntil         DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  submission      Submission       @relation(fields: [submissionId], references: [id])
+  metricsSnapshot MetricsSnapshot? @relation(fields: [metricsSnapshotId], references: [id])
+
+  @@index([submissionId])
+}
+
+enum DepositStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum PayoutStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Deposit {
+  id                  String        @id @default(cuid())
+  userId              String
+  amount              BigInt
+  currency            Currency      @default(IQD)
+  status              DepositStatus @default(PENDING)
+  referenceNumber     String?
+  note                String?
+  reviewedByUserId    String?
+  ledgerTransactionId String?       @unique
+  reviewedAt          DateTime?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  user              User               @relation(fields: [userId], references: [id])
+  ledgerTransaction LedgerTransaction? @relation(fields: [ledgerTransactionId], references: [id])
+
+  @@index([userId, status])
+}
+
+model PayoutRequest {
+  id                  String       @id @default(cuid())
+  userId              String
+  amount              BigInt
+  currency            Currency     @default(IQD)
+  status              PayoutStatus @default(PENDING)
+  payoutMethod        String
+  recipientDetails    String
+  referenceNumber     String?
+  note                String?
+  reviewedByUserId    String?
+  ledgerTransactionId String?      @unique
+  reviewedAt          DateTime?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  user              User               @relation(fields: [userId], references: [id])
+  ledgerTransaction LedgerTransaction? @relation(fields: [ledgerTransactionId], references: [id])
+
+  @@index([userId, status])
+}
+
+enum FraudSignalKind {
+  VIEW_SPIKE
+  HIGH_DISQUALIFIED_RATIO
+  MANUAL_ADMIN_FLAG
+  DUPLICATE_CONTENT_SUSPECTED
+  PAID_PROMOTION_SUSPECTED
+  ACCOUNT_PRIVACY_CHANGED
+  POST_REMOVED
+  OTHER
+}
+
+enum FraudReviewStatus {
+  OPEN
+  UNDER_REVIEW
+  CLEARED
+  CONFIRMED
+}
+
+enum FraudRiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model FraudSignal {
+  id              String          @id @default(cuid())
+  submissionId    String
+  kind            FraudSignalKind
+  scoreImpact     Int
+  note            String?
+  createdByUserId String?
+  createdAt       DateTime        @default(now())
+
+  submission    Submission @relation(fields: [submissionId], references: [id])
+  createdByUser User?      @relation(fields: [createdByUserId], references: [id])
+
+  @@index([submissionId, kind])
+  @@index([createdAt])
+}
+
+model FraudAssessment {
+  id               String            @id @default(cuid())
+  submissionId     String            @unique
+  fraudScore       Int               @default(0)
+  riskLevel        FraudRiskLevel    @default(LOW)
+  status           FraudReviewStatus @default(OPEN)
+  reviewNote       String?
+  reviewedByUserId String?
+  reviewedAt       DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  submission Submission @relation(fields: [submissionId], references: [id])
+
+  @@index([status, riskLevel])
+}
+
+enum TrustScoreEventReason {
+  FRAUD_CONFIRMED
+  FRAUD_CLEARED
+  DISPUTE_RESOLVED_CREATOR
+  DISPUTE_RESOLVED_BRAND
+  ADMIN_ADJUSTMENT
+}
+
+model TrustScoreEvent {
+  id               String                @id @default(cuid())
+  creatorProfileId String
+  userId           String
+  delta            Int
+  reason           TrustScoreEventReason
+  note             String?
+  createdAt        DateTime              @default(now())
+
+  creatorProfile CreatorProfile @relation(fields: [creatorProfileId], references: [id])
+  user           User           @relation(fields: [userId], references: [id])
+
+  @@index([creatorProfileId, createdAt])
+}
+
+enum DisputeStatus {
+  OPEN
+  AWAITING_CREATOR
+  AWAITING_BRAND
+  UNDER_ADMIN_REVIEW
+  RESOLVED_CREATOR
+  RESOLVED_BRAND
+  PARTIAL_RESOLUTION
+  CLOSED
+}
+
+enum DisputeReason {
+  SUBMISSION_REJECTION
+  QUALIFIED_VIEWS
+  DISQUALIFICATION
+  EARNINGS
+  PAYOUT
+  BRAND_MISUSE
+  FRAUD_CLAIM
+  OTHER
+}
+
+model Dispute {
+  id               String        @id @default(cuid())
+  submissionId     String
+  openedByUserId   String
+  status           DisputeStatus @default(OPEN)
+  reason           DisputeReason
+  title            String
+  description      String
+  resolutionNote   String?
+  resolvedByUserId String?
+  resolvedAt       DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  submission Submission       @relation(fields: [submissionId], references: [id])
+  openedBy   User             @relation("OpenedDisputes", fields: [openedByUserId], references: [id])
+  resolvedBy User?            @relation("ResolvedDisputes", fields: [resolvedByUserId], references: [id])
+  messages   DisputeMessage[]
+
+  @@index([submissionId, status])
+  @@index([openedByUserId, status])
+}
+
+model DisputeMessage {
+  id           String   @id @default(cuid())
+  disputeId    String
+  senderUserId String
+  body         String
+  createdAt    DateTime @default(now())
+
+  dispute Dispute @relation(fields: [disputeId], references: [id])
+  sender  User    @relation(fields: [senderUserId], references: [id])
+
+  @@index([disputeId, createdAt])
+}
+
+enum NotificationType {
+  CAMPAIGN_APPROVED
+  CAMPAIGN_NEEDS_CHANGES
+  CAMPAIGN_REJECTED
+  SUBMISSION_REVIEWED
+  DEPOSIT_REVIEWED
+  PAYOUT_REVIEWED
+  DISPUTE_UPDATED
+  FRAUD_FLAGGED
+  GENERIC
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String
+  link      String?
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, readAt, createdAt])
+}
+
+// Per-user, per-category opt-out. Absence of a row means "enabled" (the
+// default before this feature existed), so NotificationService.notify must
+// treat a missing row as enabled=true rather than creating rows eagerly.
+model NotificationPreference {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  enabled   Boolean          @default(true)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, type])
+}

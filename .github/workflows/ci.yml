@@ -1,0 +1,88 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+env:
+  # CI-only ephemeral database, not a real secret — safe to keep inline.
+  DATABASE_URL: "postgresql://postgres:postgres@127.0.0.1:5432/khalliha_trend?schema=public"
+  DIRECT_URL: "postgresql://postgres:postgres@127.0.0.1:5432/khalliha_trend?schema=public"
+  # AUTH_SECRET is intentionally NOT set here: several unit tests (e.g.
+  # middleware.test.ts) sign tokens with the hardcoded dev-only fallback
+  # secret and expect the server to verify against that same fallback. Setting
+  # a real AUTH_SECRET at job level would make those signatures mismatch and
+  # every RBAC test fail. It's set only on the E2E step below, which reads it
+  # dynamically at signing time.
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: khalliha_trend
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.31.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Prisma validate
+        run: pnpm prisma:validate
+
+      - name: Apply migrations to CI database
+        run: pnpm exec prisma migrate deploy
+
+      - name: Format check
+        run: pnpm format:check
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit tests (includes real-database concurrency/integration tests)
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: E2E tests
+        run: pnpm test:e2e
+        env:
+          # CI-only signing key so e2e/permission-boundaries.spec.ts can forge
+          # tokens against the same secret the dev server verifies with here.
+          # Scoped to this step only — see the note on job-level env above.
+          AUTH_SECRET: "ci-only-signing-secret-not-used-anywhere-else-32"
+
+      - name: Dependency audit
+        run: pnpm audit

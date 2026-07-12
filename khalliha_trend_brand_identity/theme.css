@@ -1,0 +1,88 @@
+:root {
+  --trend-50: #fbffe8;
+  --trend-100: #f5ffc2;
+  --trend-200: #ecff85;
+  --trend-300: #e3fa4e;
+  --trend-400: #d6f61d;
+  --trend-500: #c2df15;
+  --trend-600: #9fb80e;
+  --trend-700: #788b0a;
+  --trend-800: #505d06;
+  --trend-900: #2a3103;
+
+  --forest-50: #e7ede9;
+  --forest-100: #c8d6ce;
+  --forest-200: #9fb7a9;
+  --forest-300: #70937d;
+  --forest-400: #436d54;
+  --forest-500: #244c36;
+  --forest-600: #123828;
+  --forest-700: #062619;
+  --forest-800: #041b12;
+  --forest-900: #02110b;
+  --forest-950: #010806;
+
+  --mist-50: #fafcfb;
+  --mist-100: #f4f8f5;
+  --mist-200: #eef4f0;
+  --mist-300: #e7ede9;
+  --mist-400: #d2ddd6;
+  --mist-500: #b8c8be;
+  --mist-600: #91a698;
+  --mist-700: #6c8274;
+  --mist-800: #4d6054;
+  --mist-900: #2f3d34;
+
+  --color-brand: var(--trend-400);
+  --color-brand-hover: var(--trend-500);
+  --color-brand-active: var(--trend-600);
+
+  --color-bg: var(--mist-300);
+  --color-surface: var(--mist-50);
+  --color-surface-muted: var(--mist-100);
+  --color-surface-dark: var(--forest-700);
+  --color-surface-dark-raised: var(--forest-600);
+  --color-text: var(--forest-700);
+  --color-text-secondary: var(--forest-500);
+  --color-text-muted: var(--forest-300);
+  --color-text-on-brand: var(--forest-700);
+  --color-text-on-dark: var(--mist-50);
+  --color-border: var(--mist-400);
+  --color-border-strong: var(--forest-200);
+  --color-focus: var(--trend-400);
+
+  --color-success: var(--forest-400);
+  --color-warning: var(--trend-600);
+  --color-error: var(--forest-800);
+  --color-info: var(--mist-700);
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-pill: 999px;
+
+  --shadow-sm: 0 2px 8px rgba(6, 38, 25, 0.06);
+  --shadow-md: 0 8px 24px rgba(6, 38, 25, 0.1);
+  --shadow-lg: 0 20px 50px rgba(6, 38, 25, 0.14);
+  --shadow-brand: 0 12px 30px rgba(214, 246, 29, 0.25);
+
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 400ms;
+  --ease-brand: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  font-family: "IBM Plex Sans Arabic", "Inter", system-ui, sans-serif;
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --color-bg: var(--forest-950);
+  --color-surface: var(--forest-800);
+  --color-surface-muted: var(--forest-700);
+  --color-text: var(--mist-50);
+  --color-text-secondary: var(--forest-100);
+  --color-text-muted: var(--forest-300);
+  --color-border: var(--forest-600);
+  color-scheme: dark;
+}
