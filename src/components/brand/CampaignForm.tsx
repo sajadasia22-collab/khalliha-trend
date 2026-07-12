@@ -151,7 +151,7 @@ export function CampaignForm({
       {/* Card 1: Core Details */}
       <div className="bg-[rgba(250,252,251,0.01)] border border-[var(--color-border)] p-6 rounded-[var(--radius-xl)] space-y-6">
         <div className="border-b border-[rgba(200,214,206,0.06)] pb-3">
-          <h2 className="text-xs font-black text-[var(--color-brand)] bg-[var(--color-surface-dark)] px-4 py-1.5 rounded-[var(--radius-lg)] inline-block shadow-[var(--shadow-brand)]">
+          <h2 className="text-xs font-black text-[var(--color-brand)] bg-[var(--color-surface-dark)] px-4 py-1.5 rounded-[var(--radius-sm)] inline-block shadow-[var(--shadow-brand)]">
             بيانات الحملة الأساسية
           </h2>
         </div>
@@ -370,7 +370,7 @@ export function CampaignForm({
       {/* Card 2: Budget & Eligibility */}
       <div className="bg-[rgba(250,252,251,0.01)] border border-[var(--color-border)] p-6 rounded-[var(--radius-xl)] space-y-6">
         <div className="border-b border-[rgba(200,214,206,0.06)] pb-3">
-          <h2 className="text-xs font-black text-[var(--color-brand)] bg-[var(--color-surface-dark)] px-4 py-1.5 rounded-[var(--radius-lg)] inline-block shadow-[var(--shadow-brand)]">
+          <h2 className="text-xs font-black text-[var(--color-brand)] bg-[var(--color-surface-dark)] px-4 py-1.5 rounded-[var(--radius-sm)] inline-block shadow-[var(--shadow-brand)]">
             الميزانية المالية وأهلية الشركاء
           </h2>
         </div>
@@ -563,7 +563,7 @@ export function CampaignForm({
       {/* Card 3: Rates Table */}
       <div className="bg-[rgba(250,252,251,0.01)] border border-[var(--color-border)] p-6 rounded-[var(--radius-xl)] space-y-6">
         <div className="flex items-center justify-between border-b border-[rgba(200,214,206,0.06)] pb-3">
-          <h2 className="text-xs font-black text-[var(--color-brand)] bg-[var(--color-surface-dark)] px-4 py-1.5 rounded-[var(--radius-lg)] inline-block shadow-[var(--shadow-brand)]">
+          <h2 className="text-xs font-black text-[var(--color-brand)] bg-[var(--color-surface-dark)] px-4 py-1.5 rounded-[var(--radius-sm)] inline-block shadow-[var(--shadow-brand)]">
             أسعار المنصات والمشاهدات
           </h2>
           <button
@@ -699,7 +699,7 @@ export function CampaignForm({
       {/* Card 4: Assets */}
       <div className="bg-[rgba(250,252,251,0.01)] border border-[var(--color-border)] p-6 rounded-[var(--radius-xl)] space-y-6">
         <div className="flex items-center justify-between border-b border-[rgba(200,214,206,0.06)] pb-3">
-          <h2 className="text-xs font-black text-[var(--color-brand)] bg-[var(--color-surface-dark)] px-4 py-1.5 rounded-[var(--radius-lg)] inline-block shadow-[var(--shadow-brand)]">
+          <h2 className="text-xs font-black text-[var(--color-brand)] bg-[var(--color-surface-dark)] px-4 py-1.5 rounded-[var(--radius-sm)] inline-block shadow-[var(--shadow-brand)]">
             أصول الحملة ومصادرها (روابط خارجية)
           </h2>
           <button
