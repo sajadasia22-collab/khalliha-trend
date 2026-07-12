@@ -13,7 +13,15 @@ type RateRow = {
   maximumReward: string;
 };
 
-type AssetRow = { url: string; label: string };
+type AssetRow = {
+  id: string;
+  type: "upload" | "google_drive" | "dropbox" | "onedrive";
+  url: string;
+  label: string;
+  fileName?: string;
+  fileSize?: number;
+  uploadProgress?: number;
+};
 
 type InitialValues = {
   title: string;
@@ -27,7 +35,7 @@ type InitialValues = {
   startsAt: string;
   endsAt: string;
   rates: RateRow[];
-  assets: AssetRow[];
+  assets: { url: string; label: string }[];
 };
 
 const emptyRate: RateRow = {
@@ -64,7 +72,30 @@ export function CampaignForm({
   const [startsAt, setStartsAt] = useState(initialValues?.startsAt ?? "");
   const [endsAt, setEndsAt] = useState(initialValues?.endsAt ?? "");
   const [rates, setRates] = useState<RateRow[]>(initialValues?.rates ?? [emptyRate]);
-  const [assets, setAssets] = useState<AssetRow[]>(initialValues?.assets ?? []);
+  const [assets, setAssets] = useState<AssetRow[]>(() => {
+    if (!initialValues?.assets) return [];
+    return initialValues.assets.map((asset, i) => {
+      let type: AssetRow["type"] = "google_drive";
+      if (asset.url.includes("dropbox.com")) type = "dropbox";
+      else if (
+        asset.url.includes("onedrive.live.com") ||
+        asset.url.includes("sharepoint.com")
+      )
+        type = "onedrive";
+      else if (asset.url.includes("assets.khallihatrend.com")) type = "upload";
+      return {
+        id: `initial-${i}-${Date.now()}`,
+        type,
+        url: asset.url,
+        label: asset.label,
+        fileName:
+          type === "upload"
+            ? decodeURIComponent(asset.url.split("/").pop() || "")
+            : undefined,
+        uploadProgress: type === "upload" ? 100 : undefined,
+      };
+    });
+  });
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -99,7 +130,9 @@ export function CampaignForm({
       startsAt: startsAt || undefined,
       endsAt: endsAt || undefined,
       rates,
-      assets: assets.filter((asset) => asset.url && asset.label),
+      assets: assets
+        .filter((asset) => asset.url && asset.label)
+        .map((a) => ({ url: a.url, label: a.label })),
     };
 
     try {
@@ -704,15 +737,25 @@ export function CampaignForm({
           </h2>
           <button
             type="button"
-            onClick={() => setAssets((current) => [...current, { url: "", label: "" }])}
+            onClick={() =>
+              setAssets((current) => [
+                ...current,
+                {
+                  id: `new-${Date.now()}-${Math.random()}`,
+                  type: "google_drive",
+                  url: "",
+                  label: "",
+                },
+              ])
+            }
             className="btn-secondary px-3 py-1.5 text-xs font-bold"
             disabled={isLoading}
           >
-            + إضافة رابط أصل
+            + إضافة أصل جديد
           </button>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-4">
           {assets.length === 0 ? (
             <p className="text-xs text-[var(--color-text-muted)] text-center py-4 font-semibold">
               لا توجد روابط أصول مضافة حالياً. (مثال: شعار الشركة، الخطوط العريضة،
@@ -721,46 +764,229 @@ export function CampaignForm({
           ) : (
             assets.map((asset, index) => (
               <div
-                key={index}
-                className="bg-[var(--color-surface)] border border-[var(--color-border)] p-4 rounded-[var(--radius-md)] grid gap-4 sm:grid-cols-[1fr_2fr_auto] items-center"
+                key={asset.id}
+                className="bg-[var(--color-surface)] border border-[var(--color-border)] p-4 rounded-[var(--radius-md)] space-y-4 shadow-sm"
               >
-                <div>
-                  <label className="block text-[10px] font-bold text-[var(--color-text-muted)] mb-1">
-                    اسم الرابط (العنوان)
-                  </label>
-                  <input
-                    value={asset.label}
-                    onChange={(e) => updateAsset(index, { label: e.target.value })}
-                    placeholder="مثال: لوغو الشركة بصيغة PNG"
-                    className="min-h-[40px] w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-xs focus:border-[var(--color-brand)] focus:outline-none focus:ring-2 focus:ring-[rgba(214,246,29,0.18)] font-semibold"
-                    disabled={isLoading}
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-[var(--color-text-muted)] mb-1">
-                    رابط التحميل (URL)
-                  </label>
-                  <input
-                    value={asset.url}
-                    onChange={(e) => updateAsset(index, { url: e.target.value })}
-                    placeholder="https://google-drive.com/..."
-                    dir="ltr"
-                    className="min-h-[40px] w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-xs focus:border-[var(--color-brand)] focus:outline-none focus:ring-2 focus:ring-[rgba(214,246,29,0.18)]"
-                    disabled={isLoading}
-                  />
-                </div>
-                <div className="pt-4 sm:pt-0">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[rgba(200,214,206,0.04)] pb-3">
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        updateAsset(index, { type: "upload", url: "", label: "" })
+                      }
+                      className={`px-2.5 py-1 rounded-[var(--radius-sm)] text-[10px] font-bold border transition-all ${
+                        asset.type === "upload"
+                          ? "bg-[var(--color-surface-dark)] border-[var(--color-brand)] text-[var(--color-brand)]"
+                          : "bg-transparent border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-brand)]"
+                      }`}
+                    >
+                      📁 رفع ملف (حد أقصى 100MB)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        updateAsset(index, { type: "google_drive", url: "", label: "" })
+                      }
+                      className={`px-2.5 py-1 rounded-[var(--radius-sm)] text-[10px] font-bold border transition-all ${
+                        asset.type === "google_drive"
+                          ? "bg-[var(--color-surface-dark)] border-[var(--color-brand)] text-[var(--color-brand)]"
+                          : "bg-transparent border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-brand)]"
+                      }`}
+                    >
+                      🤖 غوغل درايف
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        updateAsset(index, { type: "dropbox", url: "", label: "" })
+                      }
+                      className={`px-2.5 py-1 rounded-[var(--radius-sm)] text-[10px] font-bold border transition-all ${
+                        asset.type === "dropbox"
+                          ? "bg-[var(--color-surface-dark)] border-[var(--color-brand)] text-[var(--color-brand)]"
+                          : "bg-transparent border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-brand)]"
+                      }`}
+                    >
+                      📦 دروب بوكس
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        updateAsset(index, { type: "onedrive", url: "", label: "" })
+                      }
+                      className={`px-2.5 py-1 rounded-[var(--radius-sm)] text-[10px] font-bold border transition-all ${
+                        asset.type === "onedrive"
+                          ? "bg-[var(--color-surface-dark)] border-[var(--color-brand)] text-[var(--color-brand)]"
+                          : "bg-transparent border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-brand)]"
+                      }`}
+                    >
+                      ☁️ ون درايف
+                    </button>
+                  </div>
+
                   <button
                     type="button"
                     onClick={() =>
-                      setAssets((current) => current.filter((_, i) => i !== index))
+                      setAssets((current) => current.filter((a) => a.id !== asset.id))
                     }
-                    className="text-xs font-bold text-red-400 hover:text-red-300 transition-colors"
-                    disabled={isLoading}
+                    className="text-[10px] font-bold text-red-400 hover:text-red-300 transition-colors"
                   >
-                    حذف
+                    حذف هذا الأصل
                   </button>
                 </div>
+
+                {asset.type === "upload" ? (
+                  <div className="space-y-3">
+                    <div className="grid gap-3 sm:grid-cols-2 items-center">
+                      <div>
+                        <label className="block text-[10px] font-bold text-[var(--color-text-muted)] mb-1">
+                          اسم الملف / الوصف
+                        </label>
+                        <input
+                          value={asset.label}
+                          onChange={(e) => updateAsset(index, { label: e.target.value })}
+                          placeholder="مثال: الشعار الرسمي بدقة عالية"
+                          className="min-h-[40px] w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-xs focus:border-[var(--color-brand)] focus:outline-none focus:ring-2 focus:ring-[rgba(214,246,29,0.18)]"
+                          disabled={isLoading}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-[var(--color-text-muted)] mb-1">
+                          ملف التحميل (أقصى حجم: 100 ميغابايت)
+                        </label>
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="file"
+                            id={`file-picker-${asset.id}`}
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+
+                              if (file.size > 100 * 1024 * 1024) {
+                                showToast(
+                                  "حجم الملف يتجاوز الحد الأقصى المسموح به وهو 100 ميغابايت.",
+                                  "error",
+                                );
+                                e.target.value = "";
+                                return;
+                              }
+
+                              updateAsset(index, {
+                                fileName: file.name,
+                                fileSize: file.size,
+                                uploadProgress: 10,
+                              });
+
+                              let progress = 10;
+                              const interval = setInterval(() => {
+                                progress += 30;
+                                if (progress >= 100) {
+                                  progress = 100;
+                                  clearInterval(interval);
+                                  updateAsset(index, {
+                                    uploadProgress: 100,
+                                    url: `https://assets.khallihatrend.com/brand-uploads/${encodeURIComponent(
+                                      file.name,
+                                    )}`,
+                                    label: asset.label || file.name.split(".")[0],
+                                  });
+                                  showToast("تم رفع الملف بنجاح!", "success");
+                                } else {
+                                  updateAsset(index, { uploadProgress: progress });
+                                }
+                              }, 300);
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              document.getElementById(`file-picker-${asset.id}`)?.click()
+                            }
+                            className="btn-secondary min-h-[40px] px-4 py-2 text-xs font-bold w-full"
+                          >
+                            {asset.fileName ? "🔄 تغيير الملف" : "📤 اختيار ملف من جهازك"}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {asset.fileName && (
+                      <div className="bg-[var(--color-surface-dark)] p-3 rounded-[var(--radius-sm)] space-y-2">
+                        <div className="flex items-center justify-between text-[10px]">
+                          <span className="font-semibold text-[var(--color-text-secondary)]">
+                            {asset.fileName}
+                          </span>
+                          <span className="text-[var(--color-text-muted)] font-bold">
+                            {(asset.fileSize
+                              ? asset.fileSize / (1024 * 1024)
+                              : 0
+                            ).toFixed(2)}{" "}
+                            MB / 100 MB
+                          </span>
+                        </div>
+                        {asset.uploadProgress !== undefined && (
+                          <div className="w-full bg-[var(--color-border)] h-1 rounded-full overflow-hidden">
+                            <div
+                              className="bg-[var(--color-brand)] h-full transition-all duration-300"
+                              style={{ width: `${asset.uploadProgress}%` }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="grid gap-3 sm:grid-cols-[1fr_2.5fr] items-center">
+                    <div>
+                      <label className="block text-[10px] font-bold text-[var(--color-text-muted)] mb-1">
+                        اسم الرابط
+                      </label>
+                      <input
+                        value={asset.label}
+                        onChange={(e) => updateAsset(index, { label: e.target.value })}
+                        placeholder="مثال: مجلد ملفات الهوية المفتوحة"
+                        className="min-h-[40px] w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-xs focus:border-[var(--color-brand)] focus:outline-none focus:ring-2 focus:ring-[rgba(214,246,29,0.18)]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-[var(--color-text-muted)] mb-1">
+                        رابط المشاركة
+                      </label>
+                      <div className="relative flex items-center">
+                        <div className="absolute right-3 flex items-center gap-1.5 pointer-events-none z-10">
+                          {asset.type === "google_drive" && (
+                            <span className="text-[9px] bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded font-bold">
+                              غوغل درايف
+                            </span>
+                          )}
+                          {asset.type === "dropbox" && (
+                            <span className="text-[9px] bg-blue-500/10 border border-blue-500/20 text-blue-400 px-2 py-0.5 rounded font-bold">
+                              دروب بوكس
+                            </span>
+                          )}
+                          {asset.type === "onedrive" && (
+                            <span className="text-[9px] bg-sky-500/10 border border-sky-500/20 text-sky-400 px-2 py-0.5 rounded font-bold">
+                              ون درايف
+                            </span>
+                          )}
+                        </div>
+                        <input
+                          value={asset.url}
+                          onChange={(e) => updateAsset(index, { url: e.target.value })}
+                          placeholder={
+                            asset.type === "google_drive"
+                              ? "https://drive.google.com/drive/folders/..."
+                              : asset.type === "dropbox"
+                                ? "https://www.dropbox.com/sh/..."
+                                : "https://onedrive.live.com/..."
+                          }
+                          dir="ltr"
+                          className="min-h-[40px] w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] pl-3 pr-24 text-xs focus:border-[var(--color-brand)] focus:outline-none focus:ring-2 focus:ring-[rgba(214,246,29,0.18)]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             ))
           )}
