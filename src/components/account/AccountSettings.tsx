@@ -93,82 +93,64 @@ function ProfileSection() {
   };
 
   return (
-    <div className="tilt-3d">
-      <div className="tilt-3d-surface rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
-        <div className="mb-5 flex items-center gap-3">
-          <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-surface-muted)] text-[var(--color-brand-active)]">
-            <UserIcon size={20} />
-          </span>
-          <h2 className="text-lg font-extrabold text-[var(--color-text)]">
-            البيانات الشخصية
-          </h2>
+    <div className="card rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-sm">
+      <div className="mb-5 flex items-center gap-3">
+        <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-surface-muted)] text-[var(--color-brand-active)]">
+          <UserIcon size={20} />
+        </span>
+        <h2 className="text-lg font-extrabold text-[var(--color-text)]">البيانات الشخصية</h2>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div>
+          <label className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1.5" htmlFor="fullName">
+            الاسم الكامل
+          </label>
+          <input
+            id="fullName"
+            type="text"
+            required
+            className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-[var(--color-text)] focus:border-[var(--color-brand)] focus:outline-none focus:ring-4 focus:ring-[rgba(214,246,29,0.18)]"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            disabled={saving}
+          />
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label
-              className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1.5"
-              htmlFor="fullName"
-            >
-              الاسم الكامل
-            </label>
-            <input
-              id="fullName"
-              type="text"
-              required
-              className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-3.5 py-2.5 text-sm text-[var(--color-text)] transition-colors focus:border-[var(--color-border-strong)] focus:outline-none"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              disabled={saving}
-            />
-          </div>
+        <div>
+          <label className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1.5" htmlFor="email">
+            البريد الإلكتروني
+          </label>
+          <input
+            id="email"
+            type="email"
+            className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-[var(--color-text)] focus:border-[var(--color-brand)] focus:outline-none focus:ring-4 focus:ring-[rgba(214,246,29,0.18)]"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={saving}
+            placeholder="example@domain.com"
+          />
+        </div>
 
+        <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label
-              className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1.5"
-              htmlFor="email"
-            >
-              البريد الإلكتروني
-            </label>
-            <input
-              id="email"
-              type="email"
-              className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-3.5 py-2.5 text-sm text-[var(--color-text)] transition-colors focus:border-[var(--color-border-strong)] focus:outline-none"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={saving}
-              placeholder="example@domain.com"
-            />
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <span className="block text-xs font-bold text-[var(--color-text-muted)] mb-1.5">
-                رقم الهاتف (اسم المستخدم)
-              </span>
-              <div className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-dark)] px-3.5 py-2.5 text-sm text-[var(--forest-100)] select-none">
-                {phone}
-              </div>
-            </div>
-            <div>
-              <span className="block text-xs font-bold text-[var(--color-text-muted)] mb-1.5">
-                نوع صلاحية الحساب
-              </span>
-              <div className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-dark)] px-3.5 py-2.5 text-sm text-[var(--color-brand)] font-bold select-none">
-                {roleLabels[role] || role}
-              </div>
+            <span className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1.5">رقم الهاتف (اسم المستخدم)</span>
+            <div className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 py-3 text-sm text-[var(--color-text-secondary)] font-mono select-none">
+              {phone}
             </div>
           </div>
+          <div>
+            <span className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1.5">نوع صلاحية الحساب</span>
+            <div className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 py-3 text-sm text-[var(--color-brand-active)] font-bold select-none">
+              {roleLabels[role] || role}
+            </div>
+          </div>
+        </div>
 
-          <Button
-            type="submit"
-            loading={saving}
-            className="w-full justify-center sm:w-auto"
-          >
-            حفظ التغييرات
-          </Button>
-        </form>
-      </div>
+        <Button type="submit" loading={saving} className="w-full justify-center sm:w-auto">
+          حفظ التغييرات
+        </Button>
+      </form>
     </div>
   );
 }
@@ -217,54 +199,52 @@ function PasswordSection() {
   }
 
   return (
-    <div className="tilt-3d">
-      <div className="tilt-3d-surface rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
-        <div className="mb-5 flex items-center gap-3">
-          <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-surface-muted)] text-[var(--color-brand-active)]">
-            <ShieldCheckIcon size={20} />
-          </span>
-          <h2 className="text-lg font-extrabold text-[var(--color-text)]">
-            تغيير كلمة المرور
-          </h2>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <PasswordField
-            id="currentPassword"
-            label="كلمة المرور الحالية"
-            value={currentPassword}
-            onChange={setCurrentPassword}
-            autoComplete="current-password"
-            disabled={loading}
-            error={fieldErrors.currentPassword}
-          />
-          <PasswordField
-            id="newPassword"
-            label="كلمة المرور الجديدة"
-            value={newPassword}
-            onChange={setNewPassword}
-            autoComplete="new-password"
-            disabled={loading}
-            error={fieldErrors.newPassword}
-          />
-          <PasswordField
-            id="confirmPassword"
-            label="تأكيد كلمة المرور الجديدة"
-            value={confirmPassword}
-            onChange={setConfirmPassword}
-            autoComplete="new-password"
-            disabled={loading}
-            error={fieldErrors.confirmPassword}
-          />
-          <Button
-            type="submit"
-            loading={loading}
-            className="w-full justify-center sm:w-auto"
-          >
-            حفظ كلمة المرور الجديدة
-          </Button>
-        </form>
+    <div className="card rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-sm">
+      <div className="mb-5 flex items-center gap-3">
+        <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-surface-muted)] text-[var(--color-brand-active)]">
+          <ShieldCheckIcon size={20} />
+        </span>
+        <h2 className="text-lg font-extrabold text-[var(--color-text)]">
+          تغيير كلمة المرور
+        </h2>
       </div>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <PasswordField
+          id="currentPassword"
+          label="كلمة المرور الحالية"
+          value={currentPassword}
+          onChange={setCurrentPassword}
+          autoComplete="current-password"
+          disabled={loading}
+          error={fieldErrors.currentPassword}
+        />
+        <PasswordField
+          id="newPassword"
+          label="كلمة المرور الجديدة"
+          value={newPassword}
+          onChange={setNewPassword}
+          autoComplete="new-password"
+          disabled={loading}
+          error={fieldErrors.newPassword}
+        />
+        <PasswordField
+          id="confirmPassword"
+          label="تأكيد كلمة المرور الجديدة"
+          value={confirmPassword}
+          onChange={setConfirmPassword}
+          autoComplete="new-password"
+          disabled={loading}
+          error={fieldErrors.confirmPassword}
+        />
+        <Button
+          type="submit"
+          loading={loading}
+          className="w-full justify-center sm:w-auto"
+        >
+          حفظ كلمة المرور الجديدة
+        </Button>
+      </form>
     </div>
   );
 }
@@ -304,39 +284,37 @@ function NotificationPreferencesSection() {
   }
 
   return (
-    <div className="tilt-3d">
-      <div className="tilt-3d-surface rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
-        <div className="mb-5 flex items-center gap-3">
-          <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-surface-muted)] text-[var(--forest-500)]">
-            <BellIcon size={20} />
-          </span>
-          <h2 className="text-lg font-extrabold text-[var(--color-text)]">
-            تفضيلات الإشعارات
-          </h2>
-        </div>
-
-        {!preferences ? (
-          <div className="space-y-3">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-10" />
-            ))}
-          </div>
-        ) : (
-          <ul className="divide-y divide-[var(--color-border)]">
-            {preferences.map((pref) => (
-              <li key={pref.type} className="flex items-center justify-between py-3">
-                <Checkbox
-                  id={`pref-${pref.type}`}
-                  checked={pref.enabled}
-                  onChange={() => toggle(pref.type)}
-                  disabled={saving}
-                  label={typeLabels[pref.type]}
-                />
-              </li>
-            ))}
-          </ul>
-        )}
+    <div className="card rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-sm">
+      <div className="mb-5 flex items-center gap-3">
+        <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-surface-muted)] text-[var(--forest-500)]">
+          <BellIcon size={20} />
+        </span>
+        <h2 className="text-lg font-extrabold text-[var(--color-text)]">
+          تفضيلات الإشعارات
+        </h2>
       </div>
+
+      {!preferences ? (
+        <div className="space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-10" />
+          ))}
+        </div>
+      ) : (
+        <ul className="divide-y divide-[var(--color-border)]">
+          {preferences.map((pref) => (
+            <li key={pref.type} className="flex items-center justify-between py-3">
+              <Checkbox
+                id={`pref-${pref.type}`}
+                checked={pref.enabled}
+                onChange={() => toggle(pref.type)}
+                disabled={saving}
+                label={typeLabels[pref.type]}
+              />
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
@@ -373,41 +351,26 @@ function SessionSection() {
           <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-surface-muted)] text-[var(--color-brand-active)]">
             <InfoIcon size={20} />
           </span>
-          <h2 className="text-lg font-extrabold text-[var(--color-text)]">
-            تفاصيل الجلسة الحالية
-          </h2>
+          <h2 className="text-lg font-extrabold text-[var(--color-text)]">تفاصيل الجلسة الحالية</h2>
         </div>
 
         <div className="space-y-4">
           <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed font-medium">
-            نعرض لك هنا تفاصيل جهازك وجلسة العمل الحالية المستخدمة للوصول إلى المنصة
-            لأغراض الحماية والأمان وتتبع النشاط.
+            نعرض لك هنا تفاصيل جهازك وجلسة العمل الحالية المستخدمة للوصول إلى المنصة لأغراض الحماية والأمان وتتبع النشاط.
           </p>
 
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="bg-[var(--color-surface-muted)] p-4 rounded-[var(--radius-md)] border border-[var(--color-border)]">
-              <span className="block text-[10px] text-[var(--color-text-muted)] font-bold uppercase">
-                نظام التشغيل
-              </span>
-              <strong className="block text-sm text-[var(--color-text)] mt-1">
-                {deviceInfo.os}
-              </strong>
+              <span className="block text-[10px] text-[var(--color-text-muted)] font-bold uppercase">نظام التشغيل</span>
+              <strong className="block text-sm text-[var(--color-text)] mt-1">{deviceInfo.os}</strong>
             </div>
             <div className="bg-[var(--color-surface-muted)] p-4 rounded-[var(--radius-md)] border border-[var(--color-border)]">
-              <span className="block text-[10px] text-[var(--color-text-muted)] font-bold uppercase">
-                برنامج التصفح
-              </span>
-              <strong className="block text-sm text-[var(--color-text)] mt-1">
-                {deviceInfo.browser}
-              </strong>
+              <span className="block text-[10px] text-[var(--color-text-muted)] font-bold uppercase">برنامج التصفح</span>
+              <strong className="block text-sm text-[var(--color-text)] mt-1">{deviceInfo.browser}</strong>
             </div>
             <div className="bg-[var(--color-surface-muted)] p-4 rounded-[var(--radius-md)] border border-[var(--color-border)]">
-              <span className="block text-[10px] text-[var(--color-text-muted)] font-bold uppercase">
-                عنوان الـ IP
-              </span>
-              <strong className="block text-sm text-[var(--color-text)] mt-1">
-                {deviceInfo.ip}
-              </strong>
+              <span className="block text-[10px] text-[var(--color-text-muted)] font-bold uppercase">عنوان الـ IP</span>
+              <strong className="block text-sm text-[var(--color-text)] mt-1">{deviceInfo.ip}</strong>
             </div>
           </div>
         </div>
@@ -421,21 +384,15 @@ function SessionSection() {
         <ul className="space-y-3 text-xs text-[var(--color-text-secondary)] font-medium">
           <li className="flex justify-between items-center py-1 border-b border-[rgba(200,214,206,0.06)]">
             <span>تسجيل دخول ناجح (هذا المتصفح)</span>
-            <span className="text-[10px] font-mono text-[var(--color-text-muted)]">
-              نشط الآن
-            </span>
+            <span className="text-[10px] font-mono text-[var(--color-text-muted)]">نشط الآن</span>
           </li>
           <li className="flex justify-between items-center py-1 border-b border-[rgba(200,214,206,0.06)]">
             <span>التحقق من صلاحية الجلسة واسترداد المحفظة</span>
-            <span className="text-[10px] font-mono text-[var(--color-text-muted)]">
-              قبل دقيقة
-            </span>
+            <span className="text-[10px] font-mono text-[var(--color-text-muted)]">قبل دقيقة</span>
           </li>
           <li className="flex justify-between items-center py-1">
             <span>تحديث إعدادات الحساب</span>
-            <span className="text-[10px] font-mono text-[var(--color-text-muted)]">
-              قبل قليل
-            </span>
+            <span className="text-[10px] font-mono text-[var(--color-text-muted)]">قبل قليل</span>
           </li>
         </ul>
       </div>
@@ -456,7 +413,7 @@ export function AccountSettings() {
   return (
     <div className="space-y-6">
       <Tabs items={tabItems} value={activeTab} onChange={setActiveTab} />
-
+      
       <div className="mt-6">
         {activeTab === "profile" && <ProfileSection />}
         {activeTab === "security" && <PasswordSection />}
