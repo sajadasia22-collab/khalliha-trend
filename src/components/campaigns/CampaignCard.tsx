@@ -7,6 +7,7 @@ import {
   platformLabels,
 } from "../../lib/campaigns";
 import { Platform } from "../../generated/prisma/enums";
+import { ArrowUpRightIcon, CheckIcon } from "../ui/icons";
 
 export type CampaignCardData = {
   id: string;
@@ -46,7 +47,7 @@ export function CampaignCard({
     <div className="tilt-3d">
       <Link
         href={`/campaigns/${campaign.id}`}
-        className={`campaign-card-link tilt-3d-surface group block overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] ${featured ? "sm:col-span-1" : ""}`}
+        className={`campaign-card-link surface-3d tilt-3d-surface group block overflow-hidden rounded-[var(--radius-lg)] ${featured ? "sm:col-span-1" : ""}`}
       >
         <div
           className="relative flex aspect-[16/9] items-end overflow-hidden p-4"
@@ -85,22 +86,9 @@ export function CampaignCard({
               {campaign.brand.name}
             </span>
             {campaign.brand.verified && (
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                aria-label="علامة موثّقة"
-              >
-                <circle cx="12" cy="12" r="10" fill="var(--color-brand)" />
-                <path
-                  d="M8 12.5l2.5 2.5L16 9"
-                  stroke="var(--forest-800)"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              <span className="icon-3d h-5 w-5 rounded-full" aria-label="علامة موثّقة">
+                <CheckIcon size={12} strokeWidth={3} />
+              </span>
             )}
           </div>
 
@@ -130,6 +118,7 @@ export function CampaignCard({
           </p>
 
           <span className="btn-primary flex w-full items-center justify-center py-2.5 text-sm">
+            <ArrowUpRightIcon size={16} />
             انضم للحملة
           </span>
         </div>

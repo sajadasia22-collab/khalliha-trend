@@ -7,7 +7,12 @@ import { CreatorPayouts } from "../../../../components/creator/CreatorPayouts";
 import { CreatorAnalytics } from "../../../../components/creator/CreatorAnalytics";
 import { DashboardHeader } from "../../../../components/layout/DashboardHeader";
 import { ConnectionErrorCard } from "../../../../components/ui/ConnectionErrorCard";
-import { ShieldCheckIcon, MegaphoneIcon } from "../../../../components/ui/icons";
+import {
+  ShieldCheckIcon,
+  MegaphoneIcon,
+  UserIcon,
+  ArrowUpRightIcon,
+} from "../../../../components/ui/icons";
 import { ScrollReveal } from "../../../../components/ui/ScrollReveal";
 
 export default async function CreatorDashboard() {
@@ -32,7 +37,7 @@ export default async function CreatorDashboard() {
   })().catch(() => null);
 
   return (
-    <main className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] dir-rtl md:ps-64 pb-20 md:pb-0">
+    <main className="dashboard-page min-h-screen text-[var(--color-text)] dir-rtl md:ps-64 pb-20 md:pb-0">
       <DashboardHeader
         dashboardRole="creator"
         userLabel={`صانع محتوى: ${user?.fullName}`}
@@ -40,9 +45,12 @@ export default async function CreatorDashboard() {
 
       {/* Main Content */}
       <section className="mx-auto max-w-7xl px-5 py-12 lg:px-8 space-y-10">
-        <div>
+        <div className="dashboard-hero">
+          <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-[var(--radius-md)] icon-3d">
+            <UserIcon />
+          </div>
           <h1 className="fade-in-up mb-2 text-3xl font-extrabold">
-            أهلاً بك، {user?.fullName} 👋
+            أهلاً بك، {user?.fullName}
           </h1>
           <p
             className="fade-in-up font-medium text-[var(--color-text-secondary)]"
@@ -57,10 +65,10 @@ export default async function CreatorDashboard() {
         )}
 
         {overview !== null && (
-          <div className="tilt-3d fade-in-up overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-sm)]">
+          <div className="tilt-3d fade-in-up overflow-hidden rounded-[var(--radius-xl)]">
             <div className="tilt-3d-surface grid divide-y divide-[var(--color-border)] sm:grid-cols-2 sm:divide-x sm:divide-y-0">
-              <div className="flex items-center gap-4 p-6">
-                <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-surface-muted)] text-[var(--color-brand-active)]">
+              <div className="surface-3d flex items-center gap-4 p-6">
+                <span className="icon-3d h-11 w-11 rounded-[var(--radius-md)]">
                   <ShieldCheckIcon />
                 </span>
                 <div>
@@ -76,8 +84,8 @@ export default async function CreatorDashboard() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 p-6">
-                <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-surface-muted)] text-[var(--forest-500)]">
+              <div className="surface-3d flex items-center gap-4 p-6">
+                <span className="icon-3d h-11 w-11 rounded-[var(--radius-md)]">
                   <MegaphoneIcon />
                 </span>
                 <div>
@@ -108,7 +116,7 @@ export default async function CreatorDashboard() {
 
         {/* Campaign discover banner */}
         <ScrollReveal className="tilt-3d">
-          <div className="tilt-3d-surface flex flex-col items-center justify-between gap-6 rounded-[var(--radius-xl)] border border-[var(--forest-500)] bg-[var(--color-surface-dark)] p-8 text-[var(--color-text-on-dark)] md:flex-row">
+          <div className="surface-dark-3d tilt-3d-surface flex flex-col items-center justify-between gap-6 rounded-[var(--radius-xl)] p-8 text-[var(--color-text-on-dark)] md:flex-row">
             <div>
               <h3 className="mb-2 text-xl font-bold text-[var(--color-brand)]">
                 هل تبحث عن فرص تمويل جديدة؟
@@ -120,9 +128,10 @@ export default async function CreatorDashboard() {
             </div>
             <Link
               href="/campaigns"
-              className="lime-signal inline-flex flex-shrink-0 items-center justify-center whitespace-nowrap rounded-[var(--radius-md)] bg-[var(--color-brand)] px-6 py-3 text-center text-sm font-bold text-[var(--color-text-on-brand)] transition-all hover:bg-[var(--color-brand-hover)]"
+              className="lime-signal inline-flex flex-shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-[var(--radius-md)] bg-[var(--color-brand)] px-6 py-3 text-center text-sm font-bold text-[var(--color-text-on-brand)] transition-all hover:bg-[var(--color-brand-hover)]"
             >
               استكشف الحملات المتاحة
+              <ArrowUpRightIcon size={17} />
             </Link>
           </div>
         </ScrollReveal>

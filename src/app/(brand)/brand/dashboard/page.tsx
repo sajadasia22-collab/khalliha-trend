@@ -6,7 +6,13 @@ import { LedgerEngine } from "../../../../modules/financial/ledger";
 import { BrandAnalytics } from "../../../../components/brand/BrandAnalytics";
 import { DashboardHeader } from "../../../../components/layout/DashboardHeader";
 import { ConnectionErrorCard } from "../../../../components/ui/ConnectionErrorCard";
-import { WalletIcon, BanknoteIcon, MegaphoneIcon } from "../../../../components/ui/icons";
+import {
+  WalletIcon,
+  BanknoteIcon,
+  MegaphoneIcon,
+  BriefcaseIcon,
+  PlusIcon,
+} from "../../../../components/ui/icons";
 
 export default async function BrandDashboard() {
   const user = await getCurrentUser();
@@ -36,7 +42,7 @@ export default async function BrandDashboard() {
   })().catch(() => null);
 
   return (
-    <main className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] dir-rtl md:ps-64 pb-20 md:pb-0">
+    <main className="dashboard-page min-h-screen text-[var(--color-text)] dir-rtl md:ps-64 pb-20 md:pb-0">
       <DashboardHeader
         dashboardRole="brand"
         userLabel={`العلامة التجارية: ${brand.name}`}
@@ -44,10 +50,11 @@ export default async function BrandDashboard() {
 
       {/* Main Content */}
       <section className="mx-auto max-w-7xl px-5 py-12 lg:px-8 space-y-10">
-        <div>
-          <h1 className="text-3xl font-extrabold mb-2">
-            أهلاً بك في لوحة تحكم التاجر 👋
-          </h1>
+        <div className="dashboard-hero fade-in-up">
+          <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-[var(--radius-md)] icon-3d">
+            <BriefcaseIcon />
+          </div>
+          <h1 className="text-3xl font-extrabold mb-2">لوحة تحكم التاجر</h1>
           <p className="text-[var(--color-text-secondary)] font-medium">
             علامتك التجارية:{" "}
             <strong className="text-[var(--forest-700)]">{brand.name}</strong>. أطلق
@@ -64,13 +71,10 @@ export default async function BrandDashboard() {
             {/* Card 1: Balance */}
             <Link
               href="/brand/wallet"
-              className="card-interactive fade-in-up group relative overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-sm)] hover:border-[var(--color-brand)] hover:shadow-[var(--shadow-brand)]"
+              className="card-interactive surface-3d fade-in-up group rounded-[var(--radius-xl)] p-6 hover:border-[var(--color-brand)] hover:shadow-[var(--shadow-brand)]"
             >
-              {/* Decorative background glow */}
-              <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-[var(--color-brand)] opacity-5 blur-3xl transition-opacity group-hover:opacity-15" />
-
               <div className="flex items-center gap-4">
-                <span className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[var(--radius-lg)] bg-[var(--color-surface-muted)] text-[var(--forest-500)] transition-transform duration-300 group-hover:scale-110 group-hover:bg-[var(--color-brand)] group-hover:text-[var(--color-text-on-brand)]">
+                <span className="icon-3d h-12 w-12 rounded-[var(--radius-lg)]">
                   <WalletIcon />
                 </span>
                 <div>
@@ -94,13 +98,11 @@ export default async function BrandDashboard() {
 
             {/* Card 2: Reserved */}
             <div
-              className="card-interactive fade-in-up group relative overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-sm)] hover:border-[var(--color-brand)] hover:shadow-[var(--shadow-brand)]"
+              className="card-interactive surface-3d fade-in-up group rounded-[var(--radius-xl)] p-6 hover:border-[var(--color-brand)] hover:shadow-[var(--shadow-brand)]"
               style={{ animationDelay: "100ms" }}
             >
-              <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-[var(--forest-300)] opacity-5 blur-3xl transition-opacity group-hover:opacity-15" />
-
               <div className="flex items-center gap-4">
-                <span className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[var(--radius-lg)] bg-[var(--color-surface-muted)] text-[var(--forest-500)] transition-transform duration-300 group-hover:scale-110 group-hover:bg-[var(--color-brand)] group-hover:text-[var(--color-text-on-brand)]">
+                <span className="icon-3d h-12 w-12 rounded-[var(--radius-lg)]">
                   <BanknoteIcon />
                 </span>
                 <div>
@@ -121,13 +123,11 @@ export default async function BrandDashboard() {
 
             {/* Card 3: Campaigns Count */}
             <div
-              className="card-interactive fade-in-up group relative overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-sm)] hover:border-[var(--color-brand)] hover:shadow-[var(--shadow-brand)]"
+              className="card-interactive surface-3d fade-in-up group rounded-[var(--radius-xl)] p-6 hover:border-[var(--color-brand)] hover:shadow-[var(--shadow-brand)]"
               style={{ animationDelay: "200ms" }}
             >
-              <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-[var(--color-brand)] opacity-5 blur-3xl transition-opacity group-hover:opacity-15" />
-
               <div className="flex items-center gap-4">
-                <span className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[var(--radius-lg)] bg-[var(--color-surface-muted)] text-[var(--forest-500)] transition-transform duration-300 group-hover:scale-110 group-hover:bg-[var(--color-brand)] group-hover:text-[var(--color-text-on-brand)]">
+                <span className="icon-3d h-12 w-12 rounded-[var(--radius-lg)]">
                   <MegaphoneIcon />
                 </span>
                 <div>
@@ -150,7 +150,7 @@ export default async function BrandDashboard() {
         <BrandAnalytics />
 
         {/* Campaign creation banner */}
-        <div className="p-8 card border border-[var(--forest-500)] bg-[var(--color-surface-dark)] text-[var(--color-text-on-dark)] rounded-[var(--radius-xl)] flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="surface-dark-3d p-8 text-[var(--color-text-on-dark)] rounded-[var(--radius-xl)] flex flex-col md:flex-row items-center justify-between gap-6">
           <div>
             <h3 className="text-xl font-bold text-[var(--color-brand)] mb-2">
               هل تريد إطلاق حملة تسويقية جديدة؟
@@ -163,8 +163,9 @@ export default async function BrandDashboard() {
           <div className="flex gap-3">
             <Link
               href="/brand/campaigns/new"
-              className="btn-primary inline-flex justify-center items-center text-center px-6 py-3 text-sm font-bold rounded-[var(--radius-md)] bg-[var(--color-brand)] text-[var(--color-text-on-brand)] hover:bg-[var(--color-brand-hover)] transition-all whitespace-nowrap"
+              className="btn-primary inline-flex justify-center items-center gap-2 text-center px-6 py-3 text-sm font-bold rounded-[var(--radius-md)] bg-[var(--color-brand)] text-[var(--color-text-on-brand)] hover:bg-[var(--color-brand-hover)] transition-all whitespace-nowrap"
             >
+              <PlusIcon size={17} />
               أنشئ حملة جديدة
             </Link>
           </div>

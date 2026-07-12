@@ -140,9 +140,9 @@ export function WalletView() {
       <div className="grid gap-6 sm:grid-cols-2">
         {data.map((wallet) => (
           <div key={wallet.currency} className="tilt-3d fade-in-up">
-            <div className="tilt-3d-surface rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
+            <div className="surface-3d tilt-3d-surface rounded-[var(--radius-xl)] p-6">
               <div className="flex items-center justify-between">
-                <span className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-surface-muted)] text-[var(--color-brand-active)]">
+                <span className="icon-3d h-10 w-10 rounded-[var(--radius-md)]">
                   <WalletIcon size={20} />
                 </span>
                 <Badge variant="neutral">
@@ -160,7 +160,7 @@ export function WalletView() {
         ))}
       </div>
 
-      <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
+      <div className="surface-3d rounded-[var(--radius-xl)] p-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
           <h2 className="text-lg font-extrabold text-[var(--color-text)]">
             سجل العمليات
