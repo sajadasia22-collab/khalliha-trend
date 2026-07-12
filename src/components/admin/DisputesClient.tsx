@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { EmptyState } from "../ui/EmptyState";
+import { useToast } from "../ui/Toast";
 
 const STATUS_LABELS: Record<string, string> = {
   OPEN: "مفتوح",
@@ -35,6 +36,7 @@ type DisputeItem = {
 };
 
 export function DisputesClient({ initialItems }: { initialItems: DisputeItem[] }) {
+  const { showToast } = useToast();
   const [items, setItems] = useState(initialItems);
   const [busyId, setBusyId] = useState<string | null>(null);
 
@@ -54,7 +56,7 @@ export function DisputesClient({ initialItems }: { initialItems: DisputeItem[] }
       });
       if (!response.ok) {
         const data = await response.json();
-        alert(data.error?.message || "فشل حل النزاع");
+        showToast(data.error?.message || "فشل حل النزاع", "error");
         return;
       }
       setItems((current) =>

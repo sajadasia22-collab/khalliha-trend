@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 test("navbar links to the discover campaigns page from home", async ({ page }) => {
   await page.goto("/");
 
-  await page.getByRole("link", { name: "فتح صفحة الاستكشاف" }).click();
+  await page.getByRole("link", { name: "تصفح الحملات المتوفرة" }).click();
   await expect(page).toHaveURL(/\/campaigns$/);
   await expect(
     page.getByRole("heading", { name: "استكشف الحملات المتاحة" }),
@@ -26,7 +26,9 @@ test("discover page shows a real state without fabricated campaign data", async 
 
 test("static pages render with real Arabic content", async ({ page }) => {
   await page.goto("/how-it-works");
-  await expect(page.getByRole("heading", { name: "كيف تعمل المنصة" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "كيف تعمل منصة خلّيها ترند؟" }),
+  ).toBeVisible();
 
   await page.goto("/terms");
   await expect(page.getByRole("heading", { name: "الشروط والأحكام" })).toBeVisible();

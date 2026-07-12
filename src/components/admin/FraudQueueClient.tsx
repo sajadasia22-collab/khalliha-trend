@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { EmptyState } from "../ui/EmptyState";
+import { useToast } from "../ui/Toast";
 
 const RISK_STYLES: Record<string, string> = {
   HIGH: "bg-[var(--forest-700)] text-[var(--mist-50)]",
@@ -30,6 +31,7 @@ type FraudItem = {
 };
 
 export function FraudQueueClient({ initialItems }: { initialItems: FraudItem[] }) {
+  const { showToast } = useToast();
   const [items, setItems] = useState(initialItems);
   const [busyId, setBusyId] = useState<string | null>(null);
 
@@ -48,7 +50,7 @@ export function FraudQueueClient({ initialItems }: { initialItems: FraudItem[] }
       });
       if (!response.ok) {
         const data = await response.json();
-        alert(data.error?.message || "فشلت مراجعة الحالة");
+        showToast(data.error?.message || "فشلت مراجعة الحالة", "error");
         return;
       }
       setItems((current) => current.filter((item) => item.id !== id));

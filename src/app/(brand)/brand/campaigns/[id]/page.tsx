@@ -105,7 +105,7 @@ export default async function BrandCampaignDetailPage({
                     {platformLabels[rate.platform]}
                   </h3>
                   <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
-                    CPM: {rate.cpmMinorUnits.toString()} {campaign.currency}
+                    CPM: {formatBudget(rate.cpmMinorUnits, campaign.currency)}
                   </p>
                 </div>
               ))}

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { platformLabels, formatBudget } from "../../lib/campaigns";
 import { EmptyState } from "../ui/EmptyState";
+import { useToast } from "../ui/Toast";
 
 type BrandVerificationItem = {
   id: string;
@@ -89,6 +90,7 @@ export function ReviewQueues({
   initialDeposits: DepositItem[];
   initialPayouts: PayoutItem[];
 }) {
+  const { showToast } = useToast();
   const [brandVerifications, setBrandVerifications] = useState(initialBrandVerifications);
   const [socialAccounts, setSocialAccounts] = useState(initialSocialAccounts);
   const [campaigns, setCampaigns] = useState(initialCampaigns);
@@ -166,7 +168,7 @@ export function ReviewQueues({
         : undefined;
 
     if (decision !== "APPROVE" && !note) {
-      alert("يجب إدخال ملاحظة أو سبب لإكمال هذا الإجراء.");
+      showToast("يجب إدخال ملاحظة أو سبب لإكمال هذا الإجراء.", "error");
       return;
     }
 
@@ -188,7 +190,7 @@ export function ReviewQueues({
       }
     } else {
       const data = await response.json();
-      alert(data.error?.message || "فشلت عملية المراجعة.");
+      showToast(data.error?.message || "فشلت عملية المراجعة.", "error");
     }
   };
 
@@ -198,7 +200,7 @@ export function ReviewQueues({
         ? (window.prompt("سبب الرفض (إلزامي):") ?? undefined)
         : undefined;
     if (decision === "REJECT" && !note) {
-      alert("يجب كتابة سبب الرفض المالي.");
+      showToast("يجب كتابة سبب الرفض المالي.", "error");
       return;
     }
 
@@ -209,11 +211,11 @@ export function ReviewQueues({
     });
 
     if (response.ok) {
-      alert("تم معالجة الإيداع بنجاح!");
+      showToast("تم معالجة الإيداع بنجاح!", "success");
       setDeposits((current) => current.filter((item) => item.id !== id));
     } else {
       const data = await response.json();
-      alert(data.error?.message || "فشلت معالجة الإيداع.");
+      showToast(data.error?.message || "فشلت معالجة الإيداع.", "error");
     }
   };
 
@@ -223,7 +225,7 @@ export function ReviewQueues({
         ? (window.prompt("سبب الرفض (إلزامي):") ?? undefined)
         : undefined;
     if (decision === "REJECT" && !note) {
-      alert("يجب كتابة سبب الرفض المالي.");
+      showToast("يجب كتابة سبب الرفض المالي.", "error");
       return;
     }
 
@@ -240,11 +242,11 @@ export function ReviewQueues({
     });
 
     if (response.ok) {
-      alert("تم معالجة طلب السحب والتحويل بنجاح!");
+      showToast("تم معالجة طلب السحب والتحويل بنجاح!", "success");
       setPayouts((current) => current.filter((item) => item.id !== id));
     } else {
       const data = await response.json();
-      alert(data.error?.message || "فشلت معالجة طلب السحب.");
+      showToast(data.error?.message || "فشلت معالجة طلب السحب.", "error");
     }
   };
 
@@ -256,17 +258,17 @@ export function ReviewQueues({
     const qualVal = parseInt(qualifiedViews, 10);
 
     if (isNaN(obsVal) || isNaN(qualVal) || obsVal < 0 || qualVal < 0) {
-      alert("الرجاء إدخال أرقام صحيحة وموجبة للمشاهدات");
+      showToast("الرجاء إدخال أرقام صحيحة وموجبة للمشاهدات", "error");
       return;
     }
 
     if (qualVal > obsVal) {
-      alert("المشاهدات المؤهلة لا يمكن أن تتجاوز المشاهدات الكلية");
+      showToast("المشاهدات المؤهلة لا يمكن أن تتجاوز المشاهدات الكلية", "error");
       return;
     }
 
     if (qualVal < obsVal && !metricsNote.trim()) {
-      alert("الرجاء إدخال سبب استبعاد بعض المشاهدات في الملاحظات");
+      showToast("الرجاء إدخال سبب استبعاد بعض المشاهدات في الملاحظات", "error");
       return;
     }
 
@@ -286,17 +288,17 @@ export function ReviewQueues({
       );
 
       if (response.ok) {
-        alert("تم تسجيل الإحصائيات واحتساب الأرباح بنجاح!");
+        showToast("تم تسجيل الإحصائيات واحتساب الأرباح بنجاح!", "success");
         setSelectedSubmissionForMetrics(null);
         setObservedViews("");
         setQualifiedViews("");
         setMetricsNote("");
       } else {
         const data = await response.json();
-        alert(data.error?.message || "فشلت عملية حفظ الإحصائيات.");
+        showToast(data.error?.message || "فشلت عملية حفظ الإحصائيات.", "error");
       }
     } catch {
-      alert("حدث خطأ في الشبكة");
+      showToast("حدث خطأ في الشبكة", "error");
     } finally {
       setSubmittingMetrics(false);
     }
@@ -501,7 +503,10 @@ export function ReviewQueues({
                   </div>
 
                   <div className="text-[10px] text-[var(--color-text-secondary)]">
-                    تاريخ التقديم: {new Date(item.createdAt).toLocaleString("ar-IQ")}
+                    تاريخ التقديم:{" "}
+                    {new Date(item.createdAt).toLocaleString("ar-IQ", {
+                      numberingSystem: "latn",
+                    })}
                   </div>
                 </div>
               ))}
@@ -693,7 +698,7 @@ export function ReviewQueues({
                   <span className="rounded-[var(--radius-pill)] bg-[var(--trend-100)] border border-[var(--color-brand)] px-2.5 py-0.5 text-xs font-bold text-[var(--forest-700)]">
                     إيداع ·{" "}
                     {item.currency === "IQD"
-                      ? `${parseInt(item.amount, 10).toLocaleString("ar-IQ")} د.ع`
+                      ? `${parseInt(item.amount, 10).toLocaleString("ar-IQ", { numberingSystem: "latn" })} د.ع`
                       : `$${(parseInt(item.amount, 10) / 100).toLocaleString("en-US", { minimumFractionDigits: 2 })}`}
                   </span>
                 </div>
@@ -724,7 +729,10 @@ export function ReviewQueues({
                 </div>
 
                 <div className="text-[10px] text-[var(--color-text-secondary)]">
-                  تاريخ تقديم الطلب: {new Date(item.createdAt).toLocaleString("ar-IQ")}
+                  تاريخ تقديم الطلب:{" "}
+                  {new Date(item.createdAt).toLocaleString("ar-IQ", {
+                    numberingSystem: "latn",
+                  })}
                 </div>
               </div>
             ))}
@@ -751,7 +759,7 @@ export function ReviewQueues({
                   <span className="rounded-[var(--radius-pill)] bg-[var(--mist-100)] border border-[var(--mist-400)] px-2.5 py-0.5 text-xs font-bold text-[var(--forest-500)]">
                     سحب ·{" "}
                     {item.currency === "IQD"
-                      ? `${parseInt(item.amount, 10).toLocaleString("ar-IQ")} د.ع`
+                      ? `${parseInt(item.amount, 10).toLocaleString("ar-IQ", { numberingSystem: "latn" })} د.ع`
                       : `$${(parseInt(item.amount, 10) / 100).toLocaleString("en-US", { minimumFractionDigits: 2 })}`}
                   </span>
                 </div>
@@ -791,7 +799,10 @@ export function ReviewQueues({
                 </div>
 
                 <div className="text-[10px] text-[var(--color-text-secondary)]">
-                  تاريخ تقديم الطلب: {new Date(item.createdAt).toLocaleString("ar-IQ")}
+                  تاريخ تقديم الطلب:{" "}
+                  {new Date(item.createdAt).toLocaleString("ar-IQ", {
+                    numberingSystem: "latn",
+                  })}
                 </div>
               </div>
             ))}

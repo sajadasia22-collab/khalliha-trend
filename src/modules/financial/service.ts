@@ -117,7 +117,7 @@ export class FinancialService {
       result.userId,
       NotificationType.DEPOSIT_REVIEWED,
       "تم اعتماد طلب الإيداع",
-      `تم اعتماد إيداعك بمبلغ ${result.amount.toLocaleString("ar-IQ")} وإضافته إلى رصيدك.`,
+      `تم اعتماد إيداعك بمبلغ ${result.amount.toLocaleString("ar-IQ", { numberingSystem: "latn" })} وإضافته إلى رصيدك.`,
       "/brand/dashboard",
     );
 
@@ -327,7 +327,7 @@ export class FinancialService {
       result.userId,
       NotificationType.PAYOUT_REVIEWED,
       "تم اعتماد طلب السحب",
-      `تم اعتماد طلب سحبك بمبلغ ${result.amount.toLocaleString("ar-IQ")} وتنفيذه.`,
+      `تم اعتماد طلب سحبك بمبلغ ${result.amount.toLocaleString("ar-IQ", { numberingSystem: "latn" })} وتنفيذه.`,
       "/creator/dashboard",
     );
 

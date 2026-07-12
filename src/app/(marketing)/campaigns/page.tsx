@@ -9,12 +9,26 @@ import { CampaignCard } from "../../../components/campaigns/CampaignCard";
 import { CampaignFilters } from "../../../components/campaigns/CampaignFilters";
 import { getCurrentUser } from "../../../lib/auth/session";
 import { DashboardHeader } from "../../../components/layout/DashboardHeader";
+import type { Prisma } from "../../../generated/prisma/client";
 
 export const metadata = {
   title: "استكشف الحملات — خلّيها ترند",
 };
 
 type SearchParams = Promise<{ platform?: string; category?: string; search?: string }>;
+
+type TopCreator = Prisma.CreatorProfileGetPayload<{
+  include: {
+    user: { select: { fullName: true } };
+    socialAccounts: { select: { platform: true; handle: true } };
+  };
+}>;
+
+type TopBrand = Prisma.BrandProfileGetPayload<{
+  include: {
+    campaigns: true;
+  };
+}>;
 
 async function loadCampaigns(filters: {
   platform?: string;
@@ -52,13 +66,13 @@ function LeaderboardSection({
   topCreators,
   topBrands,
 }: {
-  topCreators: any[];
-  topBrands: any[];
+  topCreators: TopCreator[];
+  topBrands: TopBrand[];
 }) {
   return (
     <div className="space-y-6">
       {/* Top Creators Card */}
-      <div className="card border border-[rgba(214,246,29,0.15)] bg-gradient-to-b from-[rgba(18,56,40,0.5)] to-[rgba(6,38,25,0.8)] p-5 rounded-[var(--radius-xl)] shadow-[var(--shadow-brand)]">
+      <div className="card border border-[rgba(214,246,29,0.2)] bg-[var(--color-surface-dark)] p-5 rounded-[var(--radius-xl)] shadow-[var(--shadow-brand)]">
         <h3 className="text-sm font-black text-[var(--color-text)] flex items-center gap-2 mb-4 border-b border-[rgba(200,214,206,0.1)] pb-3">
           <span>🏆</span>
           <span>لوحة شرف صناع المحتوى</span>
@@ -76,10 +90,10 @@ function LeaderboardSection({
                 score >= 80 ? "🏆 ذهبي" : score >= 60 ? "⚡ محترف" : "🌱 مبتدئ";
               const levelColor =
                 score >= 80
-                  ? "text-yellow-400 bg-yellow-400/10"
+                  ? "text-[var(--color-text-on-brand)] bg-[var(--color-brand)]"
                   : score >= 60
-                    ? "text-blue-400 bg-blue-400/10"
-                    : "text-gray-400 bg-gray-400/10";
+                    ? "text-[var(--color-text-on-dark)] bg-[var(--forest-500)]"
+                    : "text-[var(--color-text)] bg-[var(--color-surface)]";
               const rankIcon =
                 index === 0
                   ? "🥇"
@@ -95,7 +109,7 @@ function LeaderboardSection({
                   className="flex items-center justify-between gap-3 text-xs bg-[rgba(250,252,251,0.03)] p-2.5 rounded-[var(--radius-md)] border border-[rgba(200,214,206,0.06)] hover:border-[rgba(214,246,29,0.15)] transition-all"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <span className="font-mono font-bold text-sm text-[var(--color-brand)] w-6 text-center">
+                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-[var(--radius-sm)] bg-[var(--color-brand)] font-mono text-xs font-black text-[var(--color-text-on-brand)]">
                       {rankIcon}
                     </span>
                     <div className="min-w-0">
@@ -105,7 +119,7 @@ function LeaderboardSection({
                       <p className="text-[9px] text-[var(--color-text-secondary)] mt-0.5 truncate">
                         {creator.socialAccounts.length > 0
                           ? creator.socialAccounts
-                              .map((a: any) => `@${a.handle}`)
+                              .map((account) => `@${account.handle}`)
                               .join(", ")
                           : "لا توجد حسابات موثقة"}
                       </p>

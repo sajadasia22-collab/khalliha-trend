@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "../../../../lib/auth/session";
 import { DashboardHeader } from "../../../../components/layout/DashboardHeader";
 import { WalletView } from "../../../../components/wallet/WalletView";
+import { BrandDeposits } from "../../../../components/brand/BrandDeposits";
 
 export default async function BrandWalletPage() {
   const user = await getCurrentUser();
@@ -23,6 +24,14 @@ export default async function BrandWalletPage() {
           رصيد حسابك التجاري بالدينار والدولار، وسجل كامل لكل عملية مالية.
         </p>
         <WalletView />
+
+        <div className="mt-10">
+          <h2 className="fade-in-up mb-2 text-xl font-extrabold">تمويل المحفظة</h2>
+          <p className="fade-in-up mb-6 font-medium text-[var(--color-text-secondary)]">
+            أرسل طلب تمويل يدوي وسيتم مراجعته وإضافته لرصيدك خلال وقت قصير.
+          </p>
+          <BrandDeposits />
+        </div>
       </section>
     </main>
   );

@@ -22,6 +22,7 @@
 - [Payment Integrations](docs/PAYMENT_INTEGRATIONS.md)
 - [Deployment](docs/DEPLOYMENT.md)
 - [Mobile Roadmap](docs/MOBILE_ROADMAP.md)
+- [Changelog](docs/CHANGELOG.md)
 - [Brand Guidelines](khalliha_trend_brand_identity/BRAND_GUIDELINES.md)
 
 ## الألوان الرسمية

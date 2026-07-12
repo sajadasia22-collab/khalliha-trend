@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "../../../../lib/prisma";
-import { CampaignStatus } from "../../../../generated/prisma/enums";
+import { CampaignStatus, Platform } from "../../../../generated/prisma/enums";
 import { categoryLabels, platformLabels, formatBudget } from "../../../../lib/campaigns";
 import { ButtonLink } from "../../../../components/ui/button";
 import { getCurrentUser } from "../../../../lib/auth/session";
@@ -72,13 +72,13 @@ export default async function CampaignDetailsPage({
   let isJoined = false;
   let verifiedSocialAccounts: Array<{
     id: string;
-    platform: "TIKTOK" | "INSTAGRAM" | "FACEBOOK" | "YOUTUBE";
+    platform: Platform;
     handle: string;
     profileUrl: string;
   }> = [];
   let initialSubmissions: Array<{
     id: string;
-    platform: "TIKTOK" | "INSTAGRAM" | "FACEBOOK" | "YOUTUBE";
+    platform: Platform;
     postUrl: string;
     platformPostId: string;
     status: string;
@@ -236,19 +236,21 @@ export default async function CampaignDetailsPage({
                   <div className="flex justify-between">
                     <dt>CPM (لكل 1000 مشاهدة مؤهلة)</dt>
                     <dd className="font-bold text-[var(--color-text)]">
-                      {rate.cpmMinorUnits.toString()} {campaign.currency}
+                      {formatBudget(rate.cpmMinorUnits, campaign.currency)}
                     </dd>
                   </div>
                   <div className="flex justify-between">
                     <dt>الحد الأدنى للمشاهدات المؤهلة</dt>
                     <dd className="font-bold text-[var(--color-text)]">
-                      {rate.minimumQualifiedViews.toString()}
+                      {rate.minimumQualifiedViews.toLocaleString("ar-IQ", {
+                        numberingSystem: "latn",
+                      })}
                     </dd>
                   </div>
                   <div className="flex justify-between">
                     <dt>الحد الأقصى للأرباح لكل فيديو</dt>
                     <dd className="font-bold text-[var(--color-text)]">
-                      {rate.maximumReward.toString()} {campaign.currency}
+                      {formatBudget(rate.maximumReward, campaign.currency)}
                     </dd>
                   </div>
                 </dl>

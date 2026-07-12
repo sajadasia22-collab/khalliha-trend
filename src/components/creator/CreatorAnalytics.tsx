@@ -144,7 +144,9 @@ export function CreatorAnalytics() {
                   fill="var(--color-brand-active)"
                 >
                   <title>
-                    {bucket.date}: {bucket.total.toLocaleString("ar-IQ")} د.ع
+                    {bucket.date}:{" "}
+                    {bucket.total.toLocaleString("ar-IQ", { numberingSystem: "latn" })}{" "}
+                    د.ع
                   </title>
                 </rect>
               );

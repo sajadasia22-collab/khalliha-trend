@@ -5,9 +5,26 @@ import { useState } from "react";
 import { categoryLabels, platformLabels } from "../../lib/campaigns";
 import { useToast } from "../ui/Toast";
 import { Button } from "../ui/button";
+import {
+  DeviceUploadIcon,
+  GoogleDriveIcon,
+  DropboxIcon,
+  OneDriveIcon,
+} from "../ui/icons";
+import { PlatformSelect } from "./PlatformSelect";
+
+type PlatformValue = keyof typeof platformLabels;
 
 type RateRow = {
-  platform: keyof typeof platformLabels;
+  platforms: PlatformValue[];
+  cpmMinorUnits: string;
+  minimumQualifiedViews: string;
+  maximumReward: string;
+};
+
+/** Shape the API expects/returns: one entry per platform (DB is unique on [campaignId, platform]). */
+type InitialRateRow = {
+  platform: PlatformValue;
   cpmMinorUnits: string;
   minimumQualifiedViews: string;
   maximumReward: string;
@@ -34,12 +51,12 @@ type InitialValues = {
   minTrustScore: number;
   startsAt: string;
   endsAt: string;
-  rates: RateRow[];
+  rates: InitialRateRow[];
   assets: { url: string; label: string }[];
 };
 
 const emptyRate: RateRow = {
-  platform: "TIKTOK",
+  platforms: [],
   cpmMinorUnits: "",
   minimumQualifiedViews: "0",
   maximumReward: "",
@@ -71,7 +88,16 @@ export function CampaignForm({
   const [minTrustScore, setMinTrustScore] = useState(initialValues?.minTrustScore ?? 0);
   const [startsAt, setStartsAt] = useState(initialValues?.startsAt ?? "");
   const [endsAt, setEndsAt] = useState(initialValues?.endsAt ?? "");
-  const [rates, setRates] = useState<RateRow[]>(initialValues?.rates ?? [emptyRate]);
+  const [rates, setRates] = useState<RateRow[]>(
+    initialValues?.rates
+      ? initialValues.rates.map((rate) => ({
+          platforms: [rate.platform],
+          cpmMinorUnits: rate.cpmMinorUnits,
+          minimumQualifiedViews: rate.minimumQualifiedViews,
+          maximumReward: rate.maximumReward,
+        }))
+      : [emptyRate],
+  );
   const [assets, setAssets] = useState<AssetRow[]>(() => {
     if (!initialValues?.assets) return [];
     return initialValues.assets.map((asset, i) => {
@@ -116,6 +142,24 @@ export function CampaignForm({
     event.preventDefault();
     setError("");
     setFieldErrors({});
+
+    if (rates.some((rate) => rate.platforms.length === 0)) {
+      setFieldErrors({ rates: "اختر منصة واحدة على الأقل لكل سعر" });
+      return;
+    }
+    const seenPlatforms = new Set<PlatformValue>();
+    for (const rate of rates) {
+      for (const platform of rate.platforms) {
+        if (seenPlatforms.has(platform)) {
+          setFieldErrors({
+            rates: `تم اختيار منصة ${platformLabels[platform]} في أكثر من سعر`,
+          });
+          return;
+        }
+        seenPlatforms.add(platform);
+      }
+    }
+
     setIsLoading(true);
 
     const payload = {
@@ -129,7 +173,14 @@ export function CampaignForm({
       minTrustScore,
       startsAt: startsAt || undefined,
       endsAt: endsAt || undefined,
-      rates,
+      rates: rates.flatMap((rate) =>
+        rate.platforms.map((platform) => ({
+          platform,
+          cpmMinorUnits: rate.cpmMinorUnits,
+          minimumQualifiedViews: rate.minimumQualifiedViews,
+          maximumReward: rate.maximumReward,
+        })),
+      ),
       assets: assets
         .filter((asset) => asset.url && asset.label)
         .map((a) => ({ url: a.url, label: a.label })),
@@ -482,10 +533,14 @@ export function CampaignForm({
                 </span>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
-                    <label className="block text-[8px] text-[var(--color-text-muted)] font-black mb-1">
+                    <label
+                      htmlFor="targetViewsEstimator"
+                      className="block text-[8px] text-[var(--color-text-muted)] font-black mb-1"
+                    >
                       المشاهدات المستهدفة الكلية
                     </label>
                     <input
+                      id="targetViewsEstimator"
                       type="text"
                       placeholder="مثال: 100,000"
                       className="w-full rounded bg-[var(--color-surface)] border border-[var(--color-border)] px-2.5 py-1 text-[10px] text-[var(--color-text)] focus:border-[var(--color-brand)] focus:outline-none"
@@ -504,7 +559,7 @@ export function CampaignForm({
                       الميزانية المقترحة
                     </span>
                     <strong className="text-[11px] text-[var(--color-brand)] mt-1">
-                      {parseInt(totalBudget || "0").toLocaleString()} {currency}
+                      {parseInt(totalBudget || "0").toLocaleString("en-US")} {currency}
                     </strong>
                   </div>
                 </div>
@@ -599,14 +654,33 @@ export function CampaignForm({
           <h2 className="text-xs font-black text-[var(--color-brand)] bg-[var(--color-surface-dark)] px-4 py-1.5 rounded-[var(--radius-sm)] inline-block shadow-[var(--shadow-brand)]">
             أسعار المنصات والمشاهدات
           </h2>
-          <button
-            type="button"
-            onClick={() => setRates((current) => [...current, emptyRate])}
-            className="btn-secondary px-3 py-1.5 text-xs font-bold"
-            disabled={isLoading}
-          >
-            + إضافة منصة إعلانية
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() =>
+                setRates((current) => {
+                  const existing = new Set(current.flatMap((r) => r.platforms));
+                  const missing = (Object.keys(platformLabels) as PlatformValue[]).filter(
+                    (platform) => !existing.has(platform),
+                  );
+                  if (missing.length === 0) return current;
+                  return [...current, { ...emptyRate, platforms: missing }];
+                })
+              }
+              className="btn-secondary px-3 py-1.5 text-xs font-bold"
+              disabled={isLoading}
+            >
+              + كل المنصات بنفس السعر
+            </button>
+            <button
+              type="button"
+              onClick={() => setRates((current) => [...current, emptyRate])}
+              className="btn-secondary px-3 py-1.5 text-xs font-bold"
+              disabled={isLoading}
+            >
+              + إضافة منصة إعلانية
+            </button>
+          </div>
         </div>
 
         {fieldErrors.rates && (
@@ -619,110 +693,95 @@ export function CampaignForm({
           {rates.map((rate, index) => (
             <div
               key={index}
-              className="bg-[var(--color-surface)] border border-[var(--color-border)] p-4 rounded-[var(--radius-md)] grid gap-4 sm:grid-cols-[1.2fr_1fr_1fr_1fr_auto] items-center shadow-sm hover:border-[rgba(214,246,29,0.15)] transition-all"
+              className="bg-[var(--color-surface)] border border-[var(--color-border)] p-4 rounded-[var(--radius-md)] space-y-4 shadow-sm hover:border-[rgba(214,246,29,0.15)] transition-all"
             >
               <div>
-                <label className="block text-[10px] font-bold text-[var(--color-text-muted)] mb-1">
+                <span className="block text-[10px] font-bold text-[var(--color-text-muted)] mb-2">
                   المنصة
-                </label>
-                <div className="select-field-wrap">
-                  <select
-                    value={rate.platform}
+                </span>
+                <PlatformSelect
+                  values={rate.platforms}
+                  onChange={(platforms) => updateRate(index, { platforms })}
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div className="grid gap-4 items-end sm:grid-cols-[1fr_1fr_1fr_auto]">
+                <div>
+                  <label
+                    htmlFor={`rate-${index}-cpm`}
+                    className="block text-[10px] font-bold text-[var(--color-text-muted)] mb-1"
+                  >
+                    الـ CPM (سعر الـ 1000 مشاهدة)
+                  </label>
+                  <input
+                    id={`rate-${index}-cpm`}
+                    value={rate.cpmMinorUnits}
                     onChange={(e) =>
                       updateRate(index, {
-                        platform: e.target.value as RateRow["platform"],
+                        cpmMinorUnits: e.target.value.replace(/[^0-9]/g, ""),
                       })
                     }
-                    className="select-field select-field--compact text-xs font-bold"
+                    placeholder="مثال: 8,000 د.ع"
+                    className="min-h-[40px] w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-xs focus:border-[var(--color-brand)] focus:outline-none focus:ring-2 focus:ring-[rgba(214,246,29,0.18)]"
                     disabled={isLoading}
-                  >
-                    {Object.entries(platformLabels).map(([value, label]) => (
-                      <option key={value} value={value}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    aria-hidden="true"
-                    className="select-field-chevron"
-                  >
-                    <path
-                      d="M4 6l4 4 4-4"
-                      stroke="currentColor"
-                      strokeWidth="1.6"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
+                  />
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-[10px] font-bold text-[var(--color-text-muted)] mb-1">
-                  الـ CPM (سعر الـ 1000 مشاهدة)
-                </label>
-                <input
-                  value={rate.cpmMinorUnits}
-                  onChange={(e) =>
-                    updateRate(index, {
-                      cpmMinorUnits: e.target.value.replace(/[^0-9]/g, ""),
-                    })
-                  }
-                  placeholder="مثال: 8,000 د.ع"
-                  className="min-h-[40px] w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-xs focus:border-[var(--color-brand)] focus:outline-none focus:ring-2 focus:ring-[rgba(214,246,29,0.18)]"
-                  disabled={isLoading}
-                />
-              </div>
+                <div>
+                  <label
+                    htmlFor={`rate-${index}-minimum-views`}
+                    className="block text-[10px] font-bold text-[var(--color-text-muted)] mb-1"
+                  >
+                    أدنى مشاهدات مؤهلة
+                  </label>
+                  <input
+                    id={`rate-${index}-minimum-views`}
+                    value={rate.minimumQualifiedViews}
+                    onChange={(e) =>
+                      updateRate(index, {
+                        minimumQualifiedViews: e.target.value.replace(/[^0-9]/g, ""),
+                      })
+                    }
+                    placeholder="مثال: 5,000 مشاهدة"
+                    className="min-h-[40px] w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-xs focus:border-[var(--color-brand)] focus:outline-none focus:ring-2 focus:ring-[rgba(214,246,29,0.18)]"
+                    disabled={isLoading}
+                  />
+                </div>
 
-              <div>
-                <label className="block text-[10px] font-bold text-[var(--color-text-muted)] mb-1">
-                  أدنى مشاهدات مؤهلة
-                </label>
-                <input
-                  value={rate.minimumQualifiedViews}
-                  onChange={(e) =>
-                    updateRate(index, {
-                      minimumQualifiedViews: e.target.value.replace(/[^0-9]/g, ""),
-                    })
-                  }
-                  placeholder="مثال: 5,000 مشاهدة"
-                  className="min-h-[40px] w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-xs focus:border-[var(--color-brand)] focus:outline-none focus:ring-2 focus:ring-[rgba(214,246,29,0.18)]"
-                  disabled={isLoading}
-                />
-              </div>
+                <div>
+                  <label
+                    htmlFor={`rate-${index}-maximum-reward`}
+                    className="block text-[10px] font-bold text-[var(--color-text-muted)] mb-1"
+                  >
+                    الحد الأقصى للأرباح للفيديو
+                  </label>
+                  <input
+                    id={`rate-${index}-maximum-reward`}
+                    value={rate.maximumReward}
+                    onChange={(e) =>
+                      updateRate(index, {
+                        maximumReward: e.target.value.replace(/[^0-9]/g, ""),
+                      })
+                    }
+                    placeholder="مثال: 250,000 د.ع"
+                    className="min-h-[40px] w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-xs focus:border-[var(--color-brand)] focus:outline-none focus:ring-2 focus:ring-[rgba(214,246,29,0.18)]"
+                    disabled={isLoading}
+                  />
+                </div>
 
-              <div>
-                <label className="block text-[10px] font-bold text-[var(--color-text-muted)] mb-1">
-                  الحد الأقصى للأرباح للفيديو
-                </label>
-                <input
-                  value={rate.maximumReward}
-                  onChange={(e) =>
-                    updateRate(index, {
-                      maximumReward: e.target.value.replace(/[^0-9]/g, ""),
-                    })
-                  }
-                  placeholder="مثال: 250,000 د.ع"
-                  className="min-h-[40px] w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-xs focus:border-[var(--color-brand)] focus:outline-none focus:ring-2 focus:ring-[rgba(214,246,29,0.18)]"
-                  disabled={isLoading}
-                />
-              </div>
-
-              <div className="pt-4 sm:pt-0">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setRates((current) => current.filter((_, i) => i !== index))
-                  }
-                  disabled={rates.length === 1 || isLoading}
-                  className="text-xs font-bold text-red-400 hover:text-red-300 disabled:opacity-30 transition-colors"
-                >
-                  حذف
-                </button>
+                <div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setRates((current) => current.filter((_, i) => i !== index))
+                    }
+                    disabled={rates.length === 1 || isLoading}
+                    className="min-h-[40px] text-xs font-bold text-red-400 hover:text-red-300 disabled:opacity-30 transition-colors"
+                  >
+                    حذف
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -731,35 +790,109 @@ export function CampaignForm({
 
       {/* Card 4: Assets */}
       <div className="bg-[rgba(250,252,251,0.01)] border border-[var(--color-border)] p-6 rounded-[var(--radius-xl)] space-y-6">
-        <div className="flex items-center justify-between border-b border-[rgba(200,214,206,0.06)] pb-3">
+        <div className="border-b border-[rgba(200,214,206,0.06)] pb-3">
           <h2 className="text-xs font-black text-[var(--color-brand)] bg-[var(--color-surface-dark)] px-4 py-1.5 rounded-[var(--radius-sm)] inline-block shadow-[var(--shadow-brand)]">
             أصول الحملة ومصادرها (روابط خارجية)
           </h2>
-          <button
-            type="button"
-            onClick={() =>
-              setAssets((current) => [
-                ...current,
-                {
-                  id: `new-${Date.now()}-${Math.random()}`,
-                  type: "google_drive",
-                  url: "",
-                  label: "",
-                },
-              ])
-            }
-            className="btn-secondary px-3 py-1.5 text-xs font-bold"
-            disabled={isLoading}
-          >
-            + إضافة أصل جديد
-          </button>
         </div>
 
+        {/* Always-visible selector panel */}
+        <div className="p-4 rounded-[var(--radius-md)] border border-[rgba(200,214,206,0.04)] space-y-3">
+          <span className="block text-[10px] font-bold text-[var(--color-text-secondary)]">
+            اختر المنصة لإضافة ملف أو رابط أصل جديد:
+          </span>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <button
+              type="button"
+              onClick={() =>
+                setAssets((current) => [
+                  ...current,
+                  {
+                    id: `new-${Date.now()}-${Math.random()}`,
+                    type: "upload",
+                    url: "",
+                    label: "",
+                  },
+                ])
+              }
+              className="flex flex-col items-center gap-1.5 p-2 rounded-[var(--radius-md)] hover:bg-[var(--color-surface)] transition-all font-bold text-xs text-[var(--color-text)] text-center w-full"
+            >
+              <span className="flex items-center justify-center w-16 h-16 rounded-[var(--radius-md)] bg-[var(--color-surface)] border border-[var(--color-border)]">
+                <DeviceUploadIcon className="w-8 h-8 text-[var(--color-text-secondary)]" />
+              </span>
+              <span className="leading-tight">رفع ملف من جهازك</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                setAssets((current) => [
+                  ...current,
+                  {
+                    id: `new-${Date.now()}-${Math.random()}`,
+                    type: "google_drive",
+                    url: "",
+                    label: "",
+                  },
+                ])
+              }
+              className="flex flex-col items-center gap-1.5 p-2 rounded-[var(--radius-md)] hover:bg-[var(--color-surface)] transition-all font-bold text-xs text-[var(--color-text)] text-center w-full"
+            >
+              <span className="flex items-center justify-center w-16 h-16 rounded-[var(--radius-md)] bg-[var(--color-surface)] border border-[var(--color-border)]">
+                <GoogleDriveIcon className="w-8 h-8" />
+              </span>
+              <span className="leading-tight">رابط غوغل درايف</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                setAssets((current) => [
+                  ...current,
+                  {
+                    id: `new-${Date.now()}-${Math.random()}`,
+                    type: "dropbox",
+                    url: "",
+                    label: "",
+                  },
+                ])
+              }
+              className="flex flex-col items-center gap-1.5 p-2 rounded-[var(--radius-md)] hover:bg-[var(--color-surface)] transition-all font-bold text-xs text-[var(--color-text)] text-center w-full"
+            >
+              <span className="flex items-center justify-center w-16 h-16 rounded-[var(--radius-md)] bg-[var(--color-surface)] border border-[var(--color-border)]">
+                <DropboxIcon className="w-8 h-8" />
+              </span>
+              <span className="leading-tight">رابط دروب بوكس</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                setAssets((current) => [
+                  ...current,
+                  {
+                    id: `new-${Date.now()}-${Math.random()}`,
+                    type: "onedrive",
+                    url: "",
+                    label: "",
+                  },
+                ])
+              }
+              className="flex flex-col items-center gap-1.5 p-2 rounded-[var(--radius-md)] hover:bg-[var(--color-surface)] transition-all font-bold text-xs text-[var(--color-text)] text-center w-full"
+            >
+              <span className="flex items-center justify-center w-16 h-16 rounded-[var(--radius-md)] bg-[var(--color-surface)] border border-[var(--color-border)]">
+                <OneDriveIcon className="w-8 h-8" />
+              </span>
+              <span className="leading-tight">رابط ون درايف</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Selected asset rows list */}
         <div className="space-y-4">
           {assets.length === 0 ? (
             <p className="text-xs text-[var(--color-text-muted)] text-center py-4 font-semibold">
-              لا توجد روابط أصول مضافة حالياً. (مثال: شعار الشركة، الخطوط العريضة،
-              فيديوهات مرجعية)
+              لا توجد روابط أصول مضافة حالياً. اختر منصة من الأعلى للبدء.
             </p>
           ) : (
             assets.map((asset, index) => (
@@ -767,60 +900,22 @@ export function CampaignForm({
                 key={asset.id}
                 className="bg-[var(--color-surface)] border border-[var(--color-border)] p-4 rounded-[var(--radius-md)] space-y-4 shadow-sm"
               >
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[rgba(200,214,206,0.04)] pb-3">
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        updateAsset(index, { type: "upload", url: "", label: "" })
-                      }
-                      className={`px-2.5 py-1 rounded-[var(--radius-sm)] text-[10px] font-bold border transition-all ${
-                        asset.type === "upload"
-                          ? "bg-[var(--color-surface-dark)] border-[var(--color-brand)] text-[var(--color-brand)]"
-                          : "bg-transparent border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-brand)]"
-                      }`}
-                    >
-                      📁 رفع ملف (حد أقصى 100MB)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        updateAsset(index, { type: "google_drive", url: "", label: "" })
-                      }
-                      className={`px-2.5 py-1 rounded-[var(--radius-sm)] text-[10px] font-bold border transition-all ${
-                        asset.type === "google_drive"
-                          ? "bg-[var(--color-surface-dark)] border-[var(--color-brand)] text-[var(--color-brand)]"
-                          : "bg-transparent border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-brand)]"
-                      }`}
-                    >
-                      🤖 غوغل درايف
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        updateAsset(index, { type: "dropbox", url: "", label: "" })
-                      }
-                      className={`px-2.5 py-1 rounded-[var(--radius-sm)] text-[10px] font-bold border transition-all ${
-                        asset.type === "dropbox"
-                          ? "bg-[var(--color-surface-dark)] border-[var(--color-brand)] text-[var(--color-brand)]"
-                          : "bg-transparent border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-brand)]"
-                      }`}
-                    >
-                      📦 دروب بوكس
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        updateAsset(index, { type: "onedrive", url: "", label: "" })
-                      }
-                      className={`px-2.5 py-1 rounded-[var(--radius-sm)] text-[10px] font-bold border transition-all ${
-                        asset.type === "onedrive"
-                          ? "bg-[var(--color-surface-dark)] border-[var(--color-brand)] text-[var(--color-brand)]"
-                          : "bg-transparent border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-brand)]"
-                      }`}
-                    >
-                      ☁️ ون درايف
-                    </button>
+                <div className="flex items-center justify-between border-b border-[rgba(200,214,206,0.04)] pb-3">
+                  <div className="flex items-center gap-2">
+                    {asset.type === "google_drive" && (
+                      <GoogleDriveIcon className="w-4 h-4" />
+                    )}
+                    {asset.type === "dropbox" && <DropboxIcon className="w-4 h-4" />}
+                    {asset.type === "onedrive" && <OneDriveIcon className="w-4 h-4" />}
+                    {asset.type === "upload" && (
+                      <DeviceUploadIcon className="w-4 h-4 text-[var(--color-brand)]" />
+                    )}
+                    <span className="text-[10px] font-bold text-[var(--color-text-secondary)]">
+                      {asset.type === "google_drive" && "غوغل درايف"}
+                      {asset.type === "dropbox" && "دروب بوكس"}
+                      {asset.type === "onedrive" && "ون درايف"}
+                      {asset.type === "upload" && "ملف مرفوع من جهازك"}
+                    </span>
                   </div>
 
                   <button
@@ -830,7 +925,7 @@ export function CampaignForm({
                     }
                     className="text-[10px] font-bold text-red-400 hover:text-red-300 transition-colors"
                   >
-                    حذف هذا الأصل
+                    حذف
                   </button>
                 </div>
 
@@ -838,10 +933,14 @@ export function CampaignForm({
                   <div className="space-y-3">
                     <div className="grid gap-3 sm:grid-cols-2 items-center">
                       <div>
-                        <label className="block text-[10px] font-bold text-[var(--color-text-muted)] mb-1">
+                        <label
+                          htmlFor={`asset-${asset.id}-upload-label`}
+                          className="block text-[10px] font-bold text-[var(--color-text-muted)] mb-1"
+                        >
                           اسم الملف / الوصف
                         </label>
                         <input
+                          id={`asset-${asset.id}-upload-label`}
                           value={asset.label}
                           onChange={(e) => updateAsset(index, { label: e.target.value })}
                           placeholder="مثال: الشعار الرسمي بدقة عالية"
@@ -850,7 +949,10 @@ export function CampaignForm({
                         />
                       </div>
                       <div>
-                        <label className="block text-[10px] font-bold text-[var(--color-text-muted)] mb-1">
+                        <label
+                          htmlFor={`file-picker-${asset.id}`}
+                          className="block text-[10px] font-bold text-[var(--color-text-muted)] mb-1"
+                        >
                           ملف التحميل (أقصى حجم: 100 ميغابايت)
                         </label>
                         <div className="flex items-center gap-3">
@@ -938,10 +1040,14 @@ export function CampaignForm({
                 ) : (
                   <div className="grid gap-3 sm:grid-cols-[1fr_2.5fr] items-center">
                     <div>
-                      <label className="block text-[10px] font-bold text-[var(--color-text-muted)] mb-1">
+                      <label
+                        htmlFor={`asset-${asset.id}-link-label`}
+                        className="block text-[10px] font-bold text-[var(--color-text-muted)] mb-1"
+                      >
                         اسم الرابط
                       </label>
                       <input
+                        id={`asset-${asset.id}-link-label`}
                         value={asset.label}
                         onChange={(e) => updateAsset(index, { label: e.target.value })}
                         placeholder="مثال: مجلد ملفات الهوية المفتوحة"
@@ -949,28 +1055,15 @@ export function CampaignForm({
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-[var(--color-text-muted)] mb-1">
+                      <label
+                        htmlFor={`asset-${asset.id}-url`}
+                        className="block text-[10px] font-bold text-[var(--color-text-muted)] mb-1"
+                      >
                         رابط المشاركة
                       </label>
                       <div className="relative flex items-center">
-                        <div className="absolute right-3 flex items-center gap-1.5 pointer-events-none z-10">
-                          {asset.type === "google_drive" && (
-                            <span className="text-[9px] bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded font-bold">
-                              غوغل درايف
-                            </span>
-                          )}
-                          {asset.type === "dropbox" && (
-                            <span className="text-[9px] bg-blue-500/10 border border-blue-500/20 text-blue-400 px-2 py-0.5 rounded font-bold">
-                              دروب بوكس
-                            </span>
-                          )}
-                          {asset.type === "onedrive" && (
-                            <span className="text-[9px] bg-sky-500/10 border border-sky-500/20 text-sky-400 px-2 py-0.5 rounded font-bold">
-                              ون درايف
-                            </span>
-                          )}
-                        </div>
                         <input
+                          id={`asset-${asset.id}-url`}
                           value={asset.url}
                           onChange={(e) => updateAsset(index, { url: e.target.value })}
                           placeholder={
@@ -981,7 +1074,7 @@ export function CampaignForm({
                                 : "https://onedrive.live.com/..."
                           }
                           dir="ltr"
-                          className="min-h-[40px] w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] pl-3 pr-24 text-xs focus:border-[var(--color-brand)] focus:outline-none focus:ring-2 focus:ring-[rgba(214,246,29,0.18)]"
+                          className="min-h-[40px] w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-xs focus:border-[var(--color-brand)] focus:outline-none focus:ring-2 focus:ring-[rgba(214,246,29,0.18)]"
                         />
                       </div>
                     </div>

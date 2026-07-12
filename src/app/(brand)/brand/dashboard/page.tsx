@@ -3,7 +3,6 @@ import { getCurrentUser } from "../../../../lib/auth/session";
 import Link from "next/link";
 import { prisma } from "../../../../lib/prisma";
 import { LedgerEngine } from "../../../../modules/financial/ledger";
-import { BrandDeposits } from "../../../../components/brand/BrandDeposits";
 import { BrandAnalytics } from "../../../../components/brand/BrandAnalytics";
 import { DashboardHeader } from "../../../../components/layout/DashboardHeader";
 import { ConnectionErrorCard } from "../../../../components/ui/ConnectionErrorCard";
@@ -63,7 +62,10 @@ export default async function BrandDashboard() {
         {overview !== null && (
           <div className="grid gap-6 sm:grid-cols-3">
             {/* Card 1: Balance */}
-            <div className="card-interactive fade-in-up group relative overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-sm)] hover:border-[var(--color-brand)] hover:shadow-[var(--shadow-brand)]">
+            <Link
+              href="/brand/wallet"
+              className="card-interactive fade-in-up group relative overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-sm)] hover:border-[var(--color-brand)] hover:shadow-[var(--shadow-brand)]"
+            >
               {/* Decorative background glow */}
               <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-[var(--color-brand)] opacity-5 blur-3xl transition-opacity group-hover:opacity-15" />
 
@@ -76,14 +78,19 @@ export default async function BrandDashboard() {
                     رصيد الحساب التجاري
                   </h2>
                   <div className="mt-1 text-2xl font-black text-[var(--forest-700)] dark:text-[var(--color-text)]">
-                    {overview.balance.toLocaleString("ar-IQ")}{" "}
+                    {overview.balance.toLocaleString("ar-IQ", {
+                      numberingSystem: "latn",
+                    })}{" "}
                     <span className="text-sm font-bold text-[var(--color-text-secondary)]">
                       د.ع
                     </span>
                   </div>
+                  <span className="mt-1.5 inline-block text-[11px] font-bold text-[var(--color-brand-active)]">
+                    + موّل رصيدك
+                  </span>
                 </div>
               </div>
-            </div>
+            </Link>
 
             {/* Card 2: Reserved */}
             <div
@@ -101,7 +108,9 @@ export default async function BrandDashboard() {
                     الميزانية المحجوزة للحملات
                   </h2>
                   <div className="mt-1 text-2xl font-black text-[var(--forest-700)] dark:text-[var(--color-text)]">
-                    {overview.totalReserved.toLocaleString("ar-IQ")}{" "}
+                    {overview.totalReserved.toLocaleString("ar-IQ", {
+                      numberingSystem: "latn",
+                    })}{" "}
                     <span className="text-sm font-bold text-[var(--color-text-secondary)]">
                       د.ع
                     </span>
@@ -139,9 +148,6 @@ export default async function BrandDashboard() {
 
         {/* Analytics */}
         <BrandAnalytics />
-
-        {/* Deposits Manager Component */}
-        <BrandDeposits />
 
         {/* Campaign creation banner */}
         <div className="p-8 card border border-[var(--forest-500)] bg-[var(--color-surface-dark)] text-[var(--color-text-on-dark)] rounded-[var(--radius-xl)] flex flex-col md:flex-row items-center justify-between gap-6">

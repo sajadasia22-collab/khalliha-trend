@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useToast } from "../ui/Toast";
+import { BanknoteIcon, ClipboardIcon, ClipboardCheckIcon } from "../ui/icons";
 
 type PayoutLog = {
   id: string;
@@ -14,6 +16,7 @@ type PayoutLog = {
 };
 
 export function CreatorPayouts() {
+  const { showToast } = useToast();
   const [payouts, setPayouts] = useState<PayoutLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [amount, setAmount] = useState("");
@@ -21,6 +24,20 @@ export function CreatorPayouts() {
   const [payoutMethod, setPayoutMethod] = useState("ZainCash");
   const [recipientDetails, setRecipientDetails] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const copyReference = (id: string, value: string) => {
+    navigator.clipboard.writeText(value).then(
+      () => {
+        setCopiedId(id);
+        window.setTimeout(
+          () => setCopiedId((current) => (current === id ? null : current)),
+          1800,
+        );
+      },
+      () => showToast("تعذّر نسخ رقم التحويل", "error"),
+    );
+  };
 
   const fetchPayouts = async () => {
     try {
@@ -45,7 +62,7 @@ export function CreatorPayouts() {
     e.preventDefault();
     const parsedAmount = parseFloat(amount);
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      alert("الرجاء إدخال مبلغ صحيح أكبر من الصفر");
+      showToast("الرجاء إدخال مبلغ صحيح أكبر من الصفر", "error");
       return;
     }
 
@@ -54,7 +71,7 @@ export function CreatorPayouts() {
       currency === "USD" ? Math.round(parsedAmount * 100) : Math.round(parsedAmount);
 
     if (!recipientDetails.trim()) {
-      alert("الرجاء إدخال تفاصيل المستلم");
+      showToast("الرجاء إدخال تفاصيل المستلم", "error");
       return;
     }
 
@@ -72,16 +89,16 @@ export function CreatorPayouts() {
       });
 
       if (res.ok) {
-        alert("تم إرسال طلب السحب بنجاح وهو بانتظار الموافقة والتحويل.");
+        showToast("تم إرسال طلب السحب بنجاح وهو بانتظار الموافقة والتحويل.", "success");
         setAmount("");
         setRecipientDetails("");
         fetchPayouts();
       } else {
         const data = await res.json();
-        alert(data.error?.message || "فشلت عملية طلب السحب");
+        showToast(data.error?.message || "فشلت عملية طلب السحب", "error");
       }
     } catch {
-      alert("حدث خطأ في الاتصال بالخادم");
+      showToast("حدث خطأ في الاتصال بالخادم", "error");
     } finally {
       setSubmitting(false);
     }
@@ -90,7 +107,7 @@ export function CreatorPayouts() {
   const formatAmountVal = (val: string, curr: "IQD" | "USD") => {
     const num = parseInt(val, 10);
     if (curr === "IQD") {
-      return `${num.toLocaleString("ar-IQ")} د.ع`;
+      return `${num.toLocaleString("ar-IQ", { numberingSystem: "latn" })} د.ع`;
     }
     return `$${(num / 100).toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
   };
@@ -106,9 +123,9 @@ export function CreatorPayouts() {
   };
 
   return (
-    <div className="grid gap-8 lg:grid-cols-3 dir-rtl text-right">
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-3 dir-rtl text-right">
       {/* Payout Form */}
-      <div className="card p-6 border border-[var(--color-border)] bg-[var(--color-surface)] rounded-[var(--radius-xl)] lg:col-span-1 space-y-4">
+      <div className="card p-6 border border-[var(--color-border)] bg-[var(--color-surface)] rounded-[var(--radius-xl)] min-w-0 lg:col-span-1 space-y-4">
         <h3 className="text-lg font-extrabold text-[var(--color-text)] pb-2 border-b border-[var(--color-border)]">
           طلب سحب الأرباح المتاحة
         </h3>
@@ -221,7 +238,7 @@ export function CreatorPayouts() {
       </div>
 
       {/* Payouts History */}
-      <div className="card p-6 border border-[var(--color-border)] bg-[var(--color-surface)] rounded-[var(--radius-xl)] lg:col-span-2 space-y-4">
+      <div className="card p-6 border border-[var(--color-border)] bg-[var(--color-surface)] rounded-[var(--radius-xl)] min-w-0 lg:col-span-2 space-y-4">
         <h3 className="text-lg font-extrabold text-[var(--color-text)] pb-2 border-b border-[var(--color-border)]">
           سجل طلبات السحب الأخيرة
         </h3>
@@ -236,71 +253,178 @@ export function CreatorPayouts() {
             ))}
           </div>
         ) : payouts.length === 0 ? (
-          <p className="text-sm font-medium text-[var(--color-text-secondary)] py-8 text-center">
-            لا توجد طلبات سحب سابقة حالياً.
-          </p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse text-right">
-              <thead>
-                <tr className="border-b border-[var(--color-border)] text-xs font-extrabold text-[var(--color-text-secondary)]">
-                  <th className="py-2.5 px-3">المبلغ</th>
-                  <th className="py-2.5 px-3">الوسيلة</th>
-                  <th className="py-2.5 px-3">رقم الحساب</th>
-                  <th className="py-2.5 px-3">رقم التحويل</th>
-                  <th className="py-2.5 px-3">الحالة</th>
-                  <th className="py-2.5 px-3">تاريخ الطلب</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--color-border)]">
-                {payouts.map((item) => {
-                  const badge = statusLabels[item.status] || {
-                    label: item.status,
-                    bg: "var(--mist-100)",
-                    text: "var(--color-text)",
-                  };
-                  return (
-                    <tr
-                      key={item.id}
-                      className="hover:bg-[var(--mist-50)] transition-colors"
-                    >
-                      <td className="py-3 px-3 font-bold text-[var(--forest-700)]">
-                        {formatAmountVal(item.amount, item.currency)}
-                      </td>
-                      <td className="py-3 px-3 text-xs font-bold text-[var(--color-text-secondary)]">
-                        {item.payoutMethod === "ZainCash"
-                          ? "زين كاش"
-                          : item.payoutMethod === "FastPay"
-                            ? "فاست باي"
-                            : "حوالة بنكية"}
-                      </td>
-                      <td className="py-3 px-3 font-mono text-xs text-[var(--color-text-secondary)]">
-                        {item.recipientDetails}
-                      </td>
-                      <td className="py-3 px-3 font-mono text-xs text-[var(--color-text-secondary)]">
-                        {item.referenceNumber || "—"}
-                      </td>
-                      <td className="py-3 px-3">
-                        <span
-                          className="inline-block px-2 py-0.5 text-xs font-bold rounded-[var(--radius-pill)] border"
-                          style={{
-                            backgroundColor: badge.bg,
-                            color: badge.text,
-                            borderColor: `color-mix(in srgb, ${badge.text} 25%, transparent)`,
-                          }}
-                        >
-                          {badge.label}
-                        </span>
-                      </td>
-                      <td className="py-3 px-3 text-xs font-medium text-[var(--color-text-secondary)]">
-                        {new Date(item.createdAt).toLocaleDateString("ar-IQ")}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className="py-12 flex flex-col items-center justify-center text-center space-y-3">
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-surface-muted)] text-[var(--color-text-muted)]">
+              <BanknoteIcon size={20} />
+            </span>
+            <p className="text-sm font-bold text-[var(--color-text)]">
+              لا توجد طلبات سحب سابقة
+            </p>
+            <p className="text-xs text-[var(--color-text-muted)] max-w-xs">
+              اطلب سحب أرباحك المتاحة إلى محفظتك أو حسابك البنكي في أي وقت.
+            </p>
           </div>
+        ) : (
+          <>
+            {/* Mobile: stacked cards (a horizontally-scrolling 6-column table is unusable under ~640px) */}
+            <div className="space-y-3 sm:hidden">
+              {payouts.map((item) => {
+                const badge = statusLabels[item.status] || {
+                  label: item.status,
+                  bg: "var(--mist-100)",
+                  text: "var(--color-text)",
+                };
+                const methodLabel =
+                  item.payoutMethod === "ZainCash"
+                    ? "زين كاش"
+                    : item.payoutMethod === "FastPay"
+                      ? "فاست باي"
+                      : "حوالة بنكية";
+                return (
+                  <div
+                    key={item.id}
+                    className="rounded-[var(--radius-md)] border border-[var(--color-border)] p-4 space-y-2.5"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-bold text-[var(--forest-700)] dark:text-[var(--color-text)]">
+                        {formatAmountVal(item.amount, item.currency)}
+                      </span>
+                      <span
+                        className="inline-block px-2.5 py-0.5 text-xs font-bold rounded-[var(--radius-pill)] border"
+                        style={{
+                          backgroundColor: badge.bg,
+                          color: badge.text,
+                          borderColor: `color-mix(in srgb, ${badge.text} 25%, transparent)`,
+                        }}
+                      >
+                        {badge.label}
+                      </span>
+                    </div>
+                    <p className="text-xs font-medium text-[var(--color-text-secondary)]">
+                      {methodLabel} ·{" "}
+                      <span className="font-mono">{item.recipientDetails}</span>
+                    </p>
+                    {item.referenceNumber && (
+                      <button
+                        type="button"
+                        onClick={() => copyReference(item.id, item.referenceNumber!)}
+                        className="flex w-full items-center justify-between gap-2 rounded-[var(--radius-sm)] bg-[var(--color-surface-muted)] px-2.5 py-1.5 text-start"
+                      >
+                        <span className="font-mono text-xs text-[var(--color-text-secondary)] truncate">
+                          {item.referenceNumber}
+                        </span>
+                        {copiedId === item.id ? (
+                          <ClipboardCheckIcon
+                            size={14}
+                            className="shrink-0 text-[var(--color-success)]"
+                          />
+                        ) : (
+                          <ClipboardIcon
+                            size={14}
+                            className="shrink-0 text-[var(--color-text-muted)]"
+                          />
+                        )}
+                      </button>
+                    )}
+                    <p className="text-[11px] font-medium text-[var(--color-text-muted)]">
+                      {new Date(item.createdAt).toLocaleDateString("ar-IQ", {
+                        numberingSystem: "latn",
+                      })}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Desktop / tablet: full table */}
+            <div className="hidden overflow-x-auto sm:block">
+              <table className="w-full text-sm border-collapse text-right">
+                <thead>
+                  <tr className="border-b border-[var(--color-border)] text-xs font-extrabold text-[var(--color-text-secondary)]">
+                    <th className="py-2.5 px-3">المبلغ</th>
+                    <th className="py-2.5 px-3">الوسيلة</th>
+                    <th className="py-2.5 px-3">رقم الحساب</th>
+                    <th className="py-2.5 px-3">رقم التحويل</th>
+                    <th className="py-2.5 px-3">الحالة</th>
+                    <th className="py-2.5 px-3">تاريخ الطلب</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--color-border)]">
+                  {payouts.map((item) => {
+                    const badge = statusLabels[item.status] || {
+                      label: item.status,
+                      bg: "var(--mist-100)",
+                      text: "var(--color-text)",
+                    };
+                    return (
+                      <tr
+                        key={item.id}
+                        className="hover:bg-[var(--mist-50)] transition-colors"
+                      >
+                        <td className="py-3 px-3 font-bold text-[var(--forest-700)]">
+                          {formatAmountVal(item.amount, item.currency)}
+                        </td>
+                        <td className="py-3 px-3 text-xs font-bold text-[var(--color-text-secondary)]">
+                          {item.payoutMethod === "ZainCash"
+                            ? "زين كاش"
+                            : item.payoutMethod === "FastPay"
+                              ? "فاست باي"
+                              : "حوالة بنكية"}
+                        </td>
+                        <td className="py-3 px-3 font-mono text-xs text-[var(--color-text-secondary)]">
+                          {item.recipientDetails}
+                        </td>
+                        <td className="py-3 px-3 text-xs text-[var(--color-text-secondary)]">
+                          {item.referenceNumber ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                copyReference(item.id, item.referenceNumber!)
+                              }
+                              className="inline-flex items-center gap-1.5 font-mono hover:text-[var(--color-text)] transition-colors"
+                              title="نسخ رقم التحويل"
+                            >
+                              {item.referenceNumber}
+                              {copiedId === item.id ? (
+                                <ClipboardCheckIcon
+                                  size={13}
+                                  className="text-[var(--color-success)]"
+                                />
+                              ) : (
+                                <ClipboardIcon
+                                  size={13}
+                                  className="text-[var(--color-text-muted)]"
+                                />
+                              )}
+                            </button>
+                          ) : (
+                            "—"
+                          )}
+                        </td>
+                        <td className="py-3 px-3">
+                          <span
+                            className="inline-block px-2 py-0.5 text-xs font-bold rounded-[var(--radius-pill)] border"
+                            style={{
+                              backgroundColor: badge.bg,
+                              color: badge.text,
+                              borderColor: `color-mix(in srgb, ${badge.text} 25%, transparent)`,
+                            }}
+                          >
+                            {badge.label}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 text-xs font-medium text-[var(--color-text-secondary)]">
+                          {new Date(item.createdAt).toLocaleDateString("ar-IQ", {
+                            numberingSystem: "latn",
+                          })}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
     </div>

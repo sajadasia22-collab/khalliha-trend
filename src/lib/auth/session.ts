@@ -24,7 +24,26 @@ export async function getCurrentUser() {
       return null;
     }
 
-    return await AuthService.findById(payload.userId);
+    const user = await AuthService.findById(payload.userId);
+    if (!user) {
+      return null;
+    }
+
+    // A SUPER_ADMIN session may carry a role override (e.g. the joker
+    // test-login's "preview as brand/creator" selection) so admins can view
+    // role-gated pages as another role without that ever being written to
+    // the database. Only ever downgrades an already-fully-privileged
+    // session for this request — it cannot grant anyone new access.
+    if (
+      user.role === "SUPER_ADMIN" &&
+      payload.role &&
+      payload.role !== user.role &&
+      ["CREATOR", "BRAND", "SUPER_ADMIN"].includes(payload.role)
+    ) {
+      return { ...user, role: payload.role as typeof user.role };
+    }
+
+    return user;
   } catch {
     return null;
   }

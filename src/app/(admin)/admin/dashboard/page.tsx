@@ -104,7 +104,7 @@ export default async function AdminDashboard() {
     { label: "علامات تجارية مسجّلة", value: brandsCount, icon: BriefcaseIcon },
     {
       label: "إجمالي المشاهدات المؤهلة",
-      value: totalQualifiedViews.toLocaleString("ar-IQ"),
+      value: totalQualifiedViews.toLocaleString("ar-IQ", { numberingSystem: "latn" }),
       icon: EyeIcon,
     },
   ];

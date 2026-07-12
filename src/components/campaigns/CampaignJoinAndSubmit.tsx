@@ -2,13 +2,15 @@
 
 import { useState } from "react";
 
-type Platform = "TIKTOK" | "INSTAGRAM" | "FACEBOOK" | "YOUTUBE";
+type Platform = "TIKTOK" | "INSTAGRAM" | "FACEBOOK" | "YOUTUBE" | "X" | "THREADS";
 
 const platformLabels: Record<Platform, string> = {
   TIKTOK: "تيك توك",
   INSTAGRAM: "إنستغرام",
   FACEBOOK: "فيسبوك",
   YOUTUBE: "يوتيوب",
+  X: "إكس",
+  THREADS: "ثريدز",
 };
 
 const statusLabels: Record<string, string> = {
@@ -420,7 +422,10 @@ export function CampaignJoinAndSubmit({
                     )}
 
                     <div className="text-[10px] text-[var(--color-text-secondary)]">
-                      تاريخ التقديم: {new Date(sub.createdAt).toLocaleString("ar-IQ")}
+                      تاريخ التقديم:{" "}
+                      {new Date(sub.createdAt).toLocaleString("ar-IQ", {
+                        numberingSystem: "latn",
+                      })}
                     </div>
                   </div>
                 ))}

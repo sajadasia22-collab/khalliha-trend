@@ -107,7 +107,7 @@ export function EarningSummary() {
   const formatCurrencyVal = (val: string, curr: "IQD" | "USD") => {
     const num = parseInt(val, 10);
     if (curr === "IQD") {
-      return `${num.toLocaleString("ar-IQ")} د.ع`;
+      return `${num.toLocaleString("ar-IQ", { numberingSystem: "latn" })} د.ع`;
     }
     return `$${(num / 100).toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
   };
@@ -302,11 +302,15 @@ export function EarningSummary() {
                         </span>
                       </td>
                       <td className="py-3.5 px-4 text-xs font-medium text-[var(--color-text-secondary)]">
-                        {new Date(item.createdAt).toLocaleDateString("ar-IQ")}
+                        {new Date(item.createdAt).toLocaleDateString("ar-IQ", {
+                          numberingSystem: "latn",
+                        })}
                       </td>
                       <td className="py-3.5 px-4 text-xs font-medium text-[var(--color-text-secondary)]">
                         {item.heldUntil
-                          ? new Date(item.heldUntil).toLocaleDateString("ar-IQ")
+                          ? new Date(item.heldUntil).toLocaleDateString("ar-IQ", {
+                              numberingSystem: "latn",
+                            })
                           : "—"}
                       </td>
                     </tr>

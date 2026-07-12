@@ -5,6 +5,8 @@ export const platformLabels: Record<Platform, string> = {
   INSTAGRAM: "Instagram",
   FACEBOOK: "Facebook",
   YOUTUBE: "YouTube",
+  X: "X (تويتر)",
+  THREADS: "Threads",
 };
 
 export const categoryLabels: Record<CampaignCategory, string> = {
@@ -35,7 +37,7 @@ export const campaignStatusLabels: Record<CampaignStatus, string> = {
 };
 
 export function formatBudget(amount: bigint, currency: string): string {
-  return `${amount.toLocaleString("ar-IQ")} ${currency}`;
+  return `${amount.toLocaleString("ar-IQ", { numberingSystem: "latn" })} ${currency}`;
 }
 
 export function lowestCpm(rates: { cpmMinorUnits: bigint }[]): bigint | null {

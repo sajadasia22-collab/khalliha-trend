@@ -1,5 +1,8 @@
 import { ButtonLink } from "../../components/ui/button";
 import { ScrollReveal } from "../../components/ui/ScrollReveal";
+import { CountUpNumber } from "../../components/ui/CountUpNumber";
+import { LiveMockStat } from "../../components/ui/LiveMockStat";
+import { FloatingDollars } from "../../components/ui/FloatingDollars";
 import {
   CampaignCard,
   type CampaignCardData,
@@ -180,7 +183,9 @@ export default async function Home() {
         </div>
 
         {/* 3D Dashboard Mock Shell */}
-        <div className="tilt-3d fade-in-up" style={{ animationDelay: "120ms" }}>
+        <div className="tilt-3d fade-in-up relative" style={{ animationDelay: "120ms" }}>
+          <FloatingDollars />
+
           <div
             className="product-shell tilt-3d-surface border border-[var(--forest-500)] rounded-[var(--radius-xl)] bg-gradient-to-br from-[rgba(18,56,40,0.95)] to-[rgba(6,38,25,1)] shadow-[var(--shadow-lg)] overflow-hidden"
             aria-label="معاينة واجهة خلّيها ترند"
@@ -257,7 +262,7 @@ export default async function Home() {
                     الرصيد المتاح
                   </p>
                   <strong className="text-xs sm:text-sm text-[var(--color-brand)] font-black block mt-1">
-                    ٠ د.ع
+                    <LiveMockStat target={38000} suffix=" د.ع" />
                   </strong>
                   <span className="text-[7px] sm:text-[9px] text-[var(--forest-300)] mt-0.5 block">
                     قيد المراجعة
@@ -269,7 +274,7 @@ export default async function Home() {
                     المشاهدات
                   </p>
                   <strong className="text-xs sm:text-sm text-[var(--color-brand)] font-black block mt-1">
-                    ٠
+                    <LiveMockStat target={1280} />
                   </strong>
                   {/* Small visual graph */}
                   <svg
@@ -292,7 +297,7 @@ export default async function Home() {
                   </p>
                   <div className="flex items-center justify-between mt-1 gap-1">
                     <strong className="text-[10px] sm:text-xs text-[var(--color-brand)] font-black">
-                      ٥٠
+                      50
                     </strong>
                     <span className="text-[7px] sm:text-[8px] px-1 rounded bg-[var(--forest-600)] text-[var(--mist-100)] font-bold leading-none py-0.5">
                       مبتدئ
@@ -506,14 +511,14 @@ export default async function Home() {
           {/* Subtle background flow */}
           <div className="absolute right-1/4 top-1/4 h-64 w-64 rounded-full bg-[var(--color-brand)] opacity-5 blur-3xl pointer-events-none" />
 
-          <ScrollReveal className="mx-auto grid max-w-6xl grid-cols-2 gap-6 px-5 sm:gap-8 lg:grid-cols-4 lg:px-8 dir-rtl text-right">
+          <ScrollReveal className="mx-auto grid max-w-6xl grid-cols-2 gap-6 px-5 sm:gap-8 lg:grid-cols-4 lg:px-8 dir-rtl text-center">
             {/* Stat 1 */}
-            <div className="group p-3 sm:p-4 hover:bg-[rgba(250,252,251,0.03)] rounded-[var(--radius-md)] transition-all duration-300">
+            <div className="group flex flex-col items-center p-3 sm:p-4 hover:bg-[rgba(250,252,251,0.03)] rounded-[var(--radius-md)] transition-all duration-300">
               <span className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-sm)] bg-[rgba(214,246,29,0.12)] text-[var(--color-brand)] transition-transform duration-300 group-hover:scale-110">
                 <MegaphoneIcon size={18} />
               </span>
               <div className="mt-4 text-2xl sm:text-3xl font-black text-[var(--color-brand)] tracking-tight">
-                {stats.activeCampaigns.toLocaleString("ar-IQ")}
+                <CountUpNumber value={stats.activeCampaigns} />
               </div>
               <p className="mt-1.5 text-[10px] sm:text-xs font-bold text-[var(--forest-100)] uppercase tracking-wider">
                 حملة نشطة حالياً
@@ -521,12 +526,12 @@ export default async function Home() {
             </div>
 
             {/* Stat 2 */}
-            <div className="group p-3 sm:p-4 hover:bg-[rgba(250,252,251,0.03)] rounded-[var(--radius-md)] transition-all duration-300">
+            <div className="group flex flex-col items-center p-3 sm:p-4 hover:bg-[rgba(250,252,251,0.03)] rounded-[var(--radius-md)] transition-all duration-300">
               <span className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-sm)] bg-[rgba(214,246,29,0.12)] text-[var(--color-brand)] transition-transform duration-300 group-hover:scale-110">
                 <UsersIcon size={18} />
               </span>
               <div className="mt-4 text-2xl sm:text-3xl font-black text-[var(--color-brand)] tracking-tight">
-                {stats.creators.toLocaleString("ar-IQ")}
+                <CountUpNumber value={stats.creators} />
               </div>
               <p className="mt-1.5 text-[10px] sm:text-xs font-bold text-[var(--forest-100)] uppercase tracking-wider">
                 صانع محتوى مسجل
@@ -534,12 +539,12 @@ export default async function Home() {
             </div>
 
             {/* Stat 3 */}
-            <div className="group p-3 sm:p-4 hover:bg-[rgba(250,252,251,0.03)] rounded-[var(--radius-md)] transition-all duration-300">
+            <div className="group flex flex-col items-center p-3 sm:p-4 hover:bg-[rgba(250,252,251,0.03)] rounded-[var(--radius-md)] transition-all duration-300">
               <span className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-sm)] bg-[rgba(214,246,29,0.12)] text-[var(--color-brand)] transition-transform duration-300 group-hover:scale-110">
                 <BriefcaseIcon size={18} />
               </span>
               <div className="mt-4 text-2xl sm:text-3xl font-black text-[var(--color-brand)] tracking-tight">
-                {stats.brands.toLocaleString("ar-IQ")}
+                <CountUpNumber value={stats.brands} />
               </div>
               <p className="mt-1.5 text-[10px] sm:text-xs font-bold text-[var(--forest-100)] uppercase tracking-wider">
                 علامة تجارية شريكة
@@ -547,12 +552,12 @@ export default async function Home() {
             </div>
 
             {/* Stat 4 */}
-            <div className="group p-3 sm:p-4 hover:bg-[rgba(250,252,251,0.03)] rounded-[var(--radius-md)] transition-all duration-300">
+            <div className="group flex flex-col items-center p-3 sm:p-4 hover:bg-[rgba(250,252,251,0.03)] rounded-[var(--radius-md)] transition-all duration-300">
               <span className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-sm)] bg-[rgba(214,246,29,0.12)] text-[var(--color-brand)] transition-transform duration-300 group-hover:scale-110">
                 <TrendingUpIcon size={18} />
               </span>
               <div className="mt-4 text-2xl sm:text-3xl font-black text-[var(--color-brand)] tracking-tight">
-                {stats.qualifiedViews.toLocaleString("ar-IQ")}
+                <CountUpNumber value={stats.qualifiedViews} />
               </div>
               <p className="mt-1.5 text-[10px] sm:text-xs font-bold text-[var(--forest-100)] uppercase tracking-wider">
                 مشاهدة مؤهلة وموثقة

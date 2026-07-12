@@ -37,7 +37,7 @@ const typeLabels: Record<string, string> = {
 function formatAmount(value: string, currency: "IQD" | "USD") {
   const num = BigInt(value);
   if (currency === "IQD") {
-    return `${num.toLocaleString("ar-IQ")} د.ع`;
+    return `${num.toLocaleString("ar-IQ", { numberingSystem: "latn" })} د.ع`;
   }
   return `$${(Number(num) / 100).toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
 }
@@ -127,7 +127,9 @@ export function WalletView() {
       hideOnMobile: false,
       render: (tx) => (
         <span className="text-xs font-medium text-[var(--color-text-secondary)]">
-          {new Date(tx.createdAt).toLocaleDateString("ar-IQ")}
+          {new Date(tx.createdAt).toLocaleDateString("ar-IQ", {
+            numberingSystem: "latn",
+          })}
         </span>
       ),
     },

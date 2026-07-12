@@ -42,6 +42,8 @@ enum Platform {
   INSTAGRAM
   FACEBOOK
   YOUTUBE
+  X
+  THREADS
 }
 
 enum Currency {

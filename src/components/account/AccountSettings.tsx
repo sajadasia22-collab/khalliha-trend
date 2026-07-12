@@ -46,7 +46,7 @@ function ProfileSection() {
         if (json.user) {
           setFullName(json.user.fullName);
           setEmail(json.user.email || "");
-          setPhone(json.user.phone);
+          setPhone(json.user.phone || "");
           setRole(json.user.role);
         }
       })
@@ -364,6 +364,7 @@ function SessionSection() {
     else if (ua.indexOf("Chrome") !== -1) browser = "Google Chrome";
     else if (ua.indexOf("Safari") !== -1) browser = "Apple Safari";
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDeviceInfo({ os, browser, ip: "127.0.0.1 (المتصفح الحالي)" });
   }, []);
 

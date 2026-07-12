@@ -91,9 +91,15 @@ body {
   font-family: var(--font-arabic, "IBM Plex Sans Arabic"), "Inter", system-ui, sans-serif;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+/* @layer base (not a bare rule) so Tailwind utilities — underline,
+   text-[...], etc. — can still override this default on individual links.
+   Unlayered CSS always wins over @layer utilities regardless of
+   specificity, which was silently defeating those utility classes. */
+@layer base {
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
 }
 
 .nav-link {
@@ -1056,6 +1062,70 @@ a {
 
 .toast-in {
   animation: toast-in var(--duration-normal) var(--ease-brand) both;
+}
+
+@keyframes toast-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    max-height: 200px;
+    margin-top: 0;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(6px) scale(0.96);
+    max-height: 0;
+    margin-top: -8px;
+  }
+}
+
+.toast-out {
+  animation: toast-out var(--duration-normal) var(--ease-brand) both;
+  overflow: hidden;
+}
+
+@keyframes toast-countdown {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+.toast-countdown {
+  animation: toast-countdown linear forwards;
+  animation-duration: var(--toast-duration, 4.5s);
+  transform-origin: right;
+}
+
+@keyframes float-dollar {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 0;
+  }
+  12% {
+    opacity: var(--float-dollar-opacity, 0.4);
+  }
+  85% {
+    opacity: var(--float-dollar-opacity, 0.4);
+  }
+  100% {
+    /* Fixed px, not %: translateY% resolves against this span's own
+       (tiny, single-glyph) height, not its container — a % value here
+       would barely move it at all. */
+    transform: translateY(-460px) rotate(10deg);
+    opacity: 0;
+  }
+}
+
+.float-dollar {
+  position: absolute;
+  bottom: 0;
+  font-weight: 900;
+  color: var(--color-brand);
+  animation: float-dollar linear infinite;
+  will-change: transform, opacity;
 }
 
 /* Scroll-reveal primitive: ScrollReveal.tsx stamps data-reveal="pending" on

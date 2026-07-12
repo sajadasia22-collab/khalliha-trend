@@ -85,5 +85,31 @@ export function normalizePostUrl(rawUrl: string): NormalizedPost | null {
     };
   }
 
+  if (host === "x.com" || host === "twitter.com") {
+    const match = url.pathname.match(/\/([^/]+)\/status\/(\d+)/);
+    if (!match) {
+      return null;
+    }
+    const [, handle, id] = match;
+    return {
+      platform: "X",
+      normalizedUrl: `https://x.com/${handle}/status/${id}`,
+      platformPostId: id,
+    };
+  }
+
+  if (host === "threads.net" || host === "threads.com") {
+    const match = url.pathname.match(/\/@([^/]+)\/post\/([a-zA-Z0-9_-]+)/);
+    if (!match) {
+      return null;
+    }
+    const [, handle, id] = match;
+    return {
+      platform: "THREADS",
+      normalizedUrl: `https://www.threads.net/@${handle}/post/${id}`,
+      platformPostId: id,
+    };
+  }
+
   return null;
 }

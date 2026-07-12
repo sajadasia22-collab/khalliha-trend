@@ -118,7 +118,8 @@ export function BrandAnalytics() {
                   className="transition-opacity duration-200 hover:opacity-80 cursor-pointer"
                 >
                   <title>
-                    {point.date}: {value.toLocaleString("ar-IQ")} مشاهدة
+                    {point.date}:{" "}
+                    {value.toLocaleString("ar-IQ", { numberingSystem: "latn" })} مشاهدة
                   </title>
                 </rect>
               );
@@ -180,10 +181,14 @@ export function BrandAnalytics() {
                         </span>
                       </td>
                       <td className="px-6 py-3.5 text-[var(--color-text-secondary)] font-semibold">
-                        {BigInt(campaign.qualifiedViews).toLocaleString("ar-IQ")}
+                        {BigInt(campaign.qualifiedViews).toLocaleString("ar-IQ", {
+                          numberingSystem: "latn",
+                        })}
                       </td>
                       <td className="px-6 py-3.5 text-[var(--color-text-secondary)] font-semibold">
-                        {BigInt(campaign.spend).toLocaleString("ar-IQ")}{" "}
+                        {BigInt(campaign.spend).toLocaleString("ar-IQ", {
+                          numberingSystem: "latn",
+                        })}{" "}
                         {campaign.currency}
                       </td>
                     </tr>

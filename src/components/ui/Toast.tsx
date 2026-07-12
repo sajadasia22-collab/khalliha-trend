@@ -18,6 +18,7 @@ type ToastEntry = {
   id: number;
   message: string;
   variant: ToastVariant;
+  leaving: boolean;
 };
 
 type ToastContextValue = {
@@ -26,18 +27,30 @@ type ToastContextValue = {
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
-const variantStyles: Record<ToastVariant, { icon: ReactNode; className: string }> = {
+const TOAST_DURATION_MS = 4500;
+const EXIT_DURATION_MS = 220;
+
+const variantStyles: Record<
+  ToastVariant,
+  { icon: ReactNode; card: string; iconChip: string; bar: string }
+> = {
   success: {
-    icon: <CircleCheckIcon size={20} className="text-[var(--forest-500)]" />,
-    className: "border-[var(--color-border)]",
+    icon: <CircleCheckIcon size={18} className="text-[var(--forest-700)]" />,
+    card: "border-[var(--trend-300)] bg-[var(--trend-50)]",
+    iconChip: "bg-[var(--trend-200)]",
+    bar: "bg-[var(--color-brand)]",
   },
   error: {
-    icon: <CircleAlertIcon size={20} className="text-[var(--forest-800)]" />,
-    className: "border-[var(--color-border)]",
+    icon: <CircleAlertIcon size={18} className="text-[#b3261e]" />,
+    card: "border-[rgba(179,38,30,0.35)] bg-[rgba(179,38,30,0.06)]",
+    iconChip: "bg-[rgba(179,38,30,0.14)]",
+    bar: "bg-[#b3261e]",
   },
   info: {
-    icon: <InfoIcon size={20} className="text-[var(--color-text-secondary)]" />,
-    className: "border-[var(--color-border)]",
+    icon: <InfoIcon size={18} className="text-[var(--color-text-secondary)]" />,
+    card: "border-[var(--color-border)] bg-[var(--color-surface)]",
+    iconChip: "bg-[var(--color-surface-muted)]",
+    bar: "bg-[var(--color-text-secondary)]",
   },
 };
 
@@ -48,19 +61,30 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
-  const dismiss = useCallback((id: number) => {
+  const remove = useCallback((id: number) => {
     setToasts((current) => current.filter((toast) => toast.id !== id));
   }, []);
+
+  const dismiss = useCallback(
+    (id: number) => {
+      setToasts((current) =>
+        current.map((toast) => (toast.id === id ? { ...toast, leaving: true } : toast)),
+      );
+      window.setTimeout(() => remove(id), EXIT_DURATION_MS);
+    },
+    [remove],
+  );
 
   const showToast = useCallback(
     (message: string, variant: ToastVariant = "info") => {
       toastIdCounter += 1;
       const id = toastIdCounter;
-      setToasts((current) => [...current, { id, message, variant }]);
-      window.setTimeout(() => dismiss(id), 4500);
+      setToasts((current) => [...current, { id, message, variant, leaving: false }]);
+      window.setTimeout(() => dismiss(id), TOAST_DURATION_MS);
     },
     [dismiss],
   );
@@ -79,10 +103,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 <div
                   key={toast.id}
                   role="status"
-                  className={`toast-in pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-[var(--radius-md)] border bg-[var(--color-surface)] px-4 py-3 shadow-[var(--shadow-lg)] ${style.className}`}
+                  className={`${toast.leaving ? "toast-out" : "toast-in"} pointer-events-auto relative flex w-full max-w-sm items-start gap-3 overflow-hidden rounded-[var(--radius-md)] border px-4 py-3 shadow-[var(--shadow-lg)] ${style.card}`}
                 >
-                  <span className="mt-0.5 flex-shrink-0">{style.icon}</span>
-                  <p className="flex-1 text-sm font-semibold text-[var(--color-text)]">
+                  <span
+                    className={`mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full ${style.iconChip}`}
+                  >
+                    {style.icon}
+                  </span>
+                  <p className="flex-1 pt-0.5 text-sm font-semibold text-[var(--color-text)]">
                     {toast.message}
                   </p>
                   <button
@@ -93,6 +121,17 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                   >
                     <CloseIcon size={16} />
                   </button>
+                  {!toast.leaving && (
+                    <span
+                      aria-hidden="true"
+                      className={`toast-countdown absolute inset-x-0 bottom-0 h-[3px] ${style.bar}`}
+                      style={
+                        {
+                          "--toast-duration": `${TOAST_DURATION_MS}ms`,
+                        } as React.CSSProperties
+                      }
+                    />
+                  )}
                 </div>
               );
             })}

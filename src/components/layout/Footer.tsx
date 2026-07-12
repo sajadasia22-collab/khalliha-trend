@@ -54,7 +54,7 @@ export function Footer() {
       </div>
 
       <div className="border-t border-[var(--color-border)]">
-        <div className="mx-auto max-w-7xl px-5 py-5 text-xs font-medium text-[var(--color-text-muted)] lg:px-8">
+        <div className="mx-auto max-w-7xl px-5 py-5 text-xs font-medium text-[var(--color-text-secondary)] lg:px-8">
           © {new Date().getFullYear()} خلّيها ترند — SA Studio. كل الحقوق محفوظة.
         </div>
       </div>

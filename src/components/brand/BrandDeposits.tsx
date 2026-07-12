@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useToast } from "../ui/Toast";
+import { WalletIcon, ClipboardIcon, ClipboardCheckIcon } from "../ui/icons";
 
 type DepositLog = {
   id: string;
@@ -13,6 +15,7 @@ type DepositLog = {
 };
 
 export function BrandDeposits() {
+  const { showToast } = useToast();
   const [deposits, setDeposits] = useState<DepositLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [amount, setAmount] = useState("");
@@ -20,6 +23,20 @@ export function BrandDeposits() {
   const [referenceNumber, setReferenceNumber] = useState("");
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const copyReference = (id: string, value: string) => {
+    navigator.clipboard.writeText(value).then(
+      () => {
+        setCopiedId(id);
+        window.setTimeout(
+          () => setCopiedId((current) => (current === id ? null : current)),
+          1800,
+        );
+      },
+      () => showToast("تعذّر نسخ رقم المرجع", "error"),
+    );
+  };
 
   const fetchDeposits = async () => {
     try {
@@ -44,7 +61,7 @@ export function BrandDeposits() {
     e.preventDefault();
     const parsedAmount = parseFloat(amount);
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      alert("الرجاء إدخال مبلغ صحيح أكبر من الصفر");
+      showToast("الرجاء إدخال مبلغ صحيح أكبر من الصفر", "error");
       return;
     }
 
@@ -66,17 +83,17 @@ export function BrandDeposits() {
       });
 
       if (res.ok) {
-        alert("تم إرسال طلب الإيداع وهو قيد المراجعة الإدارية الآن.");
+        showToast("تم إرسال طلب الإيداع وهو قيد المراجعة الإدارية الآن.", "success");
         setAmount("");
         setReferenceNumber("");
         setNote("");
         fetchDeposits();
       } else {
         const data = await res.json();
-        alert(data.error?.message || "فشل إرسال طلب الإيداع");
+        showToast(data.error?.message || "فشل إرسال طلب الإيداع", "error");
       }
     } catch {
-      alert("حدث خطأ في الاتصال بالخادم");
+      showToast("حدث خطأ في الاتصال بالخادم", "error");
     } finally {
       setSubmitting(false);
     }
@@ -85,7 +102,7 @@ export function BrandDeposits() {
   const formatAmountVal = (val: string, curr: "IQD" | "USD") => {
     const num = parseInt(val, 10);
     if (curr === "IQD") {
-      return `${num.toLocaleString("ar-IQ")} د.ع`;
+      return `${num.toLocaleString("ar-IQ", { numberingSystem: "latn" })} د.ع`;
     }
     return `$${(num / 100).toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
   };
@@ -101,9 +118,9 @@ export function BrandDeposits() {
   };
 
   return (
-    <div className="grid gap-8 lg:grid-cols-3 dir-rtl text-right">
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-3 dir-rtl text-right">
       {/* Deposit Form */}
-      <div className="card p-6 border border-[var(--color-border)] bg-[var(--color-surface)] rounded-[var(--radius-xl)] lg:col-span-1 space-y-4 shadow-[var(--shadow-sm)] scale-in">
+      <div className="card p-6 border border-[var(--color-border)] bg-[var(--color-surface)] rounded-[var(--radius-xl)] min-w-0 lg:col-span-1 space-y-4 shadow-[var(--shadow-sm)] scale-in">
         <div className="pb-2 border-b border-[var(--color-border)] flex items-center justify-between">
           <h3 className="text-lg font-extrabold text-[var(--color-text)]">
             طلب تمويل يدوي (إيداع)
@@ -206,7 +223,7 @@ export function BrandDeposits() {
 
       {/* Deposits History */}
       <div
-        className="card p-6 border border-[var(--color-border)] bg-[var(--color-surface)] rounded-[var(--radius-xl)] lg:col-span-2 space-y-4 shadow-[var(--shadow-sm)] scale-in"
+        className="card p-6 border border-[var(--color-border)] bg-[var(--color-surface)] rounded-[var(--radius-xl)] min-w-0 lg:col-span-2 space-y-4 shadow-[var(--shadow-sm)] scale-in"
         style={{ animationDelay: "100ms" }}
       >
         <h3 className="text-lg font-extrabold text-[var(--color-text)] pb-2 border-b border-[var(--color-border)]">
@@ -225,7 +242,7 @@ export function BrandDeposits() {
         ) : deposits.length === 0 ? (
           <div className="py-12 flex flex-col items-center justify-center text-center space-y-3">
             <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-surface-muted)] text-[var(--color-text-muted)]">
-              ⚖️
+              <WalletIcon size={20} />
             </span>
             <p className="text-sm font-bold text-[var(--color-text)]">
               لا توجد طلبات تمويل سابقة
@@ -235,74 +252,180 @@ export function BrandDeposits() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse text-right">
-              <thead>
-                <tr className="border-b border-[var(--color-border)] text-xs font-extrabold text-[var(--color-text-secondary)] bg-[var(--color-surface-muted)]">
-                  <th className="py-3 px-4">المبلغ</th>
-                  <th className="py-3 px-4">رقم المرجع</th>
-                  <th className="py-3 px-4">الحالة</th>
-                  <th className="py-3 px-4">تاريخ الطلب</th>
-                  <th className="py-3 px-4">ملاحظات</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--color-border)]">
-                {deposits.map((item) => {
-                  const badge = statusLabels[item.status] || {
-                    label: item.status,
-                    bg: "var(--mist-100)",
-                    text: "var(--color-text)",
-                  };
-                  return (
-                    <tr
-                      key={item.id}
-                      className="hover:bg-[var(--color-surface-muted)] transition-colors"
-                    >
-                      <td className="py-3.5 px-4 font-bold text-[var(--forest-700)] dark:text-[var(--color-text)]">
+          <>
+            {/* Mobile: stacked cards (a horizontally-scrolling table is a poor fit under ~640px) */}
+            <div className="space-y-3 sm:hidden">
+              {deposits.map((item) => {
+                const badge = statusLabels[item.status] || {
+                  label: item.status,
+                  bg: "var(--mist-100)",
+                  text: "var(--color-text)",
+                };
+                return (
+                  <div
+                    key={item.id}
+                    className="rounded-[var(--radius-md)] border border-[var(--color-border)] p-4 space-y-2.5"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-bold text-[var(--forest-700)] dark:text-[var(--color-text)]">
                         {formatAmountVal(item.amount, item.currency)}
-                      </td>
-                      <td className="py-3.5 px-4 font-mono text-xs text-[var(--color-text-secondary)]">
-                        {item.referenceNumber || "—"}
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <span
-                          className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-bold rounded-[var(--radius-pill)] border"
-                          style={{
-                            backgroundColor: badge.bg,
-                            color: badge.text,
-                            borderColor: `color-mix(in srgb, ${badge.text} 20%, transparent)`,
-                          }}
-                        >
-                          {item.status === "PENDING" && (
-                            <span className="h-1.5 w-1.5 rounded-full bg-[var(--forest-500)] animate-pulse" />
-                          )}
-                          {item.status === "APPROVED" && (
-                            <span
-                              className="h-1.5 w-1.5 rounded-full bg-[var(--color-success)] animate-pulse"
-                              style={{ animationDuration: "2s" }}
-                            />
-                          )}
-                          {item.status === "REJECTED" && (
-                            <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-text-muted)]" />
-                          )}
-                          {badge.label}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 text-xs font-medium text-[var(--color-text-secondary)]">
-                        {new Date(item.createdAt).toLocaleDateString("ar-IQ")}
-                      </td>
-                      <td
-                        className="py-3.5 px-4 text-xs font-medium text-[var(--color-text-secondary)] max-w-[200px] truncate"
-                        title={item.note || undefined}
+                      </span>
+                      <span
+                        className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-bold rounded-[var(--radius-pill)] border"
+                        style={{
+                          backgroundColor: badge.bg,
+                          color: badge.text,
+                          borderColor: `color-mix(in srgb, ${badge.text} 20%, transparent)`,
+                        }}
                       >
-                        {item.note || "—"}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                        {item.status === "PENDING" && (
+                          <span className="h-1.5 w-1.5 rounded-full bg-[var(--forest-500)] animate-pulse" />
+                        )}
+                        {item.status === "APPROVED" && (
+                          <span
+                            className="h-1.5 w-1.5 rounded-full bg-[var(--color-success)] animate-pulse"
+                            style={{ animationDuration: "2s" }}
+                          />
+                        )}
+                        {item.status === "REJECTED" && (
+                          <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-text-muted)]" />
+                        )}
+                        {badge.label}
+                      </span>
+                    </div>
+                    {item.referenceNumber && (
+                      <button
+                        type="button"
+                        onClick={() => copyReference(item.id, item.referenceNumber!)}
+                        className="flex w-full items-center justify-between gap-2 rounded-[var(--radius-sm)] bg-[var(--color-surface-muted)] px-2.5 py-1.5 text-start"
+                      >
+                        <span className="font-mono text-xs text-[var(--color-text-secondary)] truncate">
+                          {item.referenceNumber}
+                        </span>
+                        {copiedId === item.id ? (
+                          <ClipboardCheckIcon
+                            size={14}
+                            className="shrink-0 text-[var(--color-success)]"
+                          />
+                        ) : (
+                          <ClipboardIcon
+                            size={14}
+                            className="shrink-0 text-[var(--color-text-muted)]"
+                          />
+                        )}
+                      </button>
+                    )}
+                    {item.note && (
+                      <p className="text-xs font-medium text-[var(--color-text-secondary)] leading-relaxed">
+                        {item.note}
+                      </p>
+                    )}
+                    <p className="text-[11px] font-medium text-[var(--color-text-muted)]">
+                      {new Date(item.createdAt).toLocaleDateString("ar-IQ", {
+                        numberingSystem: "latn",
+                      })}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Desktop / tablet: full table */}
+            <div className="hidden overflow-x-auto sm:block">
+              <table className="w-full text-sm border-collapse text-right">
+                <thead>
+                  <tr className="border-b border-[var(--color-border)] text-xs font-extrabold text-[var(--color-text-secondary)] bg-[var(--color-surface-muted)]">
+                    <th className="py-3 px-4">المبلغ</th>
+                    <th className="py-3 px-4">رقم المرجع</th>
+                    <th className="py-3 px-4">الحالة</th>
+                    <th className="py-3 px-4">تاريخ الطلب</th>
+                    <th className="py-3 px-4">ملاحظات</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--color-border)]">
+                  {deposits.map((item) => {
+                    const badge = statusLabels[item.status] || {
+                      label: item.status,
+                      bg: "var(--mist-100)",
+                      text: "var(--color-text)",
+                    };
+                    return (
+                      <tr
+                        key={item.id}
+                        className="hover:bg-[var(--color-surface-muted)] transition-colors"
+                      >
+                        <td className="py-3.5 px-4 font-bold text-[var(--forest-700)] dark:text-[var(--color-text)]">
+                          {formatAmountVal(item.amount, item.currency)}
+                        </td>
+                        <td className="py-3.5 px-4 text-xs text-[var(--color-text-secondary)]">
+                          {item.referenceNumber ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                copyReference(item.id, item.referenceNumber!)
+                              }
+                              className="inline-flex items-center gap-1.5 font-mono hover:text-[var(--color-text)] transition-colors"
+                              title="نسخ رقم المرجع"
+                            >
+                              {item.referenceNumber}
+                              {copiedId === item.id ? (
+                                <ClipboardCheckIcon
+                                  size={13}
+                                  className="text-[var(--color-success)]"
+                                />
+                              ) : (
+                                <ClipboardIcon
+                                  size={13}
+                                  className="text-[var(--color-text-muted)]"
+                                />
+                              )}
+                            </button>
+                          ) : (
+                            "—"
+                          )}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span
+                            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-bold rounded-[var(--radius-pill)] border"
+                            style={{
+                              backgroundColor: badge.bg,
+                              color: badge.text,
+                              borderColor: `color-mix(in srgb, ${badge.text} 20%, transparent)`,
+                            }}
+                          >
+                            {item.status === "PENDING" && (
+                              <span className="h-1.5 w-1.5 rounded-full bg-[var(--forest-500)] animate-pulse" />
+                            )}
+                            {item.status === "APPROVED" && (
+                              <span
+                                className="h-1.5 w-1.5 rounded-full bg-[var(--color-success)] animate-pulse"
+                                style={{ animationDuration: "2s" }}
+                              />
+                            )}
+                            {item.status === "REJECTED" && (
+                              <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-text-muted)]" />
+                            )}
+                            {badge.label}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 text-xs font-medium text-[var(--color-text-secondary)]">
+                          {new Date(item.createdAt).toLocaleDateString("ar-IQ", {
+                            numberingSystem: "latn",
+                          })}
+                        </td>
+                        <td
+                          className="py-3.5 px-4 text-xs font-medium text-[var(--color-text-secondary)] max-w-[200px] truncate"
+                          title={item.note || undefined}
+                        >
+                          {item.note || "—"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
     </div>
