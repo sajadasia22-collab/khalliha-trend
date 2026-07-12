@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { categoryLabels, platformLabels } from "../../lib/campaigns";
+import { useToast } from "../ui/Toast";
 
 type RateRow = {
   platform: keyof typeof platformLabels;
@@ -45,6 +46,8 @@ export function CampaignForm({
   initialValues?: InitialValues;
 }) {
   const router = useRouter();
+  const { showToast } = useToast();
+  const [focusedField, setFocusedField] = useState<string | null>(null);
   const [title, setTitle] = useState(initialValues?.title ?? "");
   const [summary, setSummary] = useState(initialValues?.summary ?? "");
   const [terms, setTerms] = useState(initialValues?.terms ?? "");
@@ -204,6 +207,8 @@ export function CampaignForm({
             id="terms"
             value={terms}
             onChange={(e) => setTerms(e.target.value)}
+            onFocus={() => setFocusedField("terms")}
+            onBlur={() => setTimeout(() => setFocusedField(null), 250)}
             rows={5}
             aria-invalid={Boolean(fieldErrors.terms)}
             aria-describedby={fieldErrors.terms ? "terms-error" : undefined}
@@ -218,6 +223,41 @@ export function CampaignForm({
             >
               {fieldErrors.terms}
             </p>
+          )}
+          {focusedField === "terms" && (
+            <div className="mt-3 p-4 rounded-[var(--radius-md)] bg-[rgba(214,246,29,0.03)] border border-[rgba(214,246,29,0.15)] space-y-3">
+              <span className="block text-[11px] font-black text-[var(--color-brand-active)]">
+                💡 قوالب شروط جاهزة للاستخدام الفوري:
+              </span>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTerms(`1. استعراض ميزات وشكل المنتج بوضوح في أول 5 ثوانٍ من الفيديو.
+2. تقديم مراجعة صادقة وطبيعية تتناسب مع محتوى حسابك اليومي.
+3. ذكر اسم العلامة التجارية بشكل مسموع واستخدام هاشتاقات الحملة الرسمية.
+4. عدم حذف الفيديو أو إخفائه لمدة لا تقل عن 30 يوماً من النشر.`);
+                    showToast("تم تطبيق قالب تيك توك بنجاح!", "success");
+                  }}
+                  className="text-xs text-right p-2.5 rounded bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-brand)] text-[var(--color-text)] font-bold transition-all"
+                >
+                  📌 تطبيق قالب ترويج منتج (تيك توك)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTerms(`1. تصوير جودة الطعام، الديكورات، وجودة الخدمة بدقة عالية (Reels).
+2. الإشارة إلى الحساب الرسمي للمطعم (Tag) وتضمين الموقع الجغرافي.
+3. توفير كود الخصم الممنوح للمتابعين في وصف الفيديو.
+4. الالتزام بالنشر خلال أوقات الذروة (بين الساعة 6:00 مساءً إلى 9:00 مساءً).`);
+                    showToast("تم تطبيق قالب انستغرام بنجاح!", "success");
+                  }}
+                  className="text-xs text-right p-2.5 rounded bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-brand)] text-[var(--color-text)] font-bold transition-all"
+                >
+                  📌 تطبيق قالب مراجعة مطعم (انستغرام)
+                </button>
+              </div>
+            </div>
           )}
         </div>
 
@@ -337,9 +377,11 @@ export function CampaignForm({
               inputMode="numeric"
               value={totalBudget}
               onChange={(e) => setTotalBudget(e.target.value.replace(/[^0-9]/g, ""))}
+              onFocus={() => setFocusedField("totalBudget")}
+              onBlur={() => setTimeout(() => setFocusedField(null), 250)}
               aria-invalid={Boolean(fieldErrors.totalBudget)}
               aria-describedby={fieldErrors.totalBudget ? "totalBudget-error" : undefined}
-              className="min-h-[48px] w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4"
+              className="min-h-[48px] w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 focus:border-[var(--color-brand)] focus:outline-none focus:ring-4 focus:ring-[rgba(214,246,29,0.18)]"
               disabled={isLoading}
             />
             {fieldErrors.totalBudget && (
@@ -350,6 +392,41 @@ export function CampaignForm({
               >
                 {fieldErrors.totalBudget}
               </p>
+            )}
+            {focusedField === "totalBudget" && (
+              <div className="mt-2.5 p-3.5 rounded-[var(--radius-md)] bg-[rgba(214,246,29,0.02)] border border-[rgba(214,246,29,0.1)] space-y-2">
+                <span className="block text-[10px] font-black text-[var(--color-brand-active)]">
+                  📊 حاسبة تقدير الميزانية:
+                </span>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="block text-[8px] text-[var(--color-text-muted)] font-black mb-1">
+                      المشاهدات المستهدفة الكلية
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="مثال: 100,000"
+                      className="w-full rounded bg-[var(--color-surface)] border border-[var(--color-border)] px-2.5 py-1 text-[10px] text-[var(--color-text)] focus:border-[var(--color-brand)] focus:outline-none"
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value.replace(/[^0-9]/g, "")) || 0;
+                        const est = Math.round((val * 10000) / 1000);
+                        setTotalBudget(est.toString());
+                      }}
+                    />
+                    <span className="text-[7px] text-[var(--color-text-muted)] mt-0.5 block">
+                      * يفترض CPM افتراضي بقيمة 10,000 د.ع
+                    </span>
+                  </div>
+                  <div className="flex flex-col justify-center bg-[rgba(250,252,251,0.02)] p-2 rounded border border-[rgba(200,214,206,0.06)] text-center">
+                    <span className="text-[7px] text-[var(--color-text-muted)] font-bold">
+                      الميزانية المقترحة
+                    </span>
+                    <strong className="text-[11px] text-[var(--color-brand)] mt-1">
+                      {parseInt(totalBudget || "0").toLocaleString()} {currency}
+                    </strong>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
           <div>
@@ -363,9 +440,34 @@ export function CampaignForm({
               max={100}
               value={minTrustScore}
               onChange={(e) => setMinTrustScore(Number(e.target.value))}
-              className="min-h-[48px] w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4"
+              onFocus={() => setFocusedField("minTrustScore")}
+              onBlur={() => setTimeout(() => setFocusedField(null), 250)}
+              className="min-h-[48px] w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 focus:border-[var(--color-brand)] focus:outline-none focus:ring-4 focus:ring-[rgba(214,246,29,0.18)]"
               disabled={isLoading}
             />
+            {focusedField === "minTrustScore" && (
+              <div className="mt-2.5 p-3.5 rounded-[var(--radius-md)] bg-[rgba(200,214,206,0.04)] border border-[var(--color-border)] space-y-2 text-[10px] text-[var(--color-text-secondary)] font-medium leading-relaxed">
+                <span className="block font-bold text-[var(--color-text)]">
+                  💡 دليلك لاختيار مستوى الموثوقية المناسب:
+                </span>
+                <div className="space-y-1">
+                  <p>
+                    <strong className="text-yellow-400">80 فأكثر (ذهبي):</strong> صناع
+                    محتوى ذوو تسليم موثوق 100% ونسب مشاهدات عالية جداً.
+                  </p>
+                  <p>
+                    <strong className="text-blue-400">60 فأكثر (محترف):</strong> صناع
+                    محتوى ذوو سجلات مقبولة ومنشورات موثقة نشطة.
+                  </p>
+                  <p>
+                    <strong className="text-gray-400">
+                      50 فأكثر (مبتدئ - الافتراضي):
+                    </strong>{" "}
+                    يتيح لجميع المنضمين الجدد المشاركة والانتشار السريع.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
