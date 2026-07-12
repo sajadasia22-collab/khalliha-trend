@@ -48,6 +48,145 @@ function getDashboardRole(role: string): "creator" | "brand" | "admin" | null {
   return null;
 }
 
+function LeaderboardSection({
+  topCreators,
+  topBrands,
+}: {
+  topCreators: any[];
+  topBrands: any[];
+}) {
+  return (
+    <div className="space-y-6">
+      {/* Top Creators Card */}
+      <div className="card border border-[rgba(214,246,29,0.15)] bg-gradient-to-b from-[rgba(18,56,40,0.5)] to-[rgba(6,38,25,0.8)] p-5 rounded-[var(--radius-xl)] shadow-[var(--shadow-brand)]">
+        <h3 className="text-sm font-black text-[var(--color-text)] flex items-center gap-2 mb-4 border-b border-[rgba(200,214,206,0.1)] pb-3">
+          <span>🏆</span>
+          <span>لوحة شرف صناع المحتوى</span>
+        </h3>
+
+        {topCreators.length === 0 ? (
+          <p className="text-xs text-[var(--color-text-muted)] text-center py-4">
+            لا يوجد صناع محتوى مسجلين حالياً.
+          </p>
+        ) : (
+          <ol className="space-y-3">
+            {topCreators.map((creator, index) => {
+              const score = creator.trustScore;
+              const level =
+                score >= 80 ? "🏆 ذهبي" : score >= 60 ? "⚡ محترف" : "🌱 مبتدئ";
+              const levelColor =
+                score >= 80
+                  ? "text-yellow-400 bg-yellow-400/10"
+                  : score >= 60
+                    ? "text-blue-400 bg-blue-400/10"
+                    : "text-gray-400 bg-gray-400/10";
+              const rankIcon =
+                index === 0
+                  ? "🥇"
+                  : index === 1
+                    ? "🥈"
+                    : index === 2
+                      ? "🥉"
+                      : `#${index + 1}`;
+
+              return (
+                <li
+                  key={creator.id}
+                  className="flex items-center justify-between gap-3 text-xs bg-[rgba(250,252,251,0.03)] p-2.5 rounded-[var(--radius-md)] border border-[rgba(200,214,206,0.06)] hover:border-[rgba(214,246,29,0.15)] transition-all"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="font-mono font-bold text-sm text-[var(--color-brand)] w-6 text-center">
+                      {rankIcon}
+                    </span>
+                    <div className="min-w-0">
+                      <h4 className="font-extrabold text-[var(--color-text)] truncate">
+                        {creator.user.fullName}
+                      </h4>
+                      <p className="text-[9px] text-[var(--color-text-secondary)] mt-0.5 truncate">
+                        {creator.socialAccounts.length > 0
+                          ? creator.socialAccounts
+                              .map((a: any) => `@${a.handle}`)
+                              .join(", ")
+                          : "لا توجد حسابات موثقة"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-left flex-shrink-0 flex flex-col items-end gap-1">
+                    <span className="text-[10px] font-black text-[var(--color-brand)]">
+                      {score} نقطة
+                    </span>
+                    <span
+                      className={`text-[8px] px-1.5 py-0.5 rounded font-black ${levelColor}`}
+                    >
+                      {level}
+                    </span>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+        )}
+      </div>
+
+      {/* Top Brands Card */}
+      <div className="card border border-[rgba(200,214,206,0.12)] bg-[rgba(250,252,251,0.03)] p-5 rounded-[var(--radius-xl)] shadow-[var(--shadow-sm)]">
+        <h3 className="text-sm font-black text-[var(--color-text)] flex items-center gap-2 mb-4 border-b border-[rgba(200,214,206,0.1)] pb-3">
+          <span>🤝</span>
+          <span>الشركاء الأكثر تفاعلاً</span>
+        </h3>
+
+        {topBrands.length === 0 ? (
+          <p className="text-xs text-[var(--color-text-muted)] text-center py-4">
+            لا توجد علامات تجارية موثقة حالياً.
+          </p>
+        ) : (
+          <ul className="space-y-3.5">
+            {topBrands.map((brand, index) => {
+              const activeCount = brand.campaigns.length;
+              return (
+                <li
+                  key={brand.id}
+                  className="flex items-center justify-between gap-3 text-xs"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="h-5 w-5 rounded bg-[var(--forest-600)] text-[var(--color-brand)] flex items-center justify-center font-bold text-[10px]">
+                      {index + 1}
+                    </span>
+                    <div className="min-w-0">
+                      <h4 className="font-bold text-[var(--color-text)] flex items-center gap-1.5 truncate">
+                        <span>{brand.name}</span>
+                        <svg
+                          width="10"
+                          height="10"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          className="text-[var(--color-brand)]"
+                        >
+                          <circle cx="12" cy="12" r="10" fill="currentColor" />
+                          <path
+                            d="M8 12.5l2.5 2.5L16 9"
+                            stroke="var(--forest-900)"
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </h4>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-bold bg-[rgba(214,246,29,0.1)] text-[var(--color-brand-active)] px-2 py-0.5 rounded-full flex-shrink-0">
+                    {activeCount} حملات
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default async function CampaignsPage({
   searchParams,
 }: {
@@ -88,6 +227,39 @@ export default async function CampaignsPage({
         ? `تاجر: ${user.fullName}`
         : `مشرف: ${user.fullName}`
     : "";
+
+  // Fetch top creators and brands for Whop-style Leaderboard
+  const topCreators = await prisma.creatorProfile
+    .findMany({
+      take: 5,
+      orderBy: { trustScore: "desc" },
+      include: {
+        user: {
+          select: { fullName: true },
+        },
+        socialAccounts: {
+          where: { status: "VERIFIED" },
+          select: { platform: true, handle: true },
+        },
+      },
+    })
+    .catch(() => []);
+
+  const topBrandsRaw = await prisma.brandProfile
+    .findMany({
+      take: 5,
+      where: { verifiedAt: { not: null } },
+      include: {
+        campaigns: {
+          where: { status: "ACTIVE" },
+        },
+      },
+    })
+    .catch(() => []);
+
+  const topBrands = [...topBrandsRaw].sort(
+    (a, b) => b.campaigns.length - a.campaigns.length,
+  );
 
   return (
     <main
@@ -143,69 +315,87 @@ export default async function CampaignsPage({
           />
         </div>
 
-        {loadError && (
-          <div className="card border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center">
-            <p className="font-bold text-[var(--color-text)]">
-              تعذّر الاتصال بقاعدة البيانات حالياً.
-            </p>
-            <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
-              حاول تحديث الصفحة بعد قليل.
-            </p>
-          </div>
-        )}
+        {/* 2-Column Layout: Campaigns + Whop Leaderboard */}
+        <div className="grid gap-8 lg:grid-cols-[1fr_300px] mt-8">
+          {/* Column 1: Campaigns */}
+          <div className="space-y-10">
+            {loadError && (
+              <div className="card border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center">
+                <p className="font-bold text-[var(--color-text)]">
+                  تعذّر الاتصال بقاعدة البيانات حالياً.
+                </p>
+                <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
+                  حاول تحديث الصفحة بعد قليل.
+                </p>
+              </div>
+            )}
 
-        {!loadError && campaigns.length === 0 && (
-          <div className="card border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center">
-            <p className="font-bold text-[var(--color-text)]">
-              لا توجد حملات نشطة متاحة حالياً.
-            </p>
-            <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
-              عد لاحقاً أو سجّل كصانع محتوى لتصلك إشعارات الحملات الجديدة.
-            </p>
-          </div>
-        )}
+            {!loadError && campaigns.length === 0 && (
+              <div className="card border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center">
+                <p className="font-bold text-[var(--color-text)]">
+                  لا توجد حملات نشطة متاحة حالياً.
+                </p>
+                <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
+                  عد لاحقاً أو سجّل كصانع محتوى لتصلك إشعارات الحملات الجديدة.
+                </p>
+              </div>
+            )}
 
-        {!loadError && featured.length > 0 && (
-          <div className="mb-10">
-            <h2 className="mb-4 flex items-center gap-2 text-lg font-extrabold text-[var(--color-text)]">
-              <span
-                className="h-1.5 w-1.5 rounded-full bg-[var(--color-brand)]"
-                aria-hidden="true"
-              />
-              الحملات المميزة
-            </h2>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {featured.map((campaign, index) => (
-                <div
-                  key={campaign.id}
-                  className="fade-in-up"
-                  style={{ animationDelay: `${index * 70}ms` }}
-                >
-                  <CampaignCard campaign={toCardData(campaign)} featured />
+            {!loadError && featured.length > 0 && (
+              <div>
+                <h2 className="mb-4 flex items-center gap-2 text-lg font-extrabold text-[var(--color-text)]">
+                  <span
+                    className="h-1.5 w-1.5 rounded-full bg-[var(--color-brand)]"
+                    aria-hidden="true"
+                  />
+                  الحملات المميزة
+                </h2>
+                <div className="grid gap-6 md:grid-cols-2">
+                  {featured.map((campaign, index) => (
+                    <div
+                      key={campaign.id}
+                      className="fade-in-up"
+                      style={{ animationDelay: `${index * 70}ms` }}
+                    >
+                      <CampaignCard campaign={toCardData(campaign)} featured />
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
+            )}
+
+            {!loadError && rest.length > 0 && (
+              <div>
+                <h2 className="mb-4 text-lg font-extrabold text-[var(--color-text)]">
+                  كل الحملات
+                </h2>
+                <div className="grid gap-6 md:grid-cols-2">
+                  {rest.map((campaign, index) => (
+                    <div
+                      key={campaign.id}
+                      className="fade-in-up"
+                      style={{ animationDelay: `${Math.min(index * 60, 420)}ms` }}
+                    >
+                      <CampaignCard campaign={toCardData(campaign)} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Column 2: Leaderboard (Visible in desktop) */}
+          <div className="hidden lg:block">
+            <div className="sticky top-24">
+              <LeaderboardSection topCreators={topCreators} topBrands={topBrands} />
             </div>
           </div>
-        )}
+        </div>
 
-        {!loadError && rest.length > 0 && (
-          <div>
-            <h2 className="mb-4 text-lg font-extrabold text-[var(--color-text)]">
-              كل الحملات
-            </h2>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {rest.map((campaign, index) => (
-                <div
-                  key={campaign.id}
-                  className="fade-in-up"
-                  style={{ animationDelay: `${Math.min(index * 60, 420)}ms` }}
-                >
-                  <CampaignCard campaign={toCardData(campaign)} />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Mobile Leaderboard (Visible at bottom on mobile) */}
+        <div className="block lg:hidden mt-12">
+          <LeaderboardSection topCreators={topCreators} topBrands={topBrands} />
+        </div>
       </div>
     </main>
   );
