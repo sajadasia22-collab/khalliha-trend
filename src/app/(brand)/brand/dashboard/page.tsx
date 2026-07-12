@@ -61,46 +61,75 @@ export default async function BrandDashboard() {
         )}
 
         {overview !== null && (
-          <div className="tilt-3d fade-in-up overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-sm)]">
-            <div className="tilt-3d-surface grid divide-y divide-[var(--color-border)] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-              <div className="flex items-center gap-4 p-6">
-                <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-surface-muted)] text-[var(--forest-500)]">
+          <div className="grid gap-6 sm:grid-cols-3">
+            {/* Card 1: Balance */}
+            <div className="card-interactive fade-in-up group relative overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-sm)] hover:border-[var(--color-brand)] hover:shadow-[var(--shadow-brand)]">
+              {/* Decorative background glow */}
+              <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-[var(--color-brand)] opacity-5 blur-3xl transition-opacity group-hover:opacity-15" />
+
+              <div className="flex items-center gap-4">
+                <span className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[var(--radius-lg)] bg-[var(--color-surface-muted)] text-[var(--forest-500)] transition-transform duration-300 group-hover:scale-110 group-hover:bg-[var(--color-brand)] group-hover:text-[var(--color-text-on-brand)]">
                   <WalletIcon />
                 </span>
                 <div>
-                  <h2 className="text-sm font-bold text-[var(--color-text-secondary)]">
-                    رصيد الحساب التجاري (IQD)
+                  <h2 className="text-xs font-extrabold uppercase tracking-wider text-[var(--color-text-secondary)]">
+                    رصيد الحساب التجاري
                   </h2>
-                  <div className="text-3xl font-black text-[var(--forest-700)]">
-                    {overview.balance.toLocaleString("ar-IQ")} د.ع
+                  <div className="mt-1 text-2xl font-black text-[var(--forest-700)] dark:text-[var(--color-text)]">
+                    {overview.balance.toLocaleString("ar-IQ")}{" "}
+                    <span className="text-sm font-bold text-[var(--color-text-secondary)]">
+                      د.ع
+                    </span>
                   </div>
                 </div>
               </div>
+            </div>
 
-              <div className="flex items-center gap-4 p-6">
-                <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-surface-muted)] text-[var(--forest-500)]">
+            {/* Card 2: Reserved */}
+            <div
+              className="card-interactive fade-in-up group relative overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-sm)] hover:border-[var(--color-brand)] hover:shadow-[var(--shadow-brand)]"
+              style={{ animationDelay: "100ms" }}
+            >
+              <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-[var(--forest-300)] opacity-5 blur-3xl transition-opacity group-hover:opacity-15" />
+
+              <div className="flex items-center gap-4">
+                <span className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[var(--radius-lg)] bg-[var(--color-surface-muted)] text-[var(--forest-500)] transition-transform duration-300 group-hover:scale-110 group-hover:bg-[var(--color-brand)] group-hover:text-[var(--color-text-on-brand)]">
                   <BanknoteIcon />
                 </span>
                 <div>
-                  <h2 className="text-sm font-bold text-[var(--color-text-secondary)]">
+                  <h2 className="text-xs font-extrabold uppercase tracking-wider text-[var(--color-text-secondary)]">
                     الميزانية المحجوزة للحملات
                   </h2>
-                  <div className="text-3xl font-black text-[var(--forest-700)]">
-                    {overview.totalReserved.toLocaleString("ar-IQ")} د.ع
+                  <div className="mt-1 text-2xl font-black text-[var(--forest-700)] dark:text-[var(--color-text)]">
+                    {overview.totalReserved.toLocaleString("ar-IQ")}{" "}
+                    <span className="text-sm font-bold text-[var(--color-text-secondary)]">
+                      د.ع
+                    </span>
                   </div>
                 </div>
               </div>
+            </div>
 
-              <div className="flex items-center gap-4 p-6">
-                <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-surface-muted)] text-[var(--forest-500)]">
+            {/* Card 3: Campaigns Count */}
+            <div
+              className="card-interactive fade-in-up group relative overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-sm)] hover:border-[var(--color-brand)] hover:shadow-[var(--shadow-brand)]"
+              style={{ animationDelay: "200ms" }}
+            >
+              <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-[var(--color-brand)] opacity-5 blur-3xl transition-opacity group-hover:opacity-15" />
+
+              <div className="flex items-center gap-4">
+                <span className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[var(--radius-lg)] bg-[var(--color-surface-muted)] text-[var(--forest-500)] transition-transform duration-300 group-hover:scale-110 group-hover:bg-[var(--color-brand)] group-hover:text-[var(--color-text-on-brand)]">
                   <MegaphoneIcon />
                 </span>
                 <div>
-                  <h2 className="text-sm font-bold text-[var(--color-text-secondary)]">
-                    عدد حملاتك
+                  <h2 className="text-xs font-extrabold uppercase tracking-wider text-[var(--color-text-secondary)]">
+                    حملاتك التسويقية
                   </h2>
-                  <div className="text-3xl font-black text-[var(--forest-700)]">
-                    {overview.campaignCount}
+                  <div className="mt-1 text-2xl font-black text-[var(--forest-700)] dark:text-[var(--color-text)]">
+                    {overview.campaignCount}{" "}
+                    <span className="text-sm font-bold text-[var(--color-text-secondary)]">
+                      حملة
+                    </span>
                   </div>
                 </div>
               </div>

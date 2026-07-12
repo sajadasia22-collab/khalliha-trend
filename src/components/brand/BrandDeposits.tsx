@@ -103,14 +103,17 @@ export function BrandDeposits() {
   return (
     <div className="grid gap-8 lg:grid-cols-3 dir-rtl text-right">
       {/* Deposit Form */}
-      <div className="card p-6 border border-[var(--color-border)] bg-[var(--color-surface)] rounded-[var(--radius-xl)] lg:col-span-1 space-y-4">
-        <h3 className="text-lg font-extrabold text-[var(--color-text)] pb-2 border-b border-[var(--color-border)]">
-          طلب تمويل يدوي (إيداع)
-        </h3>
+      <div className="card p-6 border border-[var(--color-border)] bg-[var(--color-surface)] rounded-[var(--radius-xl)] lg:col-span-1 space-y-4 shadow-[var(--shadow-sm)] scale-in">
+        <div className="pb-2 border-b border-[var(--color-border)] flex items-center justify-between">
+          <h3 className="text-lg font-extrabold text-[var(--color-text)]">
+            طلب تمويل يدوي (إيداع)
+          </h3>
+          <span className="h-2 w-2 rounded-full bg-[var(--color-brand)] animate-pulse" />
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <span className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1">
+            <span className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1.5">
               العملة
             </span>
             <div className="flex gap-2">
@@ -119,9 +122,9 @@ export function BrandDeposits() {
                   key={curr}
                   type="button"
                   onClick={() => setCurrency(curr)}
-                  className={`w-full py-2 text-xs font-bold rounded-[var(--radius-md)] border transition-all ${
+                  className={`w-full py-2.5 text-xs font-bold rounded-[var(--radius-md)] border transition-all active:scale-95 duration-200 cursor-pointer ${
                     currency === curr
-                      ? "bg-[var(--color-brand)] text-[var(--color-text-on-brand)] border-[var(--color-brand)]"
+                      ? "bg-[var(--color-brand)] text-[var(--color-text-on-brand)] border-[var(--color-brand)] shadow-[var(--shadow-brand)]"
                       : "bg-[var(--color-bg)] text-[var(--color-text-secondary)] border-[var(--color-border)] hover:bg-[var(--mist-100)]"
                   }`}
                 >
@@ -145,7 +148,7 @@ export function BrandDeposits() {
               required
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="input-field"
+              className="input-field w-full transition-all focus:border-[var(--color-brand)]"
               placeholder={currency === "IQD" ? "مثال: 500000" : "مثال: 250.00"}
             />
           </div>
@@ -162,7 +165,7 @@ export function BrandDeposits() {
               type="text"
               value={referenceNumber}
               onChange={(e) => setReferenceNumber(e.target.value)}
-              className="input-field"
+              className="input-field w-full transition-all focus:border-[var(--color-brand)]"
               placeholder="رقم العملية بزين كاش، أو رقم الحوالة..."
             />
           </div>
@@ -178,7 +181,7 @@ export function BrandDeposits() {
               id="deposit-note"
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              className="input-field"
+              className="input-field w-full transition-all focus:border-[var(--color-brand)]"
               placeholder="اكتب تفاصيل التحويل، مثل رقم الهاتف المرسل منه..."
               rows={3}
             />
@@ -187,15 +190,25 @@ export function BrandDeposits() {
           <button
             type="submit"
             disabled={submitting}
-            className="btn-primary w-full py-2.5 text-sm font-bold disabled:opacity-50"
+            className="btn-primary w-full py-3 text-sm font-bold disabled:opacity-50 transition-all hover:bg-[var(--color-brand-hover)] active:scale-[0.98] duration-200 cursor-pointer shadow-[var(--shadow-sm)]"
           >
-            {submitting ? "جاري الإرسال..." : "إرسال طلب التمويل"}
+            {submitting ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="h-4 w-4 border-2 border-[var(--color-text-on-brand)] border-t-transparent rounded-full animate-spin" />
+                جاري الإرسال...
+              </span>
+            ) : (
+              "إرسال طلب التمويل"
+            )}
           </button>
         </form>
       </div>
 
       {/* Deposits History */}
-      <div className="card p-6 border border-[var(--color-border)] bg-[var(--color-surface)] rounded-[var(--radius-xl)] lg:col-span-2 space-y-4">
+      <div
+        className="card p-6 border border-[var(--color-border)] bg-[var(--color-surface)] rounded-[var(--radius-xl)] lg:col-span-2 space-y-4 shadow-[var(--shadow-sm)] scale-in"
+        style={{ animationDelay: "100ms" }}
+      >
         <h3 className="text-lg font-extrabold text-[var(--color-text)] pb-2 border-b border-[var(--color-border)]">
           سجل طلبات التمويل الأخيرة
         </h3>
@@ -210,19 +223,27 @@ export function BrandDeposits() {
             ))}
           </div>
         ) : deposits.length === 0 ? (
-          <p className="text-sm font-medium text-[var(--color-text-secondary)] py-8 text-center">
-            لا توجد طلبات تمويل سابقة حالياً.
-          </p>
+          <div className="py-12 flex flex-col items-center justify-center text-center space-y-3">
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-surface-muted)] text-[var(--color-text-muted)]">
+              ⚖️
+            </span>
+            <p className="text-sm font-bold text-[var(--color-text)]">
+              لا توجد طلبات تمويل سابقة
+            </p>
+            <p className="text-xs text-[var(--color-text-muted)] max-w-xs">
+              موّل رصيدك لإطلاق أولى حملاتك الإعلانية عبر المنصة.
+            </p>
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse text-right">
               <thead>
-                <tr className="border-b border-[var(--color-border)] text-xs font-extrabold text-[var(--color-text-secondary)]">
-                  <th className="py-2.5 px-3">المبلغ</th>
-                  <th className="py-2.5 px-3">رقم المرجع</th>
-                  <th className="py-2.5 px-3">الحالة</th>
-                  <th className="py-2.5 px-3">تاريخ الطلب</th>
-                  <th className="py-2.5 px-3">ملاحظات</th>
+                <tr className="border-b border-[var(--color-border)] text-xs font-extrabold text-[var(--color-text-secondary)] bg-[var(--color-surface-muted)]">
+                  <th className="py-3 px-4">المبلغ</th>
+                  <th className="py-3 px-4">رقم المرجع</th>
+                  <th className="py-3 px-4">الحالة</th>
+                  <th className="py-3 px-4">تاريخ الطلب</th>
+                  <th className="py-3 px-4">ملاحظات</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--color-border)]">
@@ -235,30 +256,45 @@ export function BrandDeposits() {
                   return (
                     <tr
                       key={item.id}
-                      className="hover:bg-[var(--mist-50)] transition-colors"
+                      className="hover:bg-[var(--color-surface-muted)] transition-colors"
                     >
-                      <td className="py-3 px-3 font-bold text-[var(--forest-700)]">
+                      <td className="py-3.5 px-4 font-bold text-[var(--forest-700)] dark:text-[var(--color-text)]">
                         {formatAmountVal(item.amount, item.currency)}
                       </td>
-                      <td className="py-3 px-3 font-mono text-xs text-[var(--color-text-secondary)]">
+                      <td className="py-3.5 px-4 font-mono text-xs text-[var(--color-text-secondary)]">
                         {item.referenceNumber || "—"}
                       </td>
-                      <td className="py-3 px-3">
+                      <td className="py-3.5 px-4">
                         <span
-                          className="inline-block px-2 py-0.5 text-xs font-bold rounded-[var(--radius-pill)] border"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-bold rounded-[var(--radius-pill)] border"
                           style={{
                             backgroundColor: badge.bg,
                             color: badge.text,
-                            borderColor: `color-mix(in srgb, ${badge.text} 25%, transparent)`,
+                            borderColor: `color-mix(in srgb, ${badge.text} 20%, transparent)`,
                           }}
                         >
+                          {item.status === "PENDING" && (
+                            <span className="h-1.5 w-1.5 rounded-full bg-[var(--forest-500)] animate-pulse" />
+                          )}
+                          {item.status === "APPROVED" && (
+                            <span
+                              className="h-1.5 w-1.5 rounded-full bg-[var(--color-success)] animate-pulse"
+                              style={{ animationDuration: "2s" }}
+                            />
+                          )}
+                          {item.status === "REJECTED" && (
+                            <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-text-muted)]" />
+                          )}
                           {badge.label}
                         </span>
                       </td>
-                      <td className="py-3 px-3 text-xs font-medium text-[var(--color-text-secondary)]">
+                      <td className="py-3.5 px-4 text-xs font-medium text-[var(--color-text-secondary)]">
                         {new Date(item.createdAt).toLocaleDateString("ar-IQ")}
                       </td>
-                      <td className="py-3 px-3 text-xs font-medium text-[var(--color-text-secondary)] max-w-[200px] truncate">
+                      <td
+                        className="py-3.5 px-4 text-xs font-medium text-[var(--color-text-secondary)] max-w-[200px] truncate"
+                        title={item.note || undefined}
+                      >
                         {item.note || "—"}
                       </td>
                     </tr>
