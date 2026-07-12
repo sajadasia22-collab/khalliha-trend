@@ -19,7 +19,7 @@ export default async function NewCampaignPage() {
     <main className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] dir-rtl md:ps-64 pb-20 md:pb-0">
       <DashboardHeader dashboardRole="brand" userLabel={user.fullName} />
 
-      <section className="mx-auto max-w-3xl px-5 py-12 lg:px-8">
+      <section className="mx-auto max-w-6xl px-5 py-12 lg:px-8">
         <div className="mb-8">
           <h1 className="text-3xl font-extrabold mb-2">إنشاء حملة جديدة</h1>
           <p className="text-sm font-medium text-[var(--color-text-secondary)]">
