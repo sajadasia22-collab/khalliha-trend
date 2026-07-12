@@ -150,9 +150,8 @@ export function CampaignForm({
 
       {/* Card 1: Core Details */}
       <div className="bg-[rgba(250,252,251,0.01)] border border-[var(--color-border)] p-6 rounded-[var(--radius-xl)] space-y-6">
-        <h2 className="text-sm font-black text-[var(--color-text)] flex items-center gap-2 border-b border-[rgba(200,214,206,0.06)] pb-3">
-          <span className="text-[var(--color-brand)]">📝</span>
-          <span>بيانات الحملة الأساسية</span>
+        <h2 className="text-sm font-black text-[var(--color-brand)] border-b border-[rgba(200,214,206,0.06)] pb-3">
+          بيانات الحملة الأساسية
         </h2>
 
         <div className="space-y-5">
@@ -254,8 +253,8 @@ export function CampaignForm({
             )}
             {focusedField === "terms" && (
               <div className="mt-3 p-4 rounded-[var(--radius-md)] bg-[rgba(214,246,29,0.03)] border border-[rgba(214,246,29,0.15)] space-y-3">
-                <span className="block text-[11px] font-black text-[var(--color-brand-active)]">
-                  💡 قوالب شروط جاهزة للاستخدام الفوري:
+                <span className="block text-[11px] font-black text-[var(--color-brand)]">
+                  قوالب الشروط المقترحة للاستخدام المباشر:
                 </span>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <button
@@ -269,7 +268,7 @@ export function CampaignForm({
                     }}
                     className="text-xs text-right p-2.5 rounded bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-brand)] text-[var(--color-text)] font-bold transition-all"
                   >
-                    📌 تطبيق قالب ترويج منتج (تيك توك)
+                    تطبيق قالب ترويج منتج (تيك توك)
                   </button>
                   <button
                     type="button"
@@ -282,7 +281,7 @@ export function CampaignForm({
                     }}
                     className="text-xs text-right p-2.5 rounded bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-brand)] text-[var(--color-text)] font-bold transition-all"
                   >
-                    📌 تطبيق قالب مراجعة مطعم (انستغرام)
+                    تطبيق قالب مراجعة مطعم (انستغرام)
                   </button>
                 </div>
               </div>
@@ -368,9 +367,8 @@ export function CampaignForm({
 
       {/* Card 2: Budget & Eligibility */}
       <div className="bg-[rgba(250,252,251,0.01)] border border-[var(--color-border)] p-6 rounded-[var(--radius-xl)] space-y-6">
-        <h2 className="text-sm font-black text-[var(--color-text)] flex items-center gap-2 border-b border-[rgba(200,214,206,0.06)] pb-3">
-          <span className="text-[var(--color-brand)]">🛡️</span>
-          <span>الميزانية المالية وأهلية الشركاء</span>
+        <h2 className="text-sm font-black text-[var(--color-brand)] border-b border-[rgba(200,214,206,0.06)] pb-3">
+          الميزانية المالية وأهلية الشركاء
         </h2>
 
         <div className="grid gap-4 sm:grid-cols-3">
@@ -442,8 +440,8 @@ export function CampaignForm({
             )}
             {focusedField === "totalBudget" && (
               <div className="mt-2.5 p-3.5 rounded-[var(--radius-md)] bg-[rgba(214,246,29,0.02)] border border-[rgba(214,246,29,0.1)] space-y-2">
-                <span className="block text-[10px] font-black text-[var(--color-brand-active)]">
-                  📊 حاسبة تقدير الميزانية الكلية:
+                <span className="block text-[10px] font-black text-[var(--color-brand)]">
+                  حاسبة تقدير الميزانية الكلية:
                 </span>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
@@ -498,8 +496,8 @@ export function CampaignForm({
             />
             {focusedField === "minTrustScore" && (
               <div className="mt-2.5 p-3.5 rounded-[var(--radius-md)] bg-[rgba(200,214,206,0.04)] border border-[var(--color-border)] space-y-2 text-[10px] text-[var(--color-text-secondary)] font-medium leading-relaxed">
-                <span className="block font-bold text-[var(--color-text)]">
-                  💡 دليلك لاختيار مستوى الموثوقية المناسب:
+                <span className="block font-bold text-[var(--color-brand)]">
+                  دليلك لاختيار الحد الأدنى لنقاط الموثوقية المناسب:
                 </span>
                 <div className="space-y-1">
                   <p>
@@ -561,9 +559,8 @@ export function CampaignForm({
       {/* Card 3: Rates Table */}
       <div className="bg-[rgba(250,252,251,0.01)] border border-[var(--color-border)] p-6 rounded-[var(--radius-xl)] space-y-6">
         <div className="flex items-center justify-between border-b border-[rgba(200,214,206,0.06)] pb-3">
-          <h2 className="text-sm font-black text-[var(--color-text)] flex items-center gap-2">
-            <span className="text-[var(--color-brand)]">📊</span>
-            <span>أسعار المنصات والمشاهدات</span>
+          <h2 className="text-sm font-black text-[var(--color-brand)]">
+            أسعار المنصات والمشاهدات
           </h2>
           <button
             type="button"
@@ -698,9 +695,8 @@ export function CampaignForm({
       {/* Card 4: Assets */}
       <div className="bg-[rgba(250,252,251,0.01)] border border-[var(--color-border)] p-6 rounded-[var(--radius-xl)] space-y-6">
         <div className="flex items-center justify-between border-b border-[rgba(200,214,206,0.06)] pb-3">
-          <h2 className="text-sm font-black text-[var(--color-text)] flex items-center gap-2">
-            <span className="text-[var(--color-brand)]">📎</span>
-            <span>أصول الحملة ومصادرها (روابط خارجية)</span>
+          <h2 className="text-sm font-black text-[var(--color-brand)]">
+            أصول الحملة ومصادرها (روابط خارجية)
           </h2>
           <button
             type="button"
