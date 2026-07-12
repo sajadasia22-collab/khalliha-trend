@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { categoryLabels, platformLabels } from "../../lib/campaigns";
+import { categoryLabels, platformLabels, detectAssetSource } from "../../lib/campaigns";
 import { useToast } from "../ui/Toast";
 import { Button } from "../ui/button";
 import {
@@ -101,14 +101,7 @@ export function CampaignForm({
   const [assets, setAssets] = useState<AssetRow[]>(() => {
     if (!initialValues?.assets) return [];
     return initialValues.assets.map((asset, i) => {
-      let type: AssetRow["type"] = "google_drive";
-      if (asset.url.includes("dropbox.com")) type = "dropbox";
-      else if (
-        asset.url.includes("onedrive.live.com") ||
-        asset.url.includes("sharepoint.com")
-      )
-        type = "onedrive";
-      else if (asset.url.includes("assets.khallihatrend.com")) type = "upload";
+      const type = detectAssetSource(asset.url);
       return {
         id: `initial-${i}-${Date.now()}`,
         type,

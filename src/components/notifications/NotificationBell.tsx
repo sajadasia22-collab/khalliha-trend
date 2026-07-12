@@ -125,7 +125,7 @@ export function NotificationBell() {
         <div
           role="dialog"
           aria-label="الإشعارات"
-          className="fixed inset-x-3 top-16 z-30 overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-xl sm:absolute sm:inset-x-auto sm:start-0 sm:top-auto sm:mt-2 sm:w-80"
+          className="fixed inset-x-3 top-16 z-30 overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-xl sm:absolute sm:inset-x-auto sm:end-0 sm:top-auto sm:mt-2 sm:w-80"
         >
           <div className="flex items-center justify-between border-b border-[var(--color-border)] px-4 py-3">
             <h3 className="text-sm font-bold text-[var(--color-text)]">الإشعارات</h3>

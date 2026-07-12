@@ -1110,26 +1110,21 @@ body {
   border-color: var(--color-border-strong);
 }
 
-/* Depth / "3D" lift: a slight perspective tilt on top of the normal lift,
-   for surfaces that should read as physically closer on hover (campaign
-   cards, feature tiles). Subtle by design — a hint of dimension, not a
-   showpiece. Perspective lives on the parent so the tilt has somewhere to
-   project into. */
-.tilt-3d {
-  perspective: 800px;
-}
-
+/* Flat hover lift for surfaces that should read as interactive (campaign
+   cards, feature tiles) — matches .card-interactive elsewhere in the app.
+   Previously a perspective rotateX/rotateY tilt; dropped per user feedback
+   ("bending"/3D look on hover reads as broken, not premium). Class names
+   kept as-is so call sites didn't need touching. */
 .tilt-3d-surface {
   transition:
     transform var(--duration-normal) var(--ease-brand),
     box-shadow var(--duration-normal) var(--ease-brand),
     border-color var(--duration-normal) var(--ease-brand);
-  transform: translateY(0) rotateX(0deg) rotateY(0deg);
-  transform-style: preserve-3d;
+  transform: translateY(0);
 }
 
 .tilt-3d:hover .tilt-3d-surface {
-  transform: translateY(-6px) rotateX(3deg) rotateY(-2deg);
+  transform: translateY(-4px);
   box-shadow: var(--shadow-lg);
   border-color: var(--color-border-strong);
 }

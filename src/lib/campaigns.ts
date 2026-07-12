@@ -1,4 +1,17 @@
+import type { ComponentType } from "react";
 import { CampaignCategory, CampaignStatus, Platform } from "../generated/prisma/enums";
+import {
+  TikTokIcon,
+  InstagramIcon,
+  FacebookIcon,
+  YouTubeIcon,
+  XIcon,
+  ThreadsIcon,
+  FileTextIcon,
+  GoogleDriveIcon,
+  DropboxIcon,
+  OneDriveIcon,
+} from "../components/ui/icons";
 
 export const platformLabels: Record<Platform, string> = {
   TIKTOK: "TikTok",
@@ -7,6 +20,15 @@ export const platformLabels: Record<Platform, string> = {
   YOUTUBE: "YouTube",
   X: "X (تويتر)",
   THREADS: "Threads",
+};
+
+export const platformIcons: Record<Platform, ComponentType<{ className?: string }>> = {
+  TIKTOK: TikTokIcon,
+  INSTAGRAM: InstagramIcon,
+  FACEBOOK: FacebookIcon,
+  YOUTUBE: YouTubeIcon,
+  X: XIcon,
+  THREADS: ThreadsIcon,
 };
 
 export const categoryLabels: Record<CampaignCategory, string> = {
@@ -49,6 +71,37 @@ export function lowestCpm(rates: { cpmMinorUnits: bigint }[]): bigint | null {
     rates[0].cpmMinorUnits,
   );
 }
+
+export type AssetSource = "upload" | "google_drive" | "dropbox" | "onedrive";
+
+/** Infers the picker source a campaign asset link was added through — the DB
+ * only stores the raw url/label (no sourceType column), so this is the one
+ * place both the brand's edit form and the creator-facing display derive it
+ * from, by matching the same closed set of domains the picker offers. */
+export function detectAssetSource(url: string): AssetSource {
+  if (url.includes("dropbox.com")) return "dropbox";
+  if (url.includes("onedrive.live.com") || url.includes("sharepoint.com"))
+    return "onedrive";
+  if (url.includes("assets.khallihatrend.com")) return "upload";
+  return "google_drive";
+}
+
+export const assetSourceLabels: Record<AssetSource, string> = {
+  upload: "ملف مرفوع",
+  google_drive: "غوغل درايف",
+  dropbox: "دروب بوكس",
+  onedrive: "ون درايف",
+};
+
+export const assetSourceIcons: Record<
+  AssetSource,
+  ComponentType<{ className?: string }>
+> = {
+  upload: FileTextIcon,
+  google_drive: GoogleDriveIcon,
+  dropbox: DropboxIcon,
+  onedrive: OneDriveIcon,
+};
 
 export function budgetProgress(reservedBudget: bigint, totalBudget: bigint): number {
   if (totalBudget <= 0n) {

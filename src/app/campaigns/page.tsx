@@ -1,15 +1,13 @@
-import { prisma } from "../../../lib/prisma";
-import {
-  CampaignCategory,
-  CampaignStatus,
-  Platform,
-} from "../../../generated/prisma/enums";
-import { categoryLabels, platformLabels } from "../../../lib/campaigns";
-import { CampaignCard } from "../../../components/campaigns/CampaignCard";
-import { CampaignFilters } from "../../../components/campaigns/CampaignFilters";
-import { getCurrentUser } from "../../../lib/auth/session";
-import { DashboardHeader } from "../../../components/layout/DashboardHeader";
-import type { Prisma } from "../../../generated/prisma/client";
+import { prisma } from "../../lib/prisma";
+import { CampaignCategory, CampaignStatus, Platform } from "../../generated/prisma/enums";
+import { categoryLabels, platformLabels } from "../../lib/campaigns";
+import { CampaignCard } from "../../components/campaigns/CampaignCard";
+import { CampaignFilters } from "../../components/campaigns/CampaignFilters";
+import { getCurrentUser } from "../../lib/auth/session";
+import { DashboardHeader } from "../../components/layout/DashboardHeader";
+import { Navbar } from "../../components/layout/Navbar";
+import { Footer } from "../../components/layout/Footer";
+import type { Prisma } from "../../generated/prisma/client";
 
 export const metadata = {
   title: "استكشف الحملات — خلّيها ترند",
@@ -276,141 +274,151 @@ export default async function CampaignsPage({
   );
 
   return (
-    <main
-      className={`bg-[var(--color-bg)] text-[var(--color-text)] dir-rtl ${
+    <div
+      className={
         dashboardRole
-          ? "min-h-screen md:ps-64 pb-20 md:pb-0"
-          : "mx-auto max-w-7xl px-5 py-12 lg:px-8"
-      }`}
+          ? undefined
+          : "flex min-h-screen flex-col bg-[var(--color-bg)] text-[var(--color-text)]"
+      }
     >
-      {dashboardRole && (
-        <DashboardHeader dashboardRole={dashboardRole} userLabel={userLabel} />
-      )}
+      {!dashboardRole && <Navbar />}
 
-      <div className={dashboardRole ? "mx-auto max-w-7xl px-5 py-12 lg:px-8" : ""}>
-        <div className="mb-8">
-          <span
-            className="fade-in-up mb-3 inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] bg-[var(--color-surface-muted)] px-3 py-1 text-xs font-bold text-[var(--color-brand-active)]"
-            style={{ animationDelay: "0ms" }}
-          >
+      <main
+        className={`bg-[var(--color-bg)] text-[var(--color-text)] dir-rtl ${
+          dashboardRole ? "min-h-screen md:ps-64 pb-20 md:pb-0" : "flex-1"
+        }`}
+      >
+        {dashboardRole && (
+          <DashboardHeader dashboardRole={dashboardRole} userLabel={userLabel} />
+        )}
+
+        <div className="mx-auto max-w-7xl px-5 py-12 lg:px-8">
+          <div className="mb-8">
             <span
-              className="h-1.5 w-1.5 rounded-full bg-[var(--color-brand)]"
-              aria-hidden="true"
-            />
-            {campaigns.length > 0
-              ? `${campaigns.length} حملة نشطة الآن`
-              : "الحملات النشطة"}
-          </span>
-          <h1
-            className="fade-in-up mb-2 text-3xl font-extrabold"
-            style={{ animationDelay: "40ms" }}
-          >
-            استكشف الحملات المتاحة
-          </h1>
-          <p
-            className="fade-in-up font-medium text-[var(--color-text-secondary)]"
-            style={{ animationDelay: "80ms" }}
-          >
-            حملات نشطة ومموّلة من علامات تجارية عراقية. انضم بعد تحقق الأهلية وشروط كل
-            حملة.
-          </p>
-        </div>
-
-        <div className="fade-in-up" style={{ animationDelay: "120ms" }}>
-          <CampaignFilters
-            categoryOptions={Object.entries(categoryLabels).map(([value, label]) => ({
-              value,
-              label,
-            }))}
-            platformOptions={Object.entries(platformLabels).map(([value, label]) => ({
-              value,
-              label,
-            }))}
-          />
-        </div>
-
-        {/* 2-Column Layout: Campaigns + Whop Leaderboard */}
-        <div className="grid gap-8 lg:grid-cols-[1fr_300px] mt-8">
-          {/* Column 1: Campaigns */}
-          <div className="space-y-10">
-            {loadError && (
-              <div className="card border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center">
-                <p className="font-bold text-[var(--color-text)]">
-                  تعذّر الاتصال بقاعدة البيانات حالياً.
-                </p>
-                <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
-                  حاول تحديث الصفحة بعد قليل.
-                </p>
-              </div>
-            )}
-
-            {!loadError && campaigns.length === 0 && (
-              <div className="card border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center">
-                <p className="font-bold text-[var(--color-text)]">
-                  لا توجد حملات نشطة متاحة حالياً.
-                </p>
-                <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
-                  عد لاحقاً أو سجّل كصانع محتوى لتصلك إشعارات الحملات الجديدة.
-                </p>
-              </div>
-            )}
-
-            {!loadError && featured.length > 0 && (
-              <div>
-                <h2 className="mb-4 flex items-center gap-2 text-lg font-extrabold text-[var(--color-text)]">
-                  <span
-                    className="h-1.5 w-1.5 rounded-full bg-[var(--color-brand)]"
-                    aria-hidden="true"
-                  />
-                  الحملات المميزة
-                </h2>
-                <div className="grid gap-6 md:grid-cols-2">
-                  {featured.map((campaign, index) => (
-                    <div
-                      key={campaign.id}
-                      className="fade-in-up"
-                      style={{ animationDelay: `${index * 70}ms` }}
-                    >
-                      <CampaignCard campaign={toCardData(campaign)} featured />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {!loadError && rest.length > 0 && (
-              <div>
-                <h2 className="mb-4 text-lg font-extrabold text-[var(--color-text)]">
-                  كل الحملات
-                </h2>
-                <div className="grid gap-6 md:grid-cols-2">
-                  {rest.map((campaign, index) => (
-                    <div
-                      key={campaign.id}
-                      className="fade-in-up"
-                      style={{ animationDelay: `${Math.min(index * 60, 420)}ms` }}
-                    >
-                      <CampaignCard campaign={toCardData(campaign)} />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+              className="fade-in-up mb-3 inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] bg-[var(--color-surface-muted)] px-3 py-1 text-xs font-bold text-[var(--color-brand-active)]"
+              style={{ animationDelay: "0ms" }}
+            >
+              <span
+                className="h-1.5 w-1.5 rounded-full bg-[var(--color-brand)]"
+                aria-hidden="true"
+              />
+              {campaigns.length > 0
+                ? `${campaigns.length} حملة نشطة الآن`
+                : "الحملات النشطة"}
+            </span>
+            <h1
+              className="fade-in-up mb-2 text-3xl font-extrabold"
+              style={{ animationDelay: "40ms" }}
+            >
+              استكشف الحملات المتاحة
+            </h1>
+            <p
+              className="fade-in-up font-medium text-[var(--color-text-secondary)]"
+              style={{ animationDelay: "80ms" }}
+            >
+              حملات نشطة ومموّلة من علامات تجارية عراقية. انضم بعد تحقق الأهلية وشروط كل
+              حملة.
+            </p>
           </div>
 
-          {/* Column 2: Leaderboard (Visible in desktop) */}
-          <div className="hidden lg:block">
-            <div className="sticky top-24">
-              <LeaderboardSection topCreators={topCreators} topBrands={topBrands} />
+          <div className="fade-in-up" style={{ animationDelay: "120ms" }}>
+            <CampaignFilters
+              categoryOptions={Object.entries(categoryLabels).map(([value, label]) => ({
+                value,
+                label,
+              }))}
+              platformOptions={Object.entries(platformLabels).map(([value, label]) => ({
+                value,
+                label,
+              }))}
+            />
+          </div>
+
+          {/* 2-Column Layout: Campaigns + Whop Leaderboard */}
+          <div className="grid gap-8 lg:grid-cols-[1fr_300px] mt-8">
+            {/* Column 1: Campaigns */}
+            <div className="space-y-10">
+              {loadError && (
+                <div className="card border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center">
+                  <p className="font-bold text-[var(--color-text)]">
+                    تعذّر الاتصال بقاعدة البيانات حالياً.
+                  </p>
+                  <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
+                    حاول تحديث الصفحة بعد قليل.
+                  </p>
+                </div>
+              )}
+
+              {!loadError && campaigns.length === 0 && (
+                <div className="card border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center">
+                  <p className="font-bold text-[var(--color-text)]">
+                    لا توجد حملات نشطة متاحة حالياً.
+                  </p>
+                  <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
+                    عد لاحقاً أو سجّل كصانع محتوى لتصلك إشعارات الحملات الجديدة.
+                  </p>
+                </div>
+              )}
+
+              {!loadError && featured.length > 0 && (
+                <div>
+                  <h2 className="mb-4 flex items-center gap-2 text-lg font-extrabold text-[var(--color-text)]">
+                    <span
+                      className="h-1.5 w-1.5 rounded-full bg-[var(--color-brand)]"
+                      aria-hidden="true"
+                    />
+                    الحملات المميزة
+                  </h2>
+                  <div className="grid gap-6 md:grid-cols-2">
+                    {featured.map((campaign, index) => (
+                      <div
+                        key={campaign.id}
+                        className="fade-in-up"
+                        style={{ animationDelay: `${index * 70}ms` }}
+                      >
+                        <CampaignCard campaign={toCardData(campaign)} featured />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {!loadError && rest.length > 0 && (
+                <div>
+                  <h2 className="mb-4 text-lg font-extrabold text-[var(--color-text)]">
+                    كل الحملات
+                  </h2>
+                  <div className="grid gap-6 md:grid-cols-2">
+                    {rest.map((campaign, index) => (
+                      <div
+                        key={campaign.id}
+                        className="fade-in-up"
+                        style={{ animationDelay: `${Math.min(index * 60, 420)}ms` }}
+                      >
+                        <CampaignCard campaign={toCardData(campaign)} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Column 2: Leaderboard (Visible in desktop) */}
+            <div className="hidden lg:block">
+              <div className="sticky top-24">
+                <LeaderboardSection topCreators={topCreators} topBrands={topBrands} />
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Mobile Leaderboard (Visible at bottom on mobile) */}
-        <div className="block lg:hidden mt-12">
-          <LeaderboardSection topCreators={topCreators} topBrands={topBrands} />
+          {/* Mobile Leaderboard (Visible at bottom on mobile) */}
+          <div className="block lg:hidden mt-12">
+            <LeaderboardSection topCreators={topCreators} topBrands={topBrands} />
+          </div>
         </div>
-      </div>
-    </main>
+      </main>
+
+      {!dashboardRole && <Footer />}
+    </div>
   );
 }

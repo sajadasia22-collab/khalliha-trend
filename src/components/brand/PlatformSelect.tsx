@@ -1,27 +1,9 @@
 "use client";
 
-import type { ComponentType } from "react";
-import { platformLabels } from "../../lib/campaigns";
-import {
-  TikTokIcon,
-  InstagramIcon,
-  FacebookIcon,
-  YouTubeIcon,
-  XIcon,
-  ThreadsIcon,
-  CheckIcon,
-} from "../ui/icons";
+import { platformLabels, platformIcons } from "../../lib/campaigns";
+import { CheckIcon } from "../ui/icons";
 
 type PlatformValue = keyof typeof platformLabels;
-
-const platformIcons: Record<PlatformValue, ComponentType<{ className?: string }>> = {
-  TIKTOK: TikTokIcon,
-  INSTAGRAM: InstagramIcon,
-  FACEBOOK: FacebookIcon,
-  YOUTUBE: YouTubeIcon,
-  X: XIcon,
-  THREADS: ThreadsIcon,
-};
 
 const platformOptions = Object.entries(platformLabels) as [PlatformValue, string][];
 

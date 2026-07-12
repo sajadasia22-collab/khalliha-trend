@@ -1,29 +1,17 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
-// Mock prisma before any other imports
+// Mock prisma before any other imports — login/route.ts queries
+// brandMember.findFirst directly (to attach brandName) when the
+// authenticated user's role is BRAND.
 vi.mock("../../../../lib/prisma", () => {
   return {
     prisma: {
-      user: {
-        findUnique: vi.fn(),
-        findFirst: vi.fn(),
-        create: vi.fn(),
-        upsert: vi.fn(),
-      },
-      creatorProfile: {
-        upsert: vi.fn(),
-      },
       brandMember: {
         findFirst: vi.fn(),
-        create: vi.fn(),
-      },
-      brandProfile: {
-        create: vi.fn(),
       },
     },
   };
 });
-import { prisma } from "../../../../lib/prisma";
 import { POST as registerHandler } from "./register/route";
 import { POST as loginHandler } from "./login/route";
 import { AuthService } from "../../../../modules/auth/service";
@@ -144,74 +132,6 @@ describe("Auth API Handlers", () => {
       const json = await response.json();
       expect(json.status).toBe("success");
       expect(json.user.id).toBe("user-123");
-
-      const cookieHeader = response.headers.get("set-cookie");
-      expect(cookieHeader).toContain("khalliha_trend_session");
-    });
-
-    it("should return requiresRoleSelection: true for joker account without role selection", async () => {
-      const mockJoker = {
-        id: "joker-123",
-        fullName: "حساب الجوكر التجريبي",
-        email: "mhrb00850@gmail.com",
-        phone: null,
-        role: "SUPER_ADMIN",
-        status: "ACTIVE",
-      };
-
-      vi.mocked(prisma.user.upsert).mockResolvedValue(mockJoker as any);
-      vi.mocked(prisma.creatorProfile.upsert).mockResolvedValue({} as any);
-      vi.mocked(prisma.brandMember.findFirst).mockResolvedValue({
-        brand: { name: "علامة الجوكر التجريبية" },
-      } as any);
-
-      const mockReq = new Request("http://localhost/api/v1/auth/login", {
-        method: "POST",
-        body: JSON.stringify({
-          identifier: "mhrb00850@gmail.com",
-          password: "aqswde11",
-        }),
-      });
-
-      const response = await loginHandler(mockReq);
-      expect(response.status).toBe(200);
-
-      const json = await response.json();
-      expect(json.status).toBe("success");
-      expect(json.requiresRoleSelection).toBe(true);
-    });
-
-    it("should login successfully and set cookie for joker account when role is selected", async () => {
-      const mockJoker = {
-        id: "joker-123",
-        fullName: "حساب الجوكر التجريبي",
-        email: "mhrb00850@gmail.com",
-        phone: null,
-        role: "SUPER_ADMIN",
-        status: "ACTIVE",
-      };
-
-      vi.mocked(prisma.user.upsert).mockResolvedValue(mockJoker as any);
-      vi.mocked(prisma.creatorProfile.upsert).mockResolvedValue({} as any);
-      vi.mocked(prisma.brandMember.findFirst).mockResolvedValue({
-        brand: { name: "علامة الجوكر التجريبية" },
-      } as any);
-
-      const mockReq = new Request("http://localhost/api/v1/auth/login", {
-        method: "POST",
-        body: JSON.stringify({
-          identifier: "mhrb00850@gmail.com",
-          password: "aqswde11",
-          selectedRole: "CREATOR",
-        }),
-      });
-
-      const response = await loginHandler(mockReq);
-      expect(response.status).toBe(200);
-
-      const json = await response.json();
-      expect(json.status).toBe("success");
-      expect(json.user.role).toBe("CREATOR");
 
       const cookieHeader = response.headers.get("set-cookie");
       expect(cookieHeader).toContain("khalliha_trend_session");
