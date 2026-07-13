@@ -17,6 +17,8 @@
 - Rate limiting لمحاولات الدخول.
 - سجل محاولات الدخول المشبوهة.
 - وفر logout من جميع الأجهزة.
+- Google OAuth يستخدم Authorization Code Flow على السيرفر مع `state` و`nonce` وPKCE، ولا يخزن access/refresh tokens.
+- ربط Google بحساب موجود يتطلب بريداً موثقاً من Google؛ الدور لا يؤخذ من Google ولا يتغير للحسابات القائمة.
 
 ## 3. Authorization
 

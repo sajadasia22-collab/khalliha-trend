@@ -49,6 +49,37 @@ test.describe("Authentication and Route Protection E2E", () => {
     ).toBeVisible();
   });
 
+  test("Google login is available and registration preserves role and consent", async ({
+    page,
+  }) => {
+    await page.goto("/login");
+    await expect(
+      page.getByRole("button", { name: "الدخول بواسطة Google" }),
+    ).toBeVisible();
+
+    await page.goto("/register");
+    const googleRegister = page.getByRole("button", {
+      name: "إنشاء الحساب بواسطة Google",
+    });
+    await googleRegister.click();
+    await expect(page.getByText("يجب تأكيد أن عمرك 18 سنة أو أكثر")).toBeVisible();
+    await expect(page.getByText("يجب الموافقة على الشروط والأحكام")).toBeVisible();
+
+    await page.check("input[type='checkbox'] >> nth=0");
+    await page.check("input[type='checkbox'] >> nth=1");
+    await page.route("**/api/v1/auth/google?**", async (route) => {
+      await route.fulfill({ status: 200, contentType: "text/html", body: "ok" });
+    });
+    const requestPromise = page.waitForRequest("**/api/v1/auth/google?**");
+    await googleRegister.click();
+    const request = await requestPromise;
+    const url = new URL(request.url());
+    expect(url.searchParams.get("intent")).toBe("register");
+    expect(url.searchParams.get("role")).toBe("CREATOR");
+    expect(url.searchParams.get("acceptTerms")).toBe("true");
+    expect(url.searchParams.get("confirmAge")).toBe("true");
+  });
+
   test("successful creator signup redirects to creator dashboard and logout works", async ({
     page,
   }) => {

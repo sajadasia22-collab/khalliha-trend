@@ -19,6 +19,8 @@ export const serverEnvSchema = z.object({
   SUPABASE_URL: optionalUrl,
   SUPABASE_ANON_KEY: z.string().optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
   SENTRY_DSN: optionalUrl,
   PLATFORM_COMMISSION_BPS: z.string().regex(/^\d+$/).optional().default("0"),
 });

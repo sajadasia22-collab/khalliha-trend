@@ -205,6 +205,123 @@ describe("AuthService", () => {
     });
   });
 
+  describe("authenticateWithGoogle", () => {
+    it("logs in an existing active user by verified Google email", async () => {
+      const existingUser = {
+        id: "google-existing",
+        email: "user@example.com",
+        fullName: "مستخدم Google",
+        role: UserRole.CREATOR,
+        status: UserStatus.ACTIVE,
+      };
+      vi.mocked(prisma.user.findUnique).mockResolvedValue(existingUser as any);
+
+      const result = await AuthService.authenticateWithGoogle({
+        intent: "login",
+        email: "USER@example.com",
+        fullName: "اسم مختلف",
+      });
+
+      expect(result).toEqual({ user: existingUser, created: false });
+      expect(prisma.user.create).not.toHaveBeenCalled();
+    });
+
+    it("does not create an unknown Google user from the login page", async () => {
+      vi.mocked(prisma.user.findUnique).mockResolvedValue(null);
+
+      await expect(
+        AuthService.authenticateWithGoogle({
+          intent: "login",
+          email: "new@example.com",
+          fullName: "مستخدم جديد",
+        }),
+      ).rejects.toThrow("GOOGLE_ACCOUNT_NOT_FOUND");
+    });
+
+    it("creates the selected creator profile for a new Google registration", async () => {
+      vi.mocked(prisma.user.findUnique).mockResolvedValue(null);
+      const createdUser = {
+        id: "google-creator",
+        email: "creator@gmail.com",
+        fullName: "صانع Google",
+        role: UserRole.CREATOR,
+        status: UserStatus.ACTIVE,
+      };
+      vi.mocked(prisma.user.create).mockResolvedValue(createdUser as any);
+
+      const result = await AuthService.authenticateWithGoogle({
+        intent: "register",
+        email: "creator@gmail.com",
+        fullName: "صانع Google",
+        role: UserRole.CREATOR,
+      });
+
+      expect(result.created).toBe(true);
+      expect(prisma.user.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          email: "creator@gmail.com",
+          passwordHash: null,
+          role: UserRole.CREATOR,
+          status: UserStatus.ACTIVE,
+        }),
+      });
+      expect(prisma.creatorProfile.create).toHaveBeenCalledWith({
+        data: { userId: "google-creator", trustScore: 50 },
+      });
+    });
+
+    it("creates a brand and owner membership for a new Google brand", async () => {
+      vi.mocked(prisma.user.findUnique).mockResolvedValue(null);
+      vi.mocked(prisma.user.create).mockResolvedValue({
+        id: "google-brand-user",
+        email: "brand@gmail.com",
+        fullName: "تاجر Google",
+        role: UserRole.BRAND,
+        status: UserStatus.ACTIVE,
+      } as any);
+      vi.mocked(prisma.brandProfile.create).mockResolvedValue({
+        id: "google-brand",
+      } as any);
+
+      await AuthService.authenticateWithGoogle({
+        intent: "register",
+        email: "brand@gmail.com",
+        fullName: "تاجر Google",
+        role: UserRole.BRAND,
+        brandName: "متجر بغداد",
+      });
+
+      expect(prisma.brandProfile.create).toHaveBeenCalledWith({
+        data: {
+          name: "متجر بغداد",
+          slug: expect.stringMatching(/^متجر-بغداد-/),
+        },
+      });
+      expect(prisma.brandMember.create).toHaveBeenCalledWith({
+        data: {
+          userId: "google-brand-user",
+          brandId: "google-brand",
+          role: "OWNER",
+        },
+      });
+    });
+
+    it("rejects Google login for suspended or banned accounts", async () => {
+      vi.mocked(prisma.user.findUnique).mockResolvedValue({
+        id: "blocked-user",
+        status: UserStatus.SUSPENDED,
+      } as any);
+
+      await expect(
+        AuthService.authenticateWithGoogle({
+          intent: "login",
+          email: "blocked@example.com",
+          fullName: "محظور",
+        }),
+      ).rejects.toThrow("ACCOUNT_BLOCKED");
+    });
+  });
+
   describe("requestPasswordReset", () => {
     it("creates a token and sends an email when the user exists with an email", async () => {
       vi.mocked(prisma.user.findFirst).mockResolvedValue({

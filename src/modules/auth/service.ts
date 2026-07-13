@@ -124,6 +124,72 @@ export class AuthService {
     return user;
   }
 
+  static async authenticateWithGoogle(input: {
+    intent: "login" | "register";
+    email: string;
+    fullName: string;
+    role?: "CREATOR" | "BRAND";
+    brandName?: string;
+  }) {
+    const email = input.email.trim().toLowerCase();
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+
+    if (existingUser) {
+      if (
+        existingUser.status === UserStatus.SUSPENDED ||
+        existingUser.status === UserStatus.BANNED
+      ) {
+        throw new Error("ACCOUNT_BLOCKED");
+      }
+      return { user: existingUser, created: false };
+    }
+
+    if (input.intent !== "register") {
+      throw new Error("GOOGLE_ACCOUNT_NOT_FOUND");
+    }
+    if (input.role !== UserRole.CREATOR && input.role !== UserRole.BRAND) {
+      throw new Error("GOOGLE_ROLE_REQUIRED");
+    }
+    const role = input.role;
+
+    const user = await prisma.$transaction(async (tx) => {
+      const createdUser = await tx.user.create({
+        data: {
+          fullName: input.fullName.trim(),
+          email,
+          passwordHash: null,
+          role,
+          status: UserStatus.ACTIVE,
+        },
+      });
+
+      if (role === UserRole.CREATOR) {
+        await tx.creatorProfile.create({
+          data: { userId: createdUser.id, trustScore: 50 },
+        });
+      } else {
+        const brandName = input.brandName?.trim();
+        if (!brandName || brandName.length < 2) {
+          throw new Error("GOOGLE_BRAND_NAME_REQUIRED");
+        }
+        const randomSuffix = Math.random().toString(36).substring(2, 7);
+        const slug =
+          brandName
+            .toLowerCase()
+            .replace(/\s+/g, "-")
+            .replace(/[^\w\u0621-\u064A-]+/g, "") + `-${randomSuffix}`;
+        const brand = await tx.brandProfile.create({ data: { name: brandName, slug } });
+        await tx.brandMember.create({
+          data: { userId: createdUser.id, brandId: brand.id, role: "OWNER" },
+        });
+      }
+
+      return createdUser;
+    });
+
+    return { user, created: true };
+  }
+
   static async requestPasswordReset(input: ForgotPasswordInput): Promise<void> {
     const normalizedPhone = normalizeIraqiPhone(input.identifier);
 

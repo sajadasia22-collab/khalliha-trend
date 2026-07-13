@@ -21,7 +21,8 @@ export async function middleware(request: NextRequest) {
     if (
       pathname.startsWith("/api/v1/auth/login") ||
       pathname.startsWith("/api/v1/auth/register") ||
-      pathname.startsWith("/api/v1/auth/reset-password")
+      pathname.startsWith("/api/v1/auth/reset-password") ||
+      pathname.startsWith("/api/v1/auth/google")
     ) {
       const allowed = RateLimiter.isAllowed(`rate-limit:auth:${ip}`, 10, 60 * 1000); // 10 requests/min
       if (!allowed) {

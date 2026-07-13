@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { loginSchema } from "../../../modules/auth/schemas";
 import { PasswordField } from "../../../components/auth/PasswordField";
 import { PhoneInput } from "../../../components/auth/PhoneInput";
+import { GoogleAuthButton } from "../../../components/auth/GoogleAuthButton";
+import { getGoogleAuthErrorMessage } from "../../../lib/auth/google-error-message";
 
 type Tab = "email" | "phone";
 
@@ -18,6 +20,13 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [shake, setShake] = useState(false);
   const [showRoleSelector, setShowRoleSelector] = useState(false);
+
+  useEffect(() => {
+    const message = getGoogleAuthErrorMessage(
+      new URLSearchParams(window.location.search).get("googleError"),
+    );
+    if (message) queueMicrotask(() => setApiError(message));
+  }, []);
 
   const triggerShake = () => {
     setShake(true);
@@ -416,6 +425,22 @@ export default function LoginPage() {
                 {isLoading ? "جاري التحقق والدخول..." : "تسجيل الدخول"}
               </button>
             </form>
+
+            <div className="my-6 flex items-center gap-3" aria-hidden="true">
+              <span className="h-px flex-1 bg-[var(--color-border)]" />
+              <span className="text-xs font-bold text-[var(--color-text-secondary)]">
+                أو
+              </span>
+              <span className="h-px flex-1 bg-[var(--color-border)]" />
+            </div>
+
+            <GoogleAuthButton
+              label="الدخول بواسطة Google"
+              onClick={() => {
+                window.location.href = "/api/v1/auth/google?intent=login";
+              }}
+              disabled={isLoading}
+            />
 
             {/* Footer Link */}
             <div className="mt-8 text-center text-sm font-semibold text-[var(--color-text-secondary)] space-y-3">

@@ -29,10 +29,21 @@ SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 SENTRY_DSN=
 RESEND_API_KEY=
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
 ```
 
 ملاحظة: `SUPABASE_SERVICE_ROLE_KEY` سيرفر فقط ولا يصل للمتصفح.
 ملاحظة: `RESEND_API_KEY` مطلوب لإرسال رسائل استعادة كلمة المرور فعلياً على الإنتاج (بدونه محلياً فقط، الرابط يُطبع بالـ console بدل الإرسال الحقيقي — راجع Changelog 2026-07-13).
+
+### إعداد Google OAuth
+
+1. أنشئ OAuth Client من نوع **Web application** في Google Cloud Console.
+2. أضف Redirect URIs التالية بالضبط:
+   - `http://localhost:3000/api/v1/auth/google/callback`
+   - `https://khalliha-trend.vercel.app/api/v1/auth/google/callback`
+3. أضف `GOOGLE_CLIENT_ID` و`GOOGLE_CLIENT_SECRET` لبيئة Production في Vercel، ولا تضع القيم في Git.
+4. الصلاحيات المطلوبة هي `openid email profile` فقط؛ لا يتم طلب Drive أو أي API إضافي.
 
 ## 4. إجراءات قاعدة البيانات
 

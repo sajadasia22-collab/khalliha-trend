@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { registerSchema } from "../../../modules/auth/schemas";
 import { UserRole } from "../../../modules/auth/schemas";
 import { PasswordField } from "../../../components/auth/PasswordField";
 import { PhoneInput } from "../../../components/auth/PhoneInput";
+import { GoogleAuthButton } from "../../../components/auth/GoogleAuthButton";
+import { getGoogleAuthErrorMessage } from "../../../lib/auth/google-error-message";
 
 export default function RegisterPage() {
   const [fullName, setFullName] = useState("");
@@ -20,6 +22,35 @@ export default function RegisterPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const message = getGoogleAuthErrorMessage(
+      new URLSearchParams(window.location.search).get("googleError"),
+    );
+    if (message) queueMicrotask(() => setApiError(message));
+  }, []);
+
+  const handleGoogleRegister = () => {
+    const nextErrors: Record<string, string> = {};
+    if (!confirmAge) nextErrors.confirmAge = "يجب تأكيد أن عمرك 18 سنة أو أكثر";
+    if (!acceptTerms) nextErrors.acceptTerms = "يجب الموافقة على الشروط والأحكام";
+    if (role === UserRole.BRAND && brandName.trim().length < 2) {
+      nextErrors.brandName = "اسم العلامة التجارية مطلوب عند التسجيل كتاجر";
+    }
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
+      return;
+    }
+
+    const params = new URLSearchParams({
+      intent: "register",
+      role,
+      acceptTerms: "true",
+      confirmAge: "true",
+    });
+    if (role === UserRole.BRAND) params.set("brandName", brandName.trim());
+    window.location.href = `/api/v1/auth/google?${params.toString()}`;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -342,6 +373,18 @@ export default function RegisterPage() {
             {isLoading ? "جاري إنشاء الحساب..." : "إنشاء حساب جديد"}
           </button>
         </form>
+
+        <div className="my-6 flex items-center gap-3" aria-hidden="true">
+          <span className="h-px flex-1 bg-[var(--color-border)]" />
+          <span className="text-xs font-bold text-[var(--color-text-secondary)]">أو</span>
+          <span className="h-px flex-1 bg-[var(--color-border)]" />
+        </div>
+
+        <GoogleAuthButton
+          label="إنشاء الحساب بواسطة Google"
+          onClick={handleGoogleRegister}
+          disabled={isLoading}
+        />
 
         {/* Footer Link */}
         <div className="mt-8 text-center text-sm font-semibold text-[var(--color-text-secondary)] space-y-3">
