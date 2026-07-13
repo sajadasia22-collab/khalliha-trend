@@ -24,6 +24,7 @@ export function PasswordField({
   autoComplete = "current-password",
 }: Props) {
   const [isVisible, setIsVisible] = useState(false);
+  const [hasToggled, setHasToggled] = useState(false);
 
   return (
     <div>
@@ -63,46 +64,50 @@ export function PasswordField({
           className="w-full min-h-[48px] ps-11 pe-11 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] focus:border-[var(--color-brand)] focus:ring-4 focus:ring-[rgba(214,246,29,0.18)] focus:outline-none transition-all text-left font-medium"
           disabled={disabled}
         />
+        {hasToggled && (
+          <span
+            key={isVisible ? "password-revealed" : "password-concealed"}
+            className="password-field-flash"
+            aria-hidden="true"
+          />
+        )}
         <button
           type="button"
-          onClick={() => setIsVisible((visible) => !visible)}
-          className="absolute end-0 top-0 flex h-full w-11 items-center justify-center text-[var(--color-text-muted)] transition-colors hover:text-[var(--forest-700)]"
+          onClick={() => {
+            setHasToggled(true);
+            setIsVisible((visible) => !visible);
+          }}
+          className={`password-toggle absolute end-0 top-0 z-10 flex h-full w-11 items-center justify-center text-[var(--color-text-muted)] transition-colors hover:text-[var(--forest-700)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-active)] ${hasToggled ? "has-toggled" : ""} ${isVisible ? "is-visible" : ""}`}
           aria-label={isVisible ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
-          tabIndex={-1}
+          aria-pressed={isVisible}
         >
-          {isVisible ? (
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              aria-hidden="true"
-            >
-              <path
-                d="M3 3l18 18M10.6 10.6a2.5 2.5 0 0 0 3.5 3.5M6.5 6.7C4 8.3 2.3 10.7 1.5 12c1.6 2.6 5 7 10.5 7 1.8 0 3.4-.5 4.7-1.2M9.5 4.3A10.6 10.6 0 0 1 12 4c5.5 0 8.9 4.4 10.5 7-1 1.6-2.3 3.2-3.9 4.4"
-                stroke="currentColor"
-                strokeWidth="1.7"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          ) : (
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              aria-hidden="true"
-            >
-              <path
-                d="M1.5 12S5 5 12 5s10.5 7 10.5 7-3.5 7-10.5 7S1.5 12 1.5 12z"
-                stroke="currentColor"
-                strokeWidth="1.7"
-                strokeLinejoin="round"
-              />
-              <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.7" />
-            </svg>
-          )}
+          <span
+            key={isVisible ? "hide-password" : "show-password"}
+            className="password-toggle-effect"
+            aria-hidden="true"
+          >
+            {isVisible ? (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M3 3l18 18M10.6 10.6a2.5 2.5 0 0 0 3.5 3.5M6.5 6.7C4 8.3 2.3 10.7 1.5 12c1.6 2.6 5 7 10.5 7 1.8 0 3.4-.5 4.7-1.2M9.5 4.3A10.6 10.6 0 0 1 12 4c5.5 0 8.9 4.4 10.5 7-1 1.6-2.3 3.2-3.9 4.4"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            ) : (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M1.5 12S5 5 12 5s10.5 7 10.5 7-3.5 7-10.5 7S1.5 12 1.5 12z"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinejoin="round"
+                />
+                <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.8" />
+              </svg>
+            )}
+          </span>
         </button>
       </div>
       {error && (

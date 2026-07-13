@@ -66,3 +66,19 @@ test("auth fields follow the natural writing direction", async ({ page }) => {
   await page.goto("/register");
   await expect(page.locator("#fullName")).toHaveCSS("text-align", "right");
 });
+
+test("password visibility toggle works with the keyboard", async ({ page }) => {
+  await page.goto("/login");
+  await page.fill("#password", "secret123");
+
+  const toggle = page.getByRole("button", { name: "إظهار كلمة المرور" });
+  await expect(toggle).toHaveAttribute("aria-pressed", "false");
+  await toggle.focus();
+  await page.keyboard.press("Enter");
+
+  await expect(page.locator("#password")).toHaveAttribute("type", "text");
+  await expect(page.getByRole("button", { name: "إخفاء كلمة المرور" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+});
