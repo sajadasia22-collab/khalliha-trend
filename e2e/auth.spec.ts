@@ -128,16 +128,6 @@ test.describe("Authentication and Route Protection E2E", () => {
         });
       });
 
-      // Mock the logout endpoint and manually clear cookies in browser context
-      await page.route("**/api/v1/auth/logout", async (route) => {
-        await page.context().clearCookies(); // Crucial: clear cookies in the Playwright browser jar
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify({ status: "success" }),
-        });
-      });
-
       // Go to register page
       await page.goto("/register");
 
@@ -155,10 +145,14 @@ test.describe("Authentication and Route Protection E2E", () => {
 
       // Wait for redirect to creator dashboard
       await expect(page).toHaveURL(/\/creator\/dashboard/);
-      await expect(page.getByText("أهلاً بك، أحمد صانع المحتوى 👋")).toBeVisible();
+      await expect(
+        page.getByRole("heading", {
+          name: "أهلاً بك، أحمد صانع المحتوى",
+        }),
+      ).toBeVisible();
 
       // Click logout
-      await page.click("button:has-text('تسجيل الخروج')");
+      await page.getByRole("button", { name: "تسجيل الخروج" }).click();
 
       // Redirected to login
       await expect(page).toHaveURL(/\/login/, { timeout: 10000 });
