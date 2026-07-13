@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { EyeIcon, EyeOffIcon } from "../ui/icons";
 
 type Props = {
   id: string;
@@ -86,27 +87,7 @@ export function PasswordField({
             className="password-toggle-effect"
             aria-hidden="true"
           >
-            {isVisible ? (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M3 3l18 18M10.6 10.6a2.5 2.5 0 0 0 3.5 3.5M6.5 6.7C4 8.3 2.3 10.7 1.5 12c1.6 2.6 5 7 10.5 7 1.8 0 3.4-.5 4.7-1.2M9.5 4.3A10.6 10.6 0 0 1 12 4c5.5 0 8.9 4.4 10.5 7-1 1.6-2.3 3.2-3.9 4.4"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            ) : (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M1.5 12S5 5 12 5s10.5 7 10.5 7-3.5 7-10.5 7S1.5 12 1.5 12z"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinejoin="round"
-                />
-                <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.8" />
-              </svg>
-            )}
+            {isVisible ? <EyeOffIcon /> : <EyeIcon />}
           </span>
         </button>
       </div>

@@ -13,6 +13,7 @@ import {
   User,
   Link2,
   Eye,
+  EyeOff,
   LayoutDashboard,
   Scale,
   Bell,
@@ -83,6 +84,7 @@ export const BriefcaseIcon = withDefaults(Briefcase);
 export const UserIcon = withDefaults(User);
 export const LinkIcon = withDefaults(Link2);
 export const EyeIcon = withDefaults(Eye);
+export const EyeOffIcon = withDefaults(EyeOff);
 
 export const DashboardIcon = withDefaults(LayoutDashboard);
 export const DisputeIcon = withDefaults(Scale);
