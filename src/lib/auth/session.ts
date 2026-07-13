@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { getAuthSecret, verifyJWT } from "./jwt";
 import { AuthService } from "../../modules/auth/service";
+import { UserStatus } from "../../generated/prisma/enums";
 
 export async function getCurrentUser() {
   try {
@@ -19,7 +20,11 @@ export async function getCurrentUser() {
     }
 
     const user = await AuthService.findById(payload.userId);
-    if (!user) {
+    if (
+      !user ||
+      user.status === UserStatus.SUSPENDED ||
+      user.status === UserStatus.BANNED
+    ) {
       return null;
     }
 

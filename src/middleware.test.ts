@@ -85,11 +85,14 @@ describe("middleware route protection", () => {
     expect(allowed.status).toBe(200);
   });
 
-  it("redirects an authenticated user away from /login to their dashboard", async () => {
+  it("keeps login reachable for account switching but protects registration", async () => {
     const token = await tokenFor("BRAND");
-    const response = await middleware(requestTo("/login", token));
-    expect(response.status).toBe(307);
-    expect(response.headers.get("location")).toBe(
+    const loginResponse = await middleware(requestTo("/login", token));
+    expect(loginResponse.status).toBe(200);
+
+    const registerResponse = await middleware(requestTo("/register", token));
+    expect(registerResponse.status).toBe(307);
+    expect(registerResponse.headers.get("location")).toBe(
       "http://localhost:3000/brand/dashboard",
     );
   });

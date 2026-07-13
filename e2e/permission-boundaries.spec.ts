@@ -45,6 +45,22 @@ test.describe("Cross-role permission boundaries", () => {
     expect(json.error.code).toBe("FORBIDDEN");
   });
 
+  test("user status administration is protected by the admin boundary", async ({
+    request,
+  }) => {
+    const unauthenticated = await request.patch("/api/v1/admin/users/user-1/status", {
+      data: { status: "BANNED", reason: "اختبار الحماية" },
+    });
+    expect(unauthenticated.status()).toBe(401);
+
+    const token = await tokenFor("CREATOR");
+    const forbidden = await request.patch("/api/v1/admin/users/user-1/status", {
+      headers: { cookie: `${COOKIE_NAME}=${token}` },
+      data: { status: "BANNED", reason: "اختبار الحماية" },
+    });
+    expect(forbidden.status()).toBe(403);
+  });
+
   test("a BRAND token is rejected by a creator-only API with 403", async ({
     request,
   }) => {

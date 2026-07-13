@@ -158,8 +158,10 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // 3. Prevent logged-in users from visiting login/register pages
-  const isAuthPage = pathname === "/login" || pathname === "/register";
+  // 3. Keep registration away from authenticated sessions. Login remains reachable so a
+  // suspended/banned session can safely land there instead of entering a redirect loop,
+  // and active users can deliberately switch accounts.
+  const isAuthPage = pathname === "/register";
   if (isAuthPage && payload) {
     const role = payload.role;
     let dashboardPath = "/";

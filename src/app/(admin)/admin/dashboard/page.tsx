@@ -99,13 +99,29 @@ export default async function AdminDashboard() {
   ];
 
   const pulseItems = [
-    { label: "حملات نشطة حالياً", value: activeCampaignsCount, icon: MegaphoneIcon },
-    { label: "صناع محتوى مسجّلون", value: creatorsCount, icon: UsersIcon },
-    { label: "علامات تجارية مسجّلة", value: brandsCount, icon: BriefcaseIcon },
+    {
+      label: "حملات نشطة حالياً",
+      value: activeCampaignsCount,
+      icon: MegaphoneIcon,
+      href: "/admin/reviews",
+    },
+    {
+      label: "صناع محتوى مسجّلون",
+      value: creatorsCount,
+      icon: UsersIcon,
+      href: "/admin/users?role=CREATOR",
+    },
+    {
+      label: "علامات تجارية مسجّلة",
+      value: brandsCount,
+      icon: BriefcaseIcon,
+      href: "/admin/users?role=BRAND",
+    },
     {
       label: "إجمالي المشاهدات المؤهلة",
       value: totalQualifiedViews.toLocaleString("ar-IQ", { numberingSystem: "latn" }),
       icon: EyeIcon,
+      href: "/admin/dashboard",
     },
   ];
 
@@ -215,7 +231,11 @@ export default async function AdminDashboard() {
                 {pulseItems.map((item) => {
                   const Icon = item.icon;
                   return (
-                    <div key={item.label} className="flex items-center gap-3 p-5">
+                    <Link
+                      href={item.href ?? "/admin/users"}
+                      key={item.label}
+                      className="flex items-center gap-3 p-5 transition-colors hover:bg-[var(--color-surface-muted)]"
+                    >
                       <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-surface-muted)] text-[var(--forest-500)]">
                         <Icon />
                       </span>
@@ -227,7 +247,7 @@ export default async function AdminDashboard() {
                           {item.value}
                         </span>
                       </span>
-                    </div>
+                    </Link>
                   );
                 })}
               </div>
