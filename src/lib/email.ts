@@ -36,10 +36,17 @@ export async function sendPasswordResetEmail(
     </div>
   `;
 
-  await client.emails.send({
+  const { error } = await client.emails.send({
     from: "خلّيها ترند <onboarding@resend.dev>",
     to,
     subject: "إعادة تعيين كلمة المرور - خلّيها ترند",
     html,
   });
+
+  // The Resend SDK does not throw on API-level rejections (e.g. sandbox
+  // restrictions on an unverified domain) — it returns an `error` field
+  // instead, so we must check it explicitly or failures vanish silently.
+  if (error) {
+    throw new Error(`Resend failed to send password reset email: ${error.message}`);
+  }
 }

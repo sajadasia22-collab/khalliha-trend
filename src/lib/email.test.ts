@@ -52,4 +52,16 @@ describe("sendPasswordResetEmail", () => {
       sendPasswordResetEmail("user@example.com", "http://localhost:3000/reset?token=abc", "علي"),
     ).rejects.toThrow(/RESEND_API_KEY is required/);
   });
+
+  it("throws when Resend accepts the call but rejects delivery via the error field", async () => {
+    vi.stubEnv("RESEND_API_KEY", "test-key");
+    sendMock.mockResolvedValueOnce({
+      data: null,
+      error: { message: "You can only send testing emails to your own email address" },
+    });
+
+    await expect(
+      sendPasswordResetEmail("user@example.com", "http://localhost:3000/reset?token=abc", "علي"),
+    ).rejects.toThrow(/You can only send testing emails/);
+  });
 });
