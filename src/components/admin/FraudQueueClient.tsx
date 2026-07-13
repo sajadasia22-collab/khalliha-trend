@@ -36,19 +36,34 @@ export function FraudQueueClient({ initialItems }: { initialItems: FraudItem[] }
   const router = useRouter();
   const [items, setItems] = useState(initialItems);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [pendingReview, setPendingReview] = useState<{
+    id: string;
+    decision: "CLEAR" | "CONFIRM";
+  } | null>(null);
+  const [note, setNote] = useState("");
+
+  function startReview(id: string, decision: "CLEAR" | "CONFIRM") {
+    if (pendingReview?.id === id && pendingReview.decision === decision) {
+      setPendingReview(null);
+      return;
+    }
+    setPendingReview({ id, decision });
+    setNote("");
+  }
 
   async function review(id: string, decision: "CLEAR" | "CONFIRM") {
-    const note = window.prompt(
-      decision === "CONFIRM" ? "سبب تأكيد الاشتباه:" : "سبب إزالة الاشتباه:",
-    );
-    if (!note) return;
+    const trimmed = note.trim();
+    if (!trimmed) {
+      showToast("اكتب سبب القرار أولاً", "error");
+      return;
+    }
 
     setBusyId(id);
     try {
       const response = await fetch(`/api/v1/admin/fraud-queue/${id}/review`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ decision, note }),
+        body: JSON.stringify({ decision, note: trimmed }),
       });
       if (!response.ok) {
         const data = await response.json();
@@ -56,6 +71,8 @@ export function FraudQueueClient({ initialItems }: { initialItems: FraudItem[] }
         return;
       }
       setItems((current) => current.filter((item) => item.id !== id));
+      setPendingReview(null);
+      setNote("");
       // يحدّث عدّاد الحالات المصيَّر من الخادم في ترويسة الصفحة.
       router.refresh();
     } finally {
@@ -103,7 +120,7 @@ export function FraudQueueClient({ initialItems }: { initialItems: FraudItem[] }
               <button
                 type="button"
                 disabled={busyId === item.id}
-                onClick={() => review(item.id, "CLEAR")}
+                onClick={() => startReview(item.id, "CLEAR")}
                 className="btn-secondary px-4 py-2 text-xs font-bold disabled:opacity-50"
               >
                 إزالة الاشتباه
@@ -111,13 +128,54 @@ export function FraudQueueClient({ initialItems }: { initialItems: FraudItem[] }
               <button
                 type="button"
                 disabled={busyId === item.id}
-                onClick={() => review(item.id, "CONFIRM")}
+                onClick={() => startReview(item.id, "CONFIRM")}
                 className="btn-primary px-4 py-2 text-xs font-bold disabled:opacity-50"
               >
                 تأكيد الاحتيال
               </button>
             </div>
           </div>
+          {pendingReview?.id === item.id && (
+            <div className="mt-4 space-y-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
+              <label
+                htmlFor={`fraud-review-note-${item.id}`}
+                className="block text-xs font-extrabold"
+              >
+                {pendingReview.decision === "CONFIRM"
+                  ? "سبب تأكيد الاشتباه"
+                  : "سبب إزالة الاشتباه"}
+              </label>
+              <textarea
+                id={`fraud-review-note-${item.id}`}
+                value={note}
+                onChange={(event) => setNote(event.target.value)}
+                rows={2}
+                maxLength={1000}
+                placeholder="اكتب سبب القرار — يظهر في سجل التدقيق..."
+                className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm font-medium"
+              />
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  disabled={busyId === item.id || note.trim().length === 0}
+                  onClick={() => review(item.id, pendingReview.decision)}
+                  className="btn-primary px-4 py-2 text-xs font-bold disabled:opacity-50"
+                >
+                  {pendingReview.decision === "CONFIRM"
+                    ? "تأكيد الاحتيال نهائياً"
+                    : "إزالة الاشتباه نهائياً"}
+                </button>
+                <button
+                  type="button"
+                  disabled={busyId === item.id}
+                  onClick={() => setPendingReview(null)}
+                  className="btn-secondary px-4 py-2 text-xs font-bold disabled:opacity-50"
+                >
+                  إلغاء
+                </button>
+              </div>
+            </div>
+          )}
           <div className="mt-4 grid gap-2">
             {item.signals.map((signal) => (
               <div

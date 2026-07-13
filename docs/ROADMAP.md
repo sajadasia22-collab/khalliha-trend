@@ -190,9 +190,9 @@
 - `src/lib/permissions/rbac.test.ts` أصبح مصفوفة صلاحيات كاملة (كل الأدوار × كل الصلاحيات المعرّفة) بدل عينات محدودة.
 - اختبارات IDOR e2e جديدة (`e2e/permission-boundaries.spec.ts`) تتحقق من رفض كل دور للـ APIs غير المخصصة له عبر الـ pipeline الفعلي (HTTP status/JSON)، فوق `src/middleware.test.ts` الموجود مسبقاً.
 - `pnpm audit` كشف ثغرتين متوسطتين (transitive عبر next وprisma، أدوات وقت-بناء فقط) وتم تثبيتهما عبر `pnpm.overrides`. `pnpm audit` الآن نظيف.
-- تحقق threat model موثّق بالتفصيل في `docs/THREAT_MODEL.md` §8، ويشمل فجوات حقيقية متبقية بصراحة: لا يوجد نموذج `AuditLog` فعلي في قاعدة البيانات، لا rate limiting، لا CSP/security headers. هذه القرارات التصميمية تفوق نطاق "كتابة اختبارات" وتُرشَّح كعمل منفصل.
+- تحقق threat model موثّق بالتفصيل في `docs/THREAT_MODEL.md` §8. الفجوات الثلاث التي رُصدت وقتها (نموذج `AuditLog`، rate limiting، CSP/security headers) **أُغلقت لاحقاً بالكامل** — راجع «الفجوات التي أُغلقت» في `THREAT_MODEL.md` §8؛ المتبقي الوحيد هو اختبارات رفع الملفات (لا ينطبق: لا توجد ميزة رفع بعد).
 
-## المرحلة 13: Staging والنشر - جزئية (بانتظار شراء استضافة)
+## المرحلة 13: Staging والنشر - منشورة على الإنتاج (Monitoring/Backup مؤجلان)
 
 - Staging deployment config.
 - Migrations.
@@ -203,8 +203,8 @@
 
 ملاحظات التنفيذ:
 
-- **قرار صاحب المنتج**: النشر الفعلي (Vercel/Supabase أو أي استضافة حقيقية) مؤجّل عمداً لحين شراء اشتراك سيرفر. تم إنجاز كل ما يمكن تجهيزه محلياً بدون استضافة فعلية:
-  - `.github/workflows/ci.yml` أصبح خط أنابيب CI/CD كامل وفعلي: Postgres service حقيقي، `prisma migrate deploy`، format/lint/typecheck، unit+integration tests (بما فيها اختبار السباق المالي ضد قاعدة بيانات فعلية)، build، E2E كامل، dependency audit. تم تشغيله محلياً بمحاكاة كاملة (نفس متغيرات البيئة) والتأكد أن كل الخطوات تنجح.
-  - `pnpm format:check` كان يفشل على 53 ملف موجودة من قبل (تراكم من مراحل سابقة) — تم إصلاحها بالكامل؛ الـ CI الآن يمرّ فعلياً بدل الفشل من أول خطوة.
-  - `prisma migrate status` تؤكد: لا drift، 9 migrations متسلسلة، جاهزة لـ `prisma migrate deploy` على أي قاعدة بيانات جديدة.
-  - تقرير جاهزية إنتاج صريح موثّق في `docs/DEPLOYMENT.md` §8، يوضح بالتفصيل ما هو جاهز فعلياً (الكود، الاختبارات، CI) مقابل ما هو عائق حقيقي (**المشروع ليس git repository بعد** — عائق أساسي أمام أي نشر) وما هو مؤجَّل بقرار (logging/monitoring/backup/استضافة).
+- **المنصة منشورة فعلياً على الإنتاج** منذ 2026-07-13: `khalliha-trend.vercel.app` (Vercel + Supabase Postgres)، والمشروع git repository مربوط بـ GitHub والنشر يتم تلقائياً عند الدفع إلى `main`. راجع جدول الإصدارات في `CHANGELOG.md` وآلية النشر في `DEPLOYMENT.md` §10.
+- `.github/workflows/ci.yml` خط أنابيب CI/CD كامل وفعلي: Postgres service حقيقي، `prisma migrate deploy`، format/lint/typecheck، unit+integration tests (بما فيها اختبار السباق المالي ضد قاعدة بيانات فعلية)، build، E2E كامل، dependency audit.
+- `prisma migrate status`: لا drift، والـ migrations مطبقة على قاعدة الإنتاج.
+- تقرير جاهزية الإنتاج موثّق في `docs/DEPLOYMENT.md` §8.
+- **المتبقي المؤجَّل بقرار**: Monitoring/alerting فعلي (تتبع أخطاء وتنبيهات) وخطة Backup دورية موثقة لقاعدة Supabase خارج النسخ الافتراضي.

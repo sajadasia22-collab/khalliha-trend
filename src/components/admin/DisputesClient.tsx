@@ -23,6 +23,15 @@ const RESOLVED_STATUSES = new Set([
   "CLOSED",
 ]);
 
+type ResolveDecision = "CREATOR" | "BRAND" | "PARTIAL" | "CLOSE";
+
+const DECISION_LABELS: Record<ResolveDecision, string> = {
+  CREATOR: "لصالح الصانع",
+  BRAND: "لصالح العلامة",
+  PARTIAL: "حل جزئي",
+  CLOSE: "إغلاق",
+};
+
 type DisputeItem = {
   id: string;
   title: string;
@@ -53,6 +62,11 @@ export function DisputesClient({
   const [items, setItems] = useState(initialItems);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [replies, setReplies] = useState<Record<string, string>>({});
+  const [pendingResolve, setPendingResolve] = useState<{
+    id: string;
+    decision: ResolveDecision;
+  } | null>(null);
+  const [resolutionNote, setResolutionNote] = useState("");
 
   async function sendReply(id: string) {
     const body = replies[id]?.trim();
@@ -91,19 +105,28 @@ export function DisputesClient({
     }
   }
 
-  async function resolve(
-    id: string,
-    decision: "CREATOR" | "BRAND" | "PARTIAL" | "CLOSE",
-  ) {
-    const resolutionNote = window.prompt("اكتب ملاحظة قرار النزاع:");
-    if (!resolutionNote) return;
+  function startResolve(id: string, decision: ResolveDecision) {
+    if (pendingResolve?.id === id && pendingResolve.decision === decision) {
+      setPendingResolve(null);
+      return;
+    }
+    setPendingResolve({ id, decision });
+    setResolutionNote("");
+  }
+
+  async function resolve(id: string, decision: ResolveDecision) {
+    const trimmed = resolutionNote.trim();
+    if (trimmed.length < 5) {
+      showToast("ملاحظة القرار مطلوبة (5 أحرف على الأقل)", "error");
+      return;
+    }
 
     setBusyId(id);
     try {
       const response = await fetch(`/api/v1/admin/disputes/${id}/resolve`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ decision, resolutionNote }),
+        body: JSON.stringify({ decision, resolutionNote: trimmed }),
       });
       if (!response.ok) {
         const data = await response.json();
@@ -127,6 +150,8 @@ export function DisputesClient({
             : item,
         ),
       );
+      setPendingResolve(null);
+      setResolutionNote("");
       // يحدّث عدّاد النزاعات النشطة المصيَّر من الخادم في ترويسة الصفحة.
       router.refresh();
     } finally {
@@ -179,34 +204,71 @@ export function DisputesClient({
                   <button
                     disabled={busyId === item.id}
                     className="btn-secondary px-3 py-2 text-xs font-bold"
-                    onClick={() => resolve(item.id, "CREATOR")}
+                    onClick={() => startResolve(item.id, "CREATOR")}
                   >
                     لصالح الصانع
                   </button>
                   <button
                     disabled={busyId === item.id}
                     className="btn-secondary px-3 py-2 text-xs font-bold"
-                    onClick={() => resolve(item.id, "BRAND")}
+                    onClick={() => startResolve(item.id, "BRAND")}
                   >
                     لصالح العلامة
                   </button>
                   <button
                     disabled={busyId === item.id}
                     className="btn-secondary px-3 py-2 text-xs font-bold"
-                    onClick={() => resolve(item.id, "PARTIAL")}
+                    onClick={() => startResolve(item.id, "PARTIAL")}
                   >
                     حل جزئي
                   </button>
                   <button
                     disabled={busyId === item.id}
                     className="btn-primary px-3 py-2 text-xs font-bold"
-                    onClick={() => resolve(item.id, "CLOSE")}
+                    onClick={() => startResolve(item.id, "CLOSE")}
                   >
                     إغلاق
                   </button>
                 </div>
               )}
             </div>
+            {!resolved && pendingResolve?.id === item.id && (
+              <div className="mt-4 space-y-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
+                <label
+                  htmlFor={`dispute-resolution-note-${item.id}`}
+                  className="block text-xs font-extrabold"
+                >
+                  ملاحظة قرار «{DECISION_LABELS[pendingResolve.decision]}» — تظهر للطرفين
+                </label>
+                <textarea
+                  id={`dispute-resolution-note-${item.id}`}
+                  value={resolutionNote}
+                  onChange={(event) => setResolutionNote(event.target.value)}
+                  rows={2}
+                  maxLength={2000}
+                  placeholder="اشرح أساس القرار (5 أحرف على الأقل)..."
+                  className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm font-medium"
+                />
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    disabled={busyId === item.id || resolutionNote.trim().length < 5}
+                    onClick={() => resolve(item.id, pendingResolve.decision)}
+                    className="btn-primary px-4 py-2 text-xs font-bold disabled:opacity-50"
+                  >
+                    تأكيد القرار
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busyId === item.id}
+                    onClick={() => setPendingResolve(null)}
+                    className="btn-secondary px-4 py-2 text-xs font-bold disabled:opacity-50"
+                  >
+                    إلغاء
+                  </button>
+                </div>
+              </div>
+            )}
             <div className="mt-4 space-y-2">
               {item.messages.map((message) => (
                 <div

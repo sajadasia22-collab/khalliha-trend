@@ -25,6 +25,8 @@
 - `releaseAvailableEarnings` أصبح يستثني أي مشاركة تقييم احتيالها ليس `CLEARED` (كان يستثني النزاعات النشطة فقط) (`src/modules/financial/service.ts`).
 - تحديث عدّادات «نزاع نشط» و«حالة قيد المراجعة» في ترويسة صفحتي الإدارة فور الحسم عبر `router.refresh()` (`src/components/admin/DisputesClient.tsx`, `src/components/admin/FraudQueueClient.tsx`).
 - توثيق القواعد التفصيلية للإشارات والقرارات والتجميد المالي في `BUSINESS_RULES.md` وتصحيح قائمة المسارات في `API.md` (حذف `GET /api/v1/admin/disputes` غير الموجود والمكرر).
+- استبدال نوافذ `window.prompt` لملاحظات القرارات الإدارية بنماذج داخل الصفحة (textarea + تأكيد/إلغاء) في حسم النزاعات ومراجعة الاحتيال — أوضح للمستخدم وتعمل في كل البيئات (`src/components/admin/DisputesClient.tsx`, `src/components/admin/FraudQueueClient.tsx`).
+- تحديث `ROADMAP.md`: المرحلة 13 كانت تقول «بانتظار شراء استضافة» و«المشروع ليس git repository» رغم أن المنصة منشورة فعلاً على Vercel/Supabase — صُححت لتعكس الواقع، مع تصحيح ملاحظة قديمة في المرحلة 12 عن فجوات أمنية أُغلقت لاحقاً.
 
 ### إدارة المستخدمين والحظر الفوري
 
