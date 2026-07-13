@@ -420,6 +420,26 @@ describe("FinancialService", () => {
       const result = await FinancialService.releaseAvailableEarnings(new Date());
 
       expect(result).toEqual({ releasedCount: 1, releasedIds: ["earning-1"] });
+      expect(prisma.earningAccrual.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            submission: {
+              disputes: {
+                none: {
+                  status: {
+                    in: [
+                      "OPEN",
+                      "AWAITING_CREATOR",
+                      "AWAITING_BRAND",
+                      "UNDER_ADMIN_REVIEW",
+                    ],
+                  },
+                },
+              },
+            },
+          }),
+        }),
+      );
       expect(prisma.ledgerEntry.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({

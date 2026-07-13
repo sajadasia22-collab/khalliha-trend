@@ -4,9 +4,11 @@ import {
   FraudRiskLevel,
   FraudReviewStatus,
   FraudSignalKind,
+  NotificationType,
   TrustScoreEventReason,
 } from "../../generated/prisma/enums";
 import { AuditLogService } from "../audit-log/service";
+import { NotificationService } from "../notifications/service";
 
 type FraudTxClient = Pick<PrismaClient, "fraudAssessment" | "fraudSignal">;
 
@@ -48,7 +50,7 @@ export class FraudService {
         },
       });
 
-      return FraudService.recalculateAssessmentWithClient(tx, submissionId);
+      return FraudService.recalculateAssessmentWithClient(tx, submissionId, true);
     });
 
     await AuditLogService.log({
@@ -86,32 +88,35 @@ export class FraudService {
         if (disqualifiedRatio >= 50) {
           signals.push({
             kind: FraudSignalKind.HIGH_DISQUALIFIED_RATIO,
-            scoreImpact: 35,
+            scoreImpact: disqualifiedRatio >= 80 ? 55 : 45,
             note: `نسبة المشاهدات المستبعدة ${disqualifiedRatio}%`,
           });
         }
       }
 
       if (previous) {
-        const delta = latest.qualifiedViews - previous.qualifiedViews;
-        if (previous.qualifiedViews > 0n && delta > previous.qualifiedViews * 3n) {
+        if (
+          previous.qualifiedViews > 0n &&
+          latest.qualifiedViews > previous.qualifiedViews * 3n
+        ) {
           signals.push({
             kind: FraudSignalKind.VIEW_SPIKE,
-            scoreImpact: 25,
+            scoreImpact: 35,
             note: "قفزة كبيرة في المشاهدات المؤهلة بين snapshot وآخر",
           });
         }
       }
 
+      let createdSignal = false;
       for (const signal of signals) {
         const exists = await tx.fraudSignal.findFirst({
           where: {
             submissionId,
             kind: signal.kind,
-            note: signal.note,
           },
         });
         if (!exists) {
+          createdSignal = true;
           await tx.fraudSignal.create({
             data: {
               submissionId,
@@ -123,7 +128,11 @@ export class FraudService {
         }
       }
 
-      return FraudService.recalculateAssessmentWithClient(tx, submissionId);
+      return FraudService.recalculateAssessmentWithClient(
+        tx,
+        submissionId,
+        createdSignal,
+      );
     });
   }
 
@@ -164,6 +173,25 @@ export class FraudService {
         throw new Error("تقييم الاحتيال غير موجود");
       }
 
+      const claimed = await tx.fraudAssessment.updateMany({
+        where: {
+          id: assessmentId,
+          status: { in: [FraudReviewStatus.OPEN, FraudReviewStatus.UNDER_REVIEW] },
+        },
+        data: {
+          status:
+            decision === "CONFIRM"
+              ? FraudReviewStatus.CONFIRMED
+              : FraudReviewStatus.CLEARED,
+          reviewNote: note ?? null,
+          reviewedByUserId: adminUserId,
+          reviewedAt: new Date(),
+        },
+      });
+      if (claimed.count !== 1) {
+        throw new Error("تمت مراجعة حالة الاحتيال هذه مسبقاً");
+      }
+
       const creatorProfile = assessment.submission.socialAccount.creatorProfile;
       const delta = decision === "CONFIRM" ? -10 : 3;
       const newTrustScore = clampScore(creatorProfile.trustScore + delta);
@@ -186,19 +214,25 @@ export class FraudService {
         },
       });
 
-      return tx.fraudAssessment.update({
-        where: { id: assessmentId },
-        data: {
-          status:
-            decision === "CONFIRM"
-              ? FraudReviewStatus.CONFIRMED
-              : FraudReviewStatus.CLEARED,
-          reviewNote: note ?? null,
-          reviewedByUserId: adminUserId,
-          reviewedAt: new Date(),
-        },
-      });
+      return {
+        ...assessment,
+        status:
+          decision === "CONFIRM"
+            ? FraudReviewStatus.CONFIRMED
+            : FraudReviewStatus.CLEARED,
+        creatorUserId: creatorProfile.userId,
+      };
     });
+
+    await NotificationService.notify(
+      result.creatorUserId,
+      NotificationType.FRAUD_FLAGGED,
+      decision === "CONFIRM" ? "نتيجة مراجعة المحتوى" : "تمت إزالة الاشتباه",
+      decision === "CONFIRM"
+        ? "أكدت الإدارة وجود مخالفة على إحدى مشاركاتك. راجع مركز النزاعات إذا رغبت بالاعتراض."
+        : "راجعت الإدارة المشاركة وأزالت عنها إشارة الاشتباه.",
+      "/creator/disputes",
+    );
 
     await AuditLogService.log({
       actorId: adminUserId,
@@ -216,8 +250,12 @@ export class FraudService {
   private static async recalculateAssessmentWithClient(
     tx: FraudTxClient,
     submissionId: string,
+    reopen = false,
   ) {
-    const signals = await tx.fraudSignal.findMany({ where: { submissionId } });
+    const [signals, existing] = await Promise.all([
+      tx.fraudSignal.findMany({ where: { submissionId } }),
+      tx.fraudAssessment.findUnique({ where: { submissionId } }),
+    ]);
     const fraudScore = clampScore(
       signals.reduce((sum, signal) => sum + signal.scoreImpact, 0),
     );
@@ -233,7 +271,14 @@ export class FraudService {
       update: {
         fraudScore,
         riskLevel: riskLevel(fraudScore),
-        status: fraudScore > 0 ? FraudReviewStatus.OPEN : FraudReviewStatus.CLEARED,
+        status:
+          existing?.status === FraudReviewStatus.CONFIRMED
+            ? FraudReviewStatus.CONFIRMED
+            : reopen || !existing
+              ? fraudScore > 0
+                ? FraudReviewStatus.OPEN
+                : FraudReviewStatus.CLEARED
+              : existing.status,
       },
     });
   }

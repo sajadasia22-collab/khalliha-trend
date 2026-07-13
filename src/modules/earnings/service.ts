@@ -209,6 +209,7 @@ export class EarningsService {
       USD: getSummaryByCurrency("USD"),
       history: accruals.map((acc) => ({
         id: acc.id,
+        submissionId: acc.submissionId,
         amount: acc.amount.toString(),
         currency: acc.submission.campaignMembership.campaign.currency,
         status: acc.status,

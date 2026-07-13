@@ -496,6 +496,20 @@ export class FinancialService {
         where: {
           status: { in: [EarningStatus.PENDING_VERIFICATION, EarningStatus.HELD] },
           heldUntil: { lte: now },
+          submission: {
+            disputes: {
+              none: {
+                status: {
+                  in: [
+                    "OPEN",
+                    "AWAITING_CREATOR",
+                    "AWAITING_BRAND",
+                    "UNDER_ADMIN_REVIEW",
+                  ],
+                },
+              },
+            },
+          },
         },
         include: {
           submission: {

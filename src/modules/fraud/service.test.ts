@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  FraudReviewStatus,
   FraudRiskLevel,
   FraudSignalKind,
   TrustScoreEventReason,
@@ -21,6 +20,7 @@ vi.mock("../../lib/prisma", () => {
       findMany: vi.fn(),
       findUnique: vi.fn(),
       update: vi.fn(),
+      updateMany: vi.fn(),
     },
     creatorProfile: {
       update: vi.fn(),
@@ -33,12 +33,17 @@ vi.mock("../../lib/prisma", () => {
   return { prisma: mockPrisma };
 });
 
+vi.mock("../notifications/service", () => ({
+  NotificationService: { notify: vi.fn() },
+}));
+
 import { prisma } from "../../lib/prisma";
 import { FraudService } from "./service";
 
 describe("FraudService", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(prisma.fraudAssessment.updateMany).mockResolvedValue({ count: 1 });
   });
 
   it("creates manual signal and recalculates assessment", async () => {
@@ -73,6 +78,31 @@ describe("FraudService", () => {
     });
   });
 
+  it("automatically flags a high disqualification ratio and a threefold view spike", async () => {
+    vi.mocked(prisma.submission.findUnique).mockResolvedValue({
+      id: "sub-1",
+      metricsSnapshots: [
+        { observedViews: 1_000n, qualifiedViews: 400n, disqualifiedViews: 600n },
+        { observedViews: 200n, qualifiedViews: 100n, disqualifiedViews: 100n },
+      ],
+    } as any);
+    vi.mocked(prisma.fraudSignal.findFirst).mockResolvedValue(null);
+    vi.mocked(prisma.fraudSignal.findMany).mockResolvedValue([
+      { scoreImpact: 45 },
+      { scoreImpact: 35 },
+    ] as any);
+    vi.mocked(prisma.fraudAssessment.findUnique).mockResolvedValue(null);
+    vi.mocked(prisma.fraudAssessment.upsert).mockResolvedValue({
+      fraudScore: 80,
+      riskLevel: FraudRiskLevel.HIGH,
+    } as any);
+
+    const result = await FraudService.evaluateSubmissionFromMetrics("sub-1");
+
+    expect(result.riskLevel).toBe(FraudRiskLevel.HIGH);
+    expect(prisma.fraudSignal.create).toHaveBeenCalledTimes(2);
+  });
+
   it("confirms assessment and lowers creator trust score", async () => {
     vi.mocked(prisma.fraudAssessment.findUnique).mockResolvedValue({
       id: "assessment-1",
@@ -86,11 +116,6 @@ describe("FraudService", () => {
         },
       },
     } as any);
-    vi.mocked(prisma.fraudAssessment.update).mockResolvedValue({
-      id: "assessment-1",
-      status: FraudReviewStatus.CONFIRMED,
-    } as any);
-
     await FraudService.resolveAssessment("admin-1", "assessment-1", "CONFIRM", "تأكيد");
 
     expect(prisma.creatorProfile.update).toHaveBeenCalledWith({
@@ -103,5 +128,25 @@ describe("FraudService", () => {
         reason: TrustScoreEventReason.FRAUD_CONFIRMED,
       }),
     });
+  });
+
+  it("does not apply trust score twice after a final review", async () => {
+    vi.mocked(prisma.fraudAssessment.findUnique).mockResolvedValue({
+      id: "assessment-1",
+      submission: {
+        socialAccount: {
+          creatorProfile: {
+            id: "creator-profile-1",
+            userId: "creator-user",
+            trustScore: 40,
+          },
+        },
+      },
+    } as any);
+    vi.mocked(prisma.fraudAssessment.updateMany).mockResolvedValue({ count: 0 });
+    await expect(
+      FraudService.resolveAssessment("admin-1", "assessment-1", "CONFIRM", "تكرار"),
+    ).rejects.toThrow("مسبقاً");
+    expect(prisma.creatorProfile.update).not.toHaveBeenCalled();
   });
 });

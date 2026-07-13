@@ -4,6 +4,7 @@ import { DashboardHeader } from "../../../../components/layout/DashboardHeader";
 import { getCurrentUser } from "../../../../lib/auth/session";
 import { DisputeService } from "../../../../modules/disputes/service";
 import { AlertTriangleIcon } from "../../../../components/ui/icons";
+import { ACTIVE_DISPUTE_STATUSES } from "../../../../modules/disputes/service";
 
 export default async function AdminDisputesPage() {
   const user = await getCurrentUser();
@@ -11,6 +12,9 @@ export default async function AdminDisputesPage() {
   if (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") redirect("/unauthorized");
 
   const disputes = await DisputeService.listForAdmin();
+  const activeCount = disputes.filter((item) =>
+    (ACTIVE_DISPUTE_STATUSES as readonly string[]).includes(item.status),
+  ).length;
 
   return (
     <main className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] dir-rtl md:ps-64 pb-20 md:pb-0">
@@ -32,13 +36,14 @@ export default async function AdminDisputesPage() {
               </p>
             </div>
           </div>
-          {disputes.length > 0 && (
+          {activeCount > 0 && (
             <span className="rounded-[var(--radius-pill)] bg-[var(--color-brand)] px-3 py-1 text-xs font-black text-[var(--color-text-on-brand)]">
-              {disputes.length} نزاع نشط
+              {activeCount} نزاع نشط
             </span>
           )}
         </div>
         <DisputesClient
+          currentUserId={user.id}
           initialItems={disputes.map((item) => ({
             id: item.id,
             title: item.title,
@@ -53,6 +58,7 @@ export default async function AdminDisputesPage() {
               id: message.id,
               body: message.body,
               createdAt: message.createdAt.toISOString(),
+              sender: message.sender,
             })),
           }))}
         />

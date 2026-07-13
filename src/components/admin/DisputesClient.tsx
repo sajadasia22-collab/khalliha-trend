@@ -32,13 +32,62 @@ type DisputeItem = {
   campaignTitle: string;
   creatorName: string;
   brandName: string;
-  messages: Array<{ id: string; body: string; createdAt: string }>;
+  messages: Array<{
+    id: string;
+    body: string;
+    createdAt: string;
+    sender: { id: string; fullName: string; role: string };
+  }>;
 };
 
-export function DisputesClient({ initialItems }: { initialItems: DisputeItem[] }) {
+export function DisputesClient({
+  initialItems,
+  currentUserId,
+}: {
+  initialItems: DisputeItem[];
+  currentUserId: string;
+}) {
   const { showToast } = useToast();
   const [items, setItems] = useState(initialItems);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [replies, setReplies] = useState<Record<string, string>>({});
+
+  async function sendReply(id: string) {
+    const body = replies[id]?.trim();
+    if (!body || body.length < 2) return;
+    setBusyId(id);
+    try {
+      const response = await fetch(`/api/v1/disputes/${id}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ body }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        showToast(data.error?.message || "فشل إرسال الرد", "error");
+        return;
+      }
+      setItems((current) =>
+        current.map((item) =>
+          item.id === id
+            ? {
+                ...item,
+                messages: [
+                  ...item.messages,
+                  {
+                    ...data.data,
+                    createdAt: new Date(data.data.createdAt).toISOString(),
+                  },
+                ],
+              }
+            : item,
+        ),
+      );
+      setReplies((current) => ({ ...current, [id]: "" }));
+    } finally {
+      setBusyId(null);
+    }
+  }
 
   async function resolve(
     id: string,
@@ -121,47 +170,78 @@ export function DisputesClient({ initialItems }: { initialItems: DisputeItem[] }
                   فتحه: {item.openedBy.fullName} ({item.openedBy.role})
                 </p>
               </div>
-              <div className="flex flex-wrap gap-2 lg:max-w-xs">
-                <button
-                  disabled={busyId === item.id}
-                  className="btn-secondary px-3 py-2 text-xs font-bold"
-                  onClick={() => resolve(item.id, "CREATOR")}
-                >
-                  لصالح الصانع
-                </button>
-                <button
-                  disabled={busyId === item.id}
-                  className="btn-secondary px-3 py-2 text-xs font-bold"
-                  onClick={() => resolve(item.id, "BRAND")}
-                >
-                  لصالح العلامة
-                </button>
-                <button
-                  disabled={busyId === item.id}
-                  className="btn-secondary px-3 py-2 text-xs font-bold"
-                  onClick={() => resolve(item.id, "PARTIAL")}
-                >
-                  حل جزئي
-                </button>
-                <button
-                  disabled={busyId === item.id}
-                  className="btn-primary px-3 py-2 text-xs font-bold"
-                  onClick={() => resolve(item.id, "CLOSE")}
-                >
-                  إغلاق
-                </button>
-              </div>
+              {!resolved && (
+                <div className="flex flex-wrap gap-2 lg:max-w-xs">
+                  <button
+                    disabled={busyId === item.id}
+                    className="btn-secondary px-3 py-2 text-xs font-bold"
+                    onClick={() => resolve(item.id, "CREATOR")}
+                  >
+                    لصالح الصانع
+                  </button>
+                  <button
+                    disabled={busyId === item.id}
+                    className="btn-secondary px-3 py-2 text-xs font-bold"
+                    onClick={() => resolve(item.id, "BRAND")}
+                  >
+                    لصالح العلامة
+                  </button>
+                  <button
+                    disabled={busyId === item.id}
+                    className="btn-secondary px-3 py-2 text-xs font-bold"
+                    onClick={() => resolve(item.id, "PARTIAL")}
+                  >
+                    حل جزئي
+                  </button>
+                  <button
+                    disabled={busyId === item.id}
+                    className="btn-primary px-3 py-2 text-xs font-bold"
+                    onClick={() => resolve(item.id, "CLOSE")}
+                  >
+                    إغلاق
+                  </button>
+                </div>
+              )}
             </div>
             <div className="mt-4 space-y-2">
               {item.messages.map((message) => (
                 <div
                   key={message.id}
-                  className="rounded-[var(--radius-md)] bg-[var(--color-bg)] px-3 py-2 text-xs font-medium"
+                  className={`max-w-[88%] rounded-[var(--radius-md)] px-3 py-2 text-xs font-medium ${message.sender.id === currentUserId ? "bg-[var(--forest-900)] text-[var(--color-text-on-dark)]" : "bg-[var(--color-bg)]"}`}
                 >
+                  <span className="mb-1 block text-[10px] font-black opacity-60">
+                    {message.sender.fullName}
+                  </span>
                   {message.body}
                 </div>
               ))}
             </div>
+            {!resolved && (
+              <div className="mt-4 flex gap-2 border-t border-[var(--color-border)] pt-4">
+                <input
+                  value={replies[item.id] ?? ""}
+                  onChange={(event) =>
+                    setReplies((current) => ({
+                      ...current,
+                      [item.id]: event.target.value,
+                    }))
+                  }
+                  placeholder="اكتب رداً للطرفين..."
+                  maxLength={2000}
+                  className="input-field min-w-0 flex-1"
+                />
+                <button
+                  type="button"
+                  disabled={
+                    busyId === item.id || (replies[item.id]?.trim().length ?? 0) < 2
+                  }
+                  onClick={() => sendReply(item.id)}
+                  className="btn-primary px-4 text-xs font-black disabled:opacity-50"
+                >
+                  إرسال
+                </button>
+              </div>
+            )}
           </article>
         );
       })}

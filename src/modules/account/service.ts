@@ -4,8 +4,7 @@ import { NotificationType } from "../../generated/prisma/enums";
 import type { UpdateNotificationPreferencesInput } from "./schemas";
 
 // Only categories a user can meaningfully opt out of are exposed here.
-// FRAUD_FLAGGED/GENERIC are internal/unused-by-any-call-site today (see
-// NotificationService), so surfacing toggles for them would be dead UI.
+// GENERIC remains internal; every category below has a real user-facing call site.
 const USER_FACING_NOTIFICATION_TYPES: NotificationType[] = [
   NotificationType.CAMPAIGN_APPROVED,
   NotificationType.CAMPAIGN_NEEDS_CHANGES,
@@ -14,6 +13,7 @@ const USER_FACING_NOTIFICATION_TYPES: NotificationType[] = [
   NotificationType.DEPOSIT_REVIEWED,
   NotificationType.PAYOUT_REVIEWED,
   NotificationType.DISPUTE_UPDATED,
+  NotificationType.FRAUD_FLAGGED,
 ];
 
 export class AccountService {

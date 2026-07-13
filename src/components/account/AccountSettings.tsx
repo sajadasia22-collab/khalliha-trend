@@ -16,7 +16,8 @@ type NotificationType =
   | "SUBMISSION_REVIEWED"
   | "DEPOSIT_REVIEWED"
   | "PAYOUT_REVIEWED"
-  | "DISPUTE_UPDATED";
+  | "DISPUTE_UPDATED"
+  | "FRAUD_FLAGGED";
 
 type Preference = { type: NotificationType; enabled: boolean };
 
@@ -28,6 +29,7 @@ const typeLabels: Record<NotificationType, string> = {
   DEPOSIT_REVIEWED: "مراجعة طلب الإيداع",
   PAYOUT_REVIEWED: "مراجعة طلب السحب",
   DISPUTE_UPDATED: "تحديثات النزاعات",
+  FRAUD_FLAGGED: "نتائج مراجعة الاحتيال",
 };
 
 function ProfileSection() {

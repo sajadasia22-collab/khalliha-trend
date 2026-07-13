@@ -79,6 +79,26 @@ export async function middleware(request: NextRequest) {
         );
       }
     }
+
+    if (
+      request.method === "POST" &&
+      (pathname.startsWith("/api/v1/disputes") ||
+        pathname.startsWith("/api/v1/admin/fraud-queue") ||
+        pathname.includes("/fraud-signals"))
+    ) {
+      const allowed = RateLimiter.isAllowed(`rate-limit:casework:${ip}`, 30, 60 * 1000);
+      if (!allowed) {
+        return NextResponse.json(
+          {
+            error: {
+              code: "TOO_MANY_REQUESTS",
+              message: "طلبات متكررة جداً. يرجى الانتظار دقيقة قبل المحاولة مجدداً.",
+            },
+          },
+          { status: 429 },
+        );
+      }
+    }
   }
 
   // 1. Verify token if present

@@ -11,6 +11,7 @@ type EarningTotal = {
 
 type EarningLog = {
   id: string;
+  submissionId: string;
   amount: string;
   currency: "IQD" | "USD";
   status:
@@ -258,6 +259,7 @@ export function EarningSummary() {
                   <th className="py-3 px-4">المبلغ المستحق</th>
                   <th className="py-3 px-4">حالة الاستحقاق</th>
                   <th className="py-3 px-4">تاريخ الاحتساب</th>
+                  <th className="py-3 px-4">اعتراض</th>
                   <th className="py-3 px-4">تاريخ فك الحجز</th>
                 </tr>
               </thead>
@@ -305,6 +307,14 @@ export function EarningSummary() {
                         {new Date(item.createdAt).toLocaleDateString("ar-IQ", {
                           numberingSystem: "latn",
                         })}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <a
+                          href={`/creator/disputes?submission=${item.submissionId}`}
+                          className="whitespace-nowrap text-xs font-black underline"
+                        >
+                          فتح نزاع
+                        </a>
                       </td>
                       <td className="py-3.5 px-4 text-xs font-medium text-[var(--color-text-secondary)]">
                         {item.heldUntil
