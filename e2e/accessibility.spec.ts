@@ -43,3 +43,22 @@ test("login shows an alert-role error banner on failed submit", async ({ page })
     .filter({ hasText: "بيانات الدخول غير صحيحة" });
   await expect(alertBanner).toBeVisible();
 });
+
+test("auth credentials start visually from the right without breaking LTR values", async ({
+  page,
+}) => {
+  const cases = [
+    { path: "/login", selectors: ["#email", "#password"] },
+    { path: "/register", selectors: ["#email", "#password"] },
+    { path: "/forgot-password", selectors: ["#identifier"] },
+  ];
+
+  for (const { path, selectors } of cases) {
+    await page.goto(path);
+    for (const selector of selectors) {
+      const input = page.locator(selector);
+      await expect(input).toHaveAttribute("dir", "ltr");
+      await expect(input).toHaveCSS("text-align", "right");
+    }
+  }
+});
