@@ -37,7 +37,14 @@ export async function POST(
       parsed.data.decision,
       parsed.data.resolutionNote,
     );
-    return NextResponse.json({ data: dispute });
+    // النتيجة الكاملة تتضمن حقول BigInt (الأرباح والميزانيات) لا يمكن تسلسلها إلى JSON.
+    return NextResponse.json({
+      data: {
+        id: dispute.id,
+        status: dispute.status,
+        resolutionNote: dispute.resolutionNote,
+      },
+    });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "فشل حل النزاع.";
     return errorResponse("BAD_REQUEST", message, 400, { requestId });

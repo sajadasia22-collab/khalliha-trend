@@ -42,7 +42,10 @@ export async function POST(
       parsed.data.decision,
       parsed.data.note,
     );
-    return NextResponse.json({ data: assessment });
+    // النتيجة الكاملة تتضمن حقول BigInt (الأرباح والميزانيات) لا يمكن تسلسلها إلى JSON.
+    return NextResponse.json({
+      data: { id: assessment.id, status: assessment.status },
+    });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "فشلت مراجعة الاحتيال.";
     return errorResponse("BAD_REQUEST", message, 400, { requestId });

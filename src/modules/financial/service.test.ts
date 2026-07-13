@@ -436,6 +436,10 @@ describe("FinancialService", () => {
                   },
                 },
               },
+              OR: [
+                { fraudAssessment: null },
+                { fraudAssessment: { status: "CLEARED" } },
+              ],
             },
           }),
         }),

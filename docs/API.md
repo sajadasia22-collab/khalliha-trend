@@ -148,10 +148,8 @@ GET  /api/v1/admin/payouts
 POST /api/v1/admin/payouts/:id/review
 GET  /api/v1/admin/financial
 POST /api/v1/admin/financial
-GET  /api/v1/admin/fraud-queue
 POST /api/v1/admin/fraud-queue/:id/review
 POST /api/v1/admin/submissions/:id/fraud-signals
-GET  /api/v1/admin/disputes
 POST /api/v1/admin/disputes/:id/resolve
 GET  /api/v1/admin/audit-logs
 GET  /api/v1/admin/system-health

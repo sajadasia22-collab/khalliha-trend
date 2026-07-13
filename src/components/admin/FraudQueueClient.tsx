@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { EmptyState } from "../ui/EmptyState";
 import { useToast } from "../ui/Toast";
 
@@ -32,6 +33,7 @@ type FraudItem = {
 
 export function FraudQueueClient({ initialItems }: { initialItems: FraudItem[] }) {
   const { showToast } = useToast();
+  const router = useRouter();
   const [items, setItems] = useState(initialItems);
   const [busyId, setBusyId] = useState<string | null>(null);
 
@@ -54,6 +56,8 @@ export function FraudQueueClient({ initialItems }: { initialItems: FraudItem[] }
         return;
       }
       setItems((current) => current.filter((item) => item.id !== id));
+      // يحدّث عدّاد الحالات المصيَّر من الخادم في ترويسة الصفحة.
+      router.refresh();
     } finally {
       setBusyId(null);
     }

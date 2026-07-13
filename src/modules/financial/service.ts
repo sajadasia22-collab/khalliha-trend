@@ -3,6 +3,7 @@ import {
   Currency,
   DepositStatus,
   EarningStatus,
+  FraudReviewStatus,
   LedgerDirection,
   NotificationType,
   PayoutStatus,
@@ -509,6 +510,11 @@ export class FinancialService {
                 },
               },
             },
+            // لا تُحرر أرباح مشاركة قيد مراجعة الاحتيال أو ثبت احتيالها.
+            OR: [
+              { fraudAssessment: null },
+              { fraudAssessment: { status: FraudReviewStatus.CLEARED } },
+            ],
           },
         },
         include: {

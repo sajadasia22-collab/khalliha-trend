@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { EmptyState } from "../ui/EmptyState";
 import { useToast } from "../ui/Toast";
 
@@ -48,6 +49,7 @@ export function DisputesClient({
   currentUserId: string;
 }) {
   const { showToast } = useToast();
+  const router = useRouter();
   const [items, setItems] = useState(initialItems);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [replies, setReplies] = useState<Record<string, string>>({});
@@ -125,6 +127,8 @@ export function DisputesClient({
             : item,
         ),
       );
+      // يحدّث عدّاد النزاعات النشطة المصيَّر من الخادم في ترويسة الصفحة.
+      router.refresh();
     } finally {
       setBusyId(null);
     }

@@ -1,6 +1,7 @@
 import { prisma } from "../../lib/prisma";
 import type { PrismaClient } from "../../generated/prisma/client";
 import {
+  EarningStatus,
   FraudRiskLevel,
   FraudReviewStatus,
   FraudSignalKind,
@@ -164,7 +165,9 @@ export class FraudService {
         include: {
           submission: {
             include: {
+              earnings: true,
               socialAccount: { include: { creatorProfile: true } },
+              campaignMembership: { include: { campaign: true } },
             },
           },
         },
@@ -190,6 +193,34 @@ export class FraudService {
       });
       if (claimed.count !== 1) {
         throw new Error("تمت مراجعة حالة الاحتيال هذه مسبقاً");
+      }
+
+      if (decision === "CONFIRM") {
+        const reversibleAccruals = assessment.submission.earnings.filter(
+          (earning) =>
+            earning.status === EarningStatus.PENDING_VERIFICATION ||
+            earning.status === EarningStatus.HELD,
+        );
+        if (reversibleAccruals.length > 0) {
+          const reversedAmount = reversibleAccruals.reduce(
+            (sum, item) => sum + item.amount,
+            0n,
+          );
+          await tx.earningAccrual.updateMany({
+            where: { id: { in: reversibleAccruals.map((item) => item.id) } },
+            data: { status: EarningStatus.REVERSED },
+          });
+          const campaign = assessment.submission.campaignMembership.campaign;
+          await tx.campaign.update({
+            where: { id: campaign.id },
+            data: {
+              reservedBudget:
+                campaign.reservedBudget > reversedAmount
+                  ? campaign.reservedBudget - reversedAmount
+                  : 0n,
+            },
+          });
+        }
       }
 
       const creatorProfile = assessment.submission.socialAccount.creatorProfile;
@@ -266,7 +297,7 @@ export class FraudService {
         submissionId,
         fraudScore,
         riskLevel: riskLevel(fraudScore),
-        status: FraudReviewStatus.OPEN,
+        status: fraudScore > 0 ? FraudReviewStatus.OPEN : FraudReviewStatus.CLEARED,
       },
       update: {
         fraudScore,
