@@ -136,4 +136,39 @@ describe("middleware rate limiting", () => {
     const json = await limitedResponse.json();
     expect(json.error.code).toBe("TOO_MANY_REQUESTS");
   });
+
+  it("returns 429 TOO_MANY_REQUESTS when forgot-password rate limit is exceeded", async () => {
+    const forgotRequest = () =>
+      new NextRequest("http://localhost:3000/api/v1/auth/forgot-password", {
+        method: "POST",
+      });
+
+    // Forgot-password limit is 5. Let's make 5 requests.
+    for (let i = 0; i < 5; i++) {
+      const response = await middleware(forgotRequest());
+      expect(response.status).toBe(200);
+    }
+
+    const limitedResponse = await middleware(forgotRequest());
+    expect(limitedResponse.status).toBe(429);
+    const json = await limitedResponse.json();
+    expect(json.error.code).toBe("TOO_MANY_REQUESTS");
+  });
+
+  it("rate-limits reset-password under the shared auth bucket", async () => {
+    const resetRequest = () =>
+      new NextRequest("http://localhost:3000/api/v1/auth/reset-password", {
+        method: "POST",
+      });
+
+    for (let i = 0; i < 10; i++) {
+      const response = await middleware(resetRequest());
+      expect(response.status).toBe(200);
+    }
+
+    const limitedResponse = await middleware(resetRequest());
+    expect(limitedResponse.status).toBe(429);
+    const json = await limitedResponse.json();
+    expect(json.error.code).toBe("TOO_MANY_REQUESTS");
+  });
 });

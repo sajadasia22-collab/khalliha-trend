@@ -11,6 +11,7 @@ vi.mock("../../lib/prisma", () => {
       findUnique: vi.fn(),
       findFirst: vi.fn(),
       create: vi.fn(),
+      update: vi.fn(),
     },
     creatorProfile: {
       create: vi.fn(),
@@ -21,10 +22,21 @@ vi.mock("../../lib/prisma", () => {
     brandMember: {
       create: vi.fn(),
     },
+    passwordResetToken: {
+      deleteMany: vi.fn(),
+      create: vi.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn(),
+    },
     $transaction: vi.fn((cb) => cb(mockPrisma)),
   };
   return { prisma: mockPrisma };
 });
+
+const sendPasswordResetEmailMock = vi.fn().mockResolvedValue(undefined);
+vi.mock("../../lib/email", () => ({
+  sendPasswordResetEmail: (...args: unknown[]) => sendPasswordResetEmailMock(...args),
+}));
 
 import { prisma } from "../../lib/prisma";
 
@@ -189,6 +201,106 @@ describe("AuthService", () => {
         where: {
           OR: [{ email: "07701234567" }, { phone: "+9647701234567" }],
         },
+      });
+    });
+  });
+
+  describe("requestPasswordReset", () => {
+    it("creates a token and sends an email when the user exists with an email", async () => {
+      vi.mocked(prisma.user.findFirst).mockResolvedValue({
+        id: "user-123",
+        email: "creator@example.com",
+        fullName: "محمد علي",
+      } as any);
+
+      await AuthService.requestPasswordReset({ identifier: "creator@example.com" });
+
+      expect(prisma.passwordResetToken.deleteMany).toHaveBeenCalledWith({
+        where: { userId: "user-123", usedAt: null },
+      });
+      expect(prisma.passwordResetToken.create).toHaveBeenCalled();
+      expect(sendPasswordResetEmailMock).toHaveBeenCalledWith(
+        "creator@example.com",
+        expect.stringContaining("/reset-password?token="),
+        "محمد علي",
+      );
+    });
+
+    it("silently no-ops when no user matches (anti-enumeration)", async () => {
+      vi.mocked(prisma.user.findFirst).mockResolvedValue(null);
+
+      await AuthService.requestPasswordReset({ identifier: "nobody@example.com" });
+
+      expect(prisma.passwordResetToken.create).not.toHaveBeenCalled();
+      expect(sendPasswordResetEmailMock).not.toHaveBeenCalled();
+    });
+
+    it("silently no-ops for phone-only accounts (no delivery channel)", async () => {
+      vi.mocked(prisma.user.findFirst).mockResolvedValue({
+        id: "user-789",
+        email: null,
+        fullName: "علي حسن",
+      } as any);
+
+      await AuthService.requestPasswordReset({ identifier: "+9647701234567" });
+
+      expect(prisma.passwordResetToken.create).not.toHaveBeenCalled();
+      expect(sendPasswordResetEmailMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("resetPassword", () => {
+    it("throws for a nonexistent, expired, or already-used token", async () => {
+      vi.mocked(prisma.passwordResetToken.findUnique).mockResolvedValue(null);
+      await expect(
+        AuthService.resetPassword({ token: "bad", password: "newpassword123" }),
+      ).rejects.toThrow("رابط إعادة التعيين غير صالح أو منتهي الصلاحية");
+
+      vi.mocked(prisma.passwordResetToken.findUnique).mockResolvedValue({
+        id: "token-1",
+        userId: "user-123",
+        usedAt: new Date(),
+        expiresAt: new Date(Date.now() + 60 * 1000),
+      } as any);
+      await expect(
+        AuthService.resetPassword({ token: "used", password: "newpassword123" }),
+      ).rejects.toThrow("رابط إعادة التعيين غير صالح أو منتهي الصلاحية");
+
+      vi.mocked(prisma.passwordResetToken.findUnique).mockResolvedValue({
+        id: "token-2",
+        userId: "user-123",
+        usedAt: null,
+        expiresAt: new Date(Date.now() - 60 * 1000),
+      } as any);
+      await expect(
+        AuthService.resetPassword({ token: "expired", password: "newpassword123" }),
+      ).rejects.toThrow("رابط إعادة التعيين غير صالح أو منتهي الصلاحية");
+    });
+
+    it("updates the password, marks the token used, and clears sibling tokens on success", async () => {
+      vi.mocked(prisma.passwordResetToken.findUnique).mockResolvedValue({
+        id: "token-3",
+        userId: "user-123",
+        usedAt: null,
+        expiresAt: new Date(Date.now() + 60 * 1000),
+      } as any);
+
+      const userId = await AuthService.resetPassword({
+        token: "valid-token",
+        password: "newpassword123",
+      });
+
+      expect(userId).toBe("user-123");
+      expect(prisma.user.update).toHaveBeenCalledWith({
+        where: { id: "user-123" },
+        data: { passwordHash: expect.any(String) },
+      });
+      expect(prisma.passwordResetToken.update).toHaveBeenCalledWith({
+        where: { id: "token-3" },
+        data: { usedAt: expect.any(Date) },
+      });
+      expect(prisma.passwordResetToken.deleteMany).toHaveBeenCalledWith({
+        where: { userId: "user-123", id: { not: "token-3" }, usedAt: null },
       });
     });
   });

@@ -1,8 +1,15 @@
 import { prisma } from "../../lib/prisma";
 import { hashPassword, verifyPassword } from "../../lib/auth/password";
-import { RegisterInput, LoginInput } from "./schemas";
+import {
+  generateResetToken,
+  hashResetToken,
+  RESET_TOKEN_TTL_MS,
+} from "../../lib/auth/reset-token";
+import { sendPasswordResetEmail } from "../../lib/email";
+import { RegisterInput, LoginInput, ForgotPasswordInput, ResetPasswordInput } from "./schemas";
 import { UserRole, UserStatus } from "../../generated/prisma/client";
 import { normalizeIraqiPhone } from "../../lib/phone";
+import { AuditLogService } from "../audit-log/service";
 
 export class AuthService {
   static async register(input: RegisterInput) {
@@ -110,6 +117,76 @@ export class AuthService {
     }
 
     return user;
+  }
+
+  static async requestPasswordReset(input: ForgotPasswordInput): Promise<void> {
+    const normalizedPhone = normalizeIraqiPhone(input.identifier);
+
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [{ email: input.identifier }, { phone: normalizedPhone ?? input.identifier }],
+      },
+    });
+
+    // Anti-enumeration: silently no-op when the account doesn't exist, or exists
+    // but has no email (phone-only accounts have no delivery channel yet).
+    if (!user || !user.email) {
+      return;
+    }
+
+    const rawToken = generateResetToken();
+    const tokenHash = hashResetToken(rawToken);
+    const expiresAt = new Date(Date.now() + RESET_TOKEN_TTL_MS);
+
+    await prisma.$transaction(async (tx) => {
+      // At most one live token per user at a time.
+      await tx.passwordResetToken.deleteMany({ where: { userId: user.id, usedAt: null } });
+      await tx.passwordResetToken.create({ data: { userId: user.id, tokenHash, expiresAt } });
+    });
+
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const resetUrl = `${appUrl}/reset-password?token=${rawToken}`;
+    await sendPasswordResetEmail(user.email, resetUrl, user.fullName);
+
+    await AuditLogService.log({
+      actorId: user.id,
+      actorEmail: user.email,
+      action: "PASSWORD_RESET_REQUESTED",
+      targetType: "User",
+      targetId: user.id,
+    });
+  }
+
+  static async resetPassword(input: ResetPasswordInput): Promise<string> {
+    const tokenHash = hashResetToken(input.token);
+    const resetToken = await prisma.passwordResetToken.findUnique({ where: { tokenHash } });
+
+    if (!resetToken || resetToken.usedAt || resetToken.expiresAt < new Date()) {
+      throw new Error("رابط إعادة التعيين غير صالح أو منتهي الصلاحية");
+    }
+
+    const passwordHash = hashPassword(input.password);
+
+    await prisma.$transaction(async (tx) => {
+      await tx.user.update({ where: { id: resetToken.userId }, data: { passwordHash } });
+      await tx.passwordResetToken.update({
+        where: { id: resetToken.id },
+        data: { usedAt: new Date() },
+      });
+      // Defense in depth: invalidate any other outstanding tokens for this user.
+      await tx.passwordResetToken.deleteMany({
+        where: { userId: resetToken.userId, id: { not: resetToken.id }, usedAt: null },
+      });
+    });
+
+    await AuditLogService.log({
+      actorId: resetToken.userId,
+      action: "PASSWORD_RESET_SUCCESS",
+      targetType: "User",
+      targetId: resetToken.userId,
+    });
+
+    return resetToken.userId;
   }
 
   static async findById(id: string) {

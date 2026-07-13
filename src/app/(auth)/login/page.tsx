@@ -396,6 +396,15 @@ export default function LoginPage() {
                 />
               </div>
 
+              <div className="text-end -mt-2">
+                <Link
+                  href="/forgot-password"
+                  className="text-xs font-semibold text-[var(--color-text-secondary)] hover:text-[var(--forest-700)] underline"
+                >
+                  نسيت كلمة المرور؟
+                </Link>
+              </div>
+
               {/* Submit Button */}
               <button
                 type="submit"

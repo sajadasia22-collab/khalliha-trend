@@ -54,5 +54,16 @@ export const registerSchema = z
     },
   );
 
+export const forgotPasswordSchema = z.object({
+  identifier: z.string().trim().min(1, "البريد الإلكتروني أو الهاتف مطلوب"),
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string().trim().min(1, "الرمز مطلوب"),
+  password: z.string().min(6, "كلمة المرور يجب أن تكون 6 أحرف على الأقل"),
+});
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
