@@ -44,9 +44,7 @@ test("login shows an alert-role error banner on failed submit", async ({ page })
   await expect(alertBanner).toBeVisible();
 });
 
-test("auth credentials start visually from the right without breaking LTR values", async ({
-  page,
-}) => {
+test("auth fields follow the natural writing direction", async ({ page }) => {
   const cases = [
     { path: "/login", selectors: ["#email", "#password"] },
     { path: "/register", selectors: ["#email", "#password"] },
@@ -58,10 +56,13 @@ test("auth credentials start visually from the right without breaking LTR values
     for (const selector of selectors) {
       const input = page.locator(selector);
       await expect(input).toHaveAttribute("dir", "ltr");
-      await expect(input).toHaveCSS("text-align", "right");
+      await expect(input).toHaveCSS("text-align", "left");
     }
   }
 
   await page.goto("/login");
   await expect(page.locator("#email")).toHaveCSS("padding-right", "44px");
+
+  await page.goto("/register");
+  await expect(page.locator("#fullName")).toHaveCSS("text-align", "right");
 });

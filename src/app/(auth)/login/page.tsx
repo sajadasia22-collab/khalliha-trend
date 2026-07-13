@@ -365,7 +365,7 @@ export default function LoginPage() {
                       aria-describedby={
                         errors.identifier ? "identifier-error" : undefined
                       }
-                      className="w-full min-h-[48px] pl-4 pr-11 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] focus:border-[var(--color-brand)] focus:ring-4 focus:ring-[rgba(214,246,29,0.18)] focus:outline-none transition-all text-right font-medium"
+                      className="w-full min-h-[48px] pl-4 pr-11 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] focus:border-[var(--color-brand)] focus:ring-4 focus:ring-[rgba(214,246,29,0.18)] focus:outline-none transition-all text-left font-medium"
                       disabled={isLoading}
                     />
                   </div>
