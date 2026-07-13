@@ -114,7 +114,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[var(--color-bg)] px-5 py-12 text-[var(--color-text)] dir-rtl">
+    <main className="auth-page-shell flex min-h-screen items-center justify-center bg-[var(--color-bg)] px-5 py-12 text-[var(--color-text)] dir-rtl">
       <div className="auth-card card max-w-lg w-full p-8 border border-[var(--color-border)] bg-[var(--color-surface)] shadow-lg rounded-[var(--radius-lg)]">
         {/* Brand Link */}
         <div className="text-center mb-8">

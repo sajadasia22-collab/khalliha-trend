@@ -887,11 +887,51 @@ body {
   }
 }
 
+/* Shared full-page backdrop for every authentication route. */
+.auth-page-shell {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.auth-page-shell::before {
+  position: fixed;
+  inset: -2%;
+  z-index: -2;
+  background-image: url("/images/auth-platform-background.webp");
+  background-position: center;
+  background-size: cover;
+  content: "";
+  opacity: 0.1;
+  transform: scale(1.03);
+}
+
+.auth-page-shell::after {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(250, 252, 251, 0.72), transparent 48%),
+    linear-gradient(135deg, rgba(214, 246, 29, 0.035), rgba(6, 38, 25, 0.025));
+  content: "";
+  pointer-events: none;
+}
+
 .auth-card {
+  position: relative;
+  background: rgba(250, 252, 251, 0.96);
+  backdrop-filter: blur(12px) saturate(112%);
+  -webkit-backdrop-filter: blur(12px) saturate(112%);
   animation: auth-card-in var(--duration-slow) var(--ease-brand) both;
   transition:
     box-shadow var(--duration-normal) var(--ease-brand),
     border-color var(--duration-normal) var(--ease-brand);
+}
+
+@media (max-width: 640px) {
+  .auth-page-shell::before {
+    background-position: 58% center;
+  }
 }
 
 .auth-card:focus-within {

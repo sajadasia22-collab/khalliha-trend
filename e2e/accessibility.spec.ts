@@ -82,3 +82,17 @@ test("password visibility toggle works with the keyboard", async ({ page }) => {
     "true",
   );
 });
+
+test("auth pages use the optimized decorative background", async ({ page, request }) => {
+  const asset = await request.get("/images/auth-platform-background.webp");
+  expect(asset.ok()).toBe(true);
+  expect(asset.headers()["content-type"]).toContain("image/webp");
+
+  await page.goto("/login");
+  const background = await page.locator("main.auth-page-shell").evaluate((element) => {
+    const style = getComputedStyle(element, "::before");
+    return { image: style.backgroundImage, opacity: style.opacity };
+  });
+  expect(background.image).toContain("auth-platform-background.webp");
+  expect(background.opacity).toBe("0.1");
+});
