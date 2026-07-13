@@ -61,4 +61,7 @@ test("auth credentials start visually from the right without breaking LTR values
       await expect(input).toHaveCSS("text-align", "right");
     }
   }
+
+  await page.goto("/login");
+  await expect(page.locator("#email")).toHaveCSS("padding-right", "44px");
 });
