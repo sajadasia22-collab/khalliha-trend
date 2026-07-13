@@ -6,7 +6,12 @@ import {
   RESET_TOKEN_TTL_MS,
 } from "../../lib/auth/reset-token";
 import { sendPasswordResetEmail } from "../../lib/email";
-import { RegisterInput, LoginInput, ForgotPasswordInput, ResetPasswordInput } from "./schemas";
+import {
+  RegisterInput,
+  LoginInput,
+  ForgotPasswordInput,
+  ResetPasswordInput,
+} from "./schemas";
 import { UserRole, UserStatus } from "../../generated/prisma/client";
 import { normalizeIraqiPhone } from "../../lib/phone";
 import { AuditLogService } from "../audit-log/service";
@@ -140,8 +145,12 @@ export class AuthService {
 
     await prisma.$transaction(async (tx) => {
       // At most one live token per user at a time.
-      await tx.passwordResetToken.deleteMany({ where: { userId: user.id, usedAt: null } });
-      await tx.passwordResetToken.create({ data: { userId: user.id, tokenHash, expiresAt } });
+      await tx.passwordResetToken.deleteMany({
+        where: { userId: user.id, usedAt: null },
+      });
+      await tx.passwordResetToken.create({
+        data: { userId: user.id, tokenHash, expiresAt },
+      });
     });
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
@@ -159,7 +168,9 @@ export class AuthService {
 
   static async resetPassword(input: ResetPasswordInput): Promise<string> {
     const tokenHash = hashResetToken(input.token);
-    const resetToken = await prisma.passwordResetToken.findUnique({ where: { tokenHash } });
+    const resetToken = await prisma.passwordResetToken.findUnique({
+      where: { tokenHash },
+    });
 
     if (!resetToken || resetToken.usedAt || resetToken.expiresAt < new Date()) {
       throw new Error("رابط إعادة التعيين غير صالح أو منتهي الصلاحية");

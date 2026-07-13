@@ -43,7 +43,8 @@ export async function POST(request: Request) {
     // that isn't the account owner's regular one.
     return NextResponse.json({ status: "success" });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "فشل إعادة تعيين كلمة المرور.";
+    const message =
+      error instanceof Error ? error.message : "فشل إعادة تعيين كلمة المرور.";
     return NextResponse.json(
       {
         error: {

@@ -49,7 +49,8 @@ export async function middleware(request: NextRequest) {
           {
             error: {
               code: "TOO_MANY_REQUESTS",
-              message: "لقد تجاوزت حد طلبات إعادة تعيين كلمة المرور. يرجى المحاولة بعد دقيقة.",
+              message:
+                "لقد تجاوزت حد طلبات إعادة تعيين كلمة المرور. يرجى المحاولة بعد دقيقة.",
             },
           },
           { status: 429 },

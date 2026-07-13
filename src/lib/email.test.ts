@@ -23,7 +23,11 @@ describe("sendPasswordResetEmail", () => {
     vi.stubEnv("NODE_ENV", "development");
     const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
 
-    await sendPasswordResetEmail("user@example.com", "http://localhost:3000/reset?token=abc", "علي");
+    await sendPasswordResetEmail(
+      "user@example.com",
+      "http://localhost:3000/reset?token=abc",
+      "علي",
+    );
 
     expect(sendMock).not.toHaveBeenCalled();
     expect(logSpy).toHaveBeenCalledWith(
@@ -34,7 +38,11 @@ describe("sendPasswordResetEmail", () => {
   it("sends via Resend when an API key is configured", async () => {
     vi.stubEnv("RESEND_API_KEY", "test-key");
 
-    await sendPasswordResetEmail("user@example.com", "http://localhost:3000/reset?token=abc", "علي");
+    await sendPasswordResetEmail(
+      "user@example.com",
+      "http://localhost:3000/reset?token=abc",
+      "علي",
+    );
 
     expect(sendMock).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -49,7 +57,11 @@ describe("sendPasswordResetEmail", () => {
     vi.stubEnv("NODE_ENV", "production");
 
     await expect(
-      sendPasswordResetEmail("user@example.com", "http://localhost:3000/reset?token=abc", "علي"),
+      sendPasswordResetEmail(
+        "user@example.com",
+        "http://localhost:3000/reset?token=abc",
+        "علي",
+      ),
     ).rejects.toThrow(/RESEND_API_KEY is required/);
   });
 
@@ -61,7 +73,11 @@ describe("sendPasswordResetEmail", () => {
     });
 
     await expect(
-      sendPasswordResetEmail("user@example.com", "http://localhost:3000/reset?token=abc", "علي"),
+      sendPasswordResetEmail(
+        "user@example.com",
+        "http://localhost:3000/reset?token=abc",
+        "علي",
+      ),
     ).rejects.toThrow(/You can only send testing emails/);
   });
 });

@@ -45,6 +45,7 @@ export async function POST(request: Request) {
 
   return NextResponse.json({
     status: "success",
-    message: "إذا كان هذا البريد أو الرقم مسجلاً لدينا، فسيتم إرسال رابط إعادة التعيين إليه.",
+    message:
+      "إذا كان هذا البريد أو الرقم مسجلاً لدينا، فسيتم إرسال رابط إعادة التعيين إليه.",
   });
 }

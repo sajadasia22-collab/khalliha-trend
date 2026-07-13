@@ -11,7 +11,9 @@ function ResetPasswordForm() {
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [errors, setErrors] = useState<{ password?: string; confirmPassword?: string }>({});
+  const [errors, setErrors] = useState<{ password?: string; confirmPassword?: string }>(
+    {},
+  );
   const [apiError, setApiError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [shake, setShake] = useState(false);
