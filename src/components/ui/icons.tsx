@@ -25,6 +25,9 @@ import {
   Search,
   Filter,
   TrendingUp,
+  BarChart3,
+  Activity,
+  CircleDollarSign,
   Video,
   Settings,
   LogOut,
@@ -97,6 +100,9 @@ export const ChevronEndIcon = withDefaults(ChevronRight);
 export const SearchIcon = withDefaults(Search);
 export const FilterIcon = withDefaults(Filter);
 export const TrendingUpIcon = withDefaults(TrendingUp);
+export const AnalyticsIcon = withDefaults(BarChart3);
+export const ActivityIcon = withDefaults(Activity);
+export const RevenueIcon = withDefaults(CircleDollarSign);
 export const VideoIcon = withDefaults(Video);
 export const SettingsIcon = withDefaults(Settings);
 export const LogOutIcon = withDefaults(LogOut);

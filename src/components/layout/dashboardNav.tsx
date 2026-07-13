@@ -8,6 +8,7 @@ import {
   DisputeIcon,
   WalletIcon,
   SettingsIcon,
+  AnalyticsIcon,
   type IconProps,
 } from "../ui/icons";
 
@@ -37,6 +38,7 @@ export const navByRole: Record<DashboardRole, NavItem[]> = {
   admin: [
     { href: "/admin/dashboard", label: "لوحة التحكم", icon: DashboardIcon },
     { href: "/admin/users", label: "المستخدمون", icon: UserIcon },
+    { href: "/admin/analytics", label: "التقارير والتحليلات", icon: AnalyticsIcon },
     { href: "/admin/reviews", label: "المراجعات", icon: ClipboardCheckIcon },
     { href: "/admin/fraud", label: "الاحتيال", icon: ShieldAlertIcon },
     { href: "/admin/disputes", label: "النزاعات", icon: DisputeIcon },
