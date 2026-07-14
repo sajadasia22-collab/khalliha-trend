@@ -207,4 +207,5 @@
 - `.github/workflows/ci.yml` خط أنابيب CI/CD كامل وفعلي: Postgres service حقيقي، `prisma migrate deploy`، format/lint/typecheck، unit+integration tests (بما فيها اختبار السباق المالي ضد قاعدة بيانات فعلية)، build، E2E كامل، dependency audit.
 - `prisma migrate status`: لا drift، والـ migrations مطبقة على قاعدة الإنتاج.
 - تقرير جاهزية الإنتاج موثّق في `docs/DEPLOYMENT.md` §8.
-- **المتبقي المؤجَّل بقرار**: Monitoring/alerting فعلي (تتبع أخطاء وتنبيهات) وخطة Backup دورية موثقة لقاعدة Supabase خارج النسخ الافتراضي.
+- **Monitoring**: مراقبة أخطاء السيرفر مفعّلة (سجلات JSON منظمة عبر `src/instrumentation.ts` + تنبيهات webhook اختيارية عبر `ERROR_ALERT_WEBHOOK_URL`) — راجع `DEPLOYMENT.md` §11.
+- **Backup**: سكربت `scripts/backup-db.sh` (pg_dump مع سياسة احتفاظ) موثق مع خطة الإيقاع والاستعادة في `DEPLOYMENT.md` §12. الترقية المستقبلية الاختيارية: Sentry ونسخ Supabase Pro التلقائية.
