@@ -11,12 +11,16 @@ import {
   FlagIcon,
   HeartIcon,
   ImageIcon,
+  LinkIcon,
   MoreIcon,
   MuteIcon,
+  PlusIcon,
   SearchIcon,
   SendIcon,
   ShareIcon,
   TrashIcon,
+  TrendingUpIcon,
+  UsersIcon,
 } from "../ui/icons";
 
 type CurrentUser = { id: string; fullName: string; role: string } | null;
@@ -59,6 +63,45 @@ const reportReasons = [
   ["COPYRIGHT", "حقوق ملكية"],
   ["OTHER", "سبب آخر"],
 ] as const;
+
+const feedOptions = [
+  { value: "all", label: "آخر المنشورات", shortLabel: "الرئيسية", icon: TrendingUpIcon },
+  {
+    value: "following",
+    label: "الحسابات المتابَعة",
+    shortLabel: "أتابعهم",
+    icon: UsersIcon,
+  },
+  {
+    value: "saved",
+    label: "المنشورات المحفوظة",
+    shortLabel: "المحفوظات",
+    icon: BookmarkIcon,
+  },
+] as const;
+
+function formatPostTime(value: string) {
+  const date = new Date(value);
+  const elapsed = Date.now() - date.getTime();
+  const minutes = Math.floor(elapsed / 60_000);
+
+  if (minutes < 1) return "الآن";
+  if (minutes < 60) return `منذ ${minutes} د`;
+  if (minutes < 1_440) return `منذ ${Math.floor(minutes / 60)} س`;
+
+  return date.toLocaleDateString("ar-IQ", {
+    day: "numeric",
+    month: "short",
+  });
+}
+
+function linkHost(value: string) {
+  try {
+    return new URL(value).hostname.replace(/^www\./, "");
+  } catch {
+    return value;
+  }
+}
 
 function avatar(identity: CreatorIdentity, name: string, size = "h-11 w-11") {
   return (
@@ -229,27 +272,24 @@ function PostCard({
   }
 
   return (
-    <article className="overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-sm)]">
-      <div className="flex items-start gap-3 p-5">
+    <article className="overflow-hidden rounded-[20px] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[0_1px_2px_rgba(6,38,25,.06),0_8px_24px_rgba(6,38,25,.04)] transition-shadow duration-200 hover:shadow-[0_2px_4px_rgba(6,38,25,.08),0_14px_32px_rgba(6,38,25,.07)]">
+      <div className="flex items-start gap-3 p-4 sm:p-5">
         <Link href={identity?.username ? `/creators/${identity.username}` : "/creators"}>
           {avatar(identity, item.author.fullName)}
         </Link>
         <div className="min-w-0 flex-1">
           <Link
             href={identity?.username ? `/creators/${identity.username}` : "/creators"}
-            className="font-black hover:text-[var(--color-brand-active)]"
+            className="text-[15px] font-black hover:text-[var(--color-brand-active)]"
           >
             {item.author.fullName}
           </Link>
           <div className="flex flex-wrap items-center gap-2 text-[11px] text-[var(--color-text-muted)]">
             {identity?.username && <span dir="ltr">@{identity.username}</span>}
-            <span>•</span>
-            <time dateTime={item.createdAt}>
-              {new Date(item.createdAt).toLocaleDateString("ar-IQ", {
-                day: "numeric",
-                month: "short",
-              })}
-            </time>
+            <span aria-hidden="true">•</span>
+            <time dateTime={item.createdAt}>{formatPostTime(item.createdAt)}</time>
+            <span aria-hidden="true">•</span>
+            <span>عام</span>
             {item.updatedAt !== item.createdAt && <span>معدّل</span>}
           </div>
         </div>
@@ -314,7 +354,7 @@ function PostCard({
       </div>
 
       {editing ? (
-        <div className="px-5 pb-5">
+        <div className="px-4 pb-5 sm:px-5">
           <textarea
             className="min-h-28 w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-muted)] p-3"
             value={editBody}
@@ -331,14 +371,16 @@ function PostCard({
           </div>
         </div>
       ) : item.body ? (
-        <p className="whitespace-pre-wrap px-5 pb-5 text-[15px] leading-7">{item.body}</p>
+        <p className="whitespace-pre-wrap px-4 pb-5 text-[15px] leading-7 sm:px-5 sm:text-base">
+          {item.body}
+        </p>
       ) : null}
 
       {item.imageUrl && (
         <img
           src={item.imageUrl}
           alt="صورة مرفقة بالمنشور"
-          className="max-h-[620px] w-full object-cover"
+          className="max-h-[680px] w-full bg-[var(--color-surface-muted)] object-cover"
         />
       )}
       {item.linkUrl && (
@@ -346,10 +388,20 @@ function PostCard({
           href={item.linkUrl}
           target="_blank"
           rel="noreferrer"
-          className="mx-5 mb-5 block truncate rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 py-3 text-sm font-bold text-[var(--color-brand-active)]"
+          className="mx-4 mb-5 flex items-center gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 py-3.5 transition-colors hover:border-[var(--color-border-strong)] sm:mx-5"
           dir="ltr"
         >
-          {item.linkUrl}
+          <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-[var(--color-surface)] text-[var(--color-brand-active)]">
+            <LinkIcon size={18} aria-hidden="true" />
+          </span>
+          <span className="min-w-0 text-start">
+            <span className="block text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)]">
+              رابط خارجي
+            </span>
+            <span className="block truncate text-sm font-black text-[var(--color-text)]">
+              {linkHost(item.linkUrl)}
+            </span>
+          </span>
         </a>
       )}
 
@@ -381,42 +433,56 @@ function PostCard({
         </div>
       )}
 
-      <div className="grid grid-cols-4 border-t border-[var(--color-border)] px-3 py-2">
+      <div className="flex items-center justify-between px-4 pb-2 text-xs text-[var(--color-text-muted)] sm:px-5">
+        <span className="flex items-center gap-1.5">
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--color-brand)] text-[var(--color-text-on-brand)]">
+            <HeartIcon size={11} fill="currentColor" aria-hidden="true" />
+          </span>
+          {item._count.likes ? `${item._count.likes} إعجاب` : "كن أول المعجبين"}
+        </span>
+        <span className="flex items-center gap-3">
+          {item._count.comments > 0 && <span>{item._count.comments} تعليق</span>}
+          {item._count.shares > 0 && <span>{item._count.shares} مشاركة</span>}
+        </span>
+      </div>
+
+      <div className="mx-4 grid grid-cols-4 border-y border-[var(--color-border)] py-1 sm:mx-5">
         <button
           type="button"
           aria-pressed={item.isLiked}
-          className={`flex items-center justify-center gap-1.5 rounded py-2 text-xs font-bold ${item.isLiked ? "text-[var(--color-brand-active)]" : "text-[var(--color-text-secondary)]"}`}
+          className={`flex items-center justify-center gap-1.5 rounded-lg py-2.5 text-xs font-bold transition-colors hover:bg-[var(--color-surface-muted)] ${item.isLiked ? "text-[var(--color-brand-active)]" : "text-[var(--color-text-secondary)]"}`}
           onClick={() => action("like")}
         >
-          <HeartIcon size={18} fill={item.isLiked ? "currentColor" : "none"} />{" "}
-          {item._count.likes}
+          <HeartIcon size={18} fill={item.isLiked ? "currentColor" : "none"} />
+          <span className="hidden sm:inline">إعجاب</span>
         </button>
         <button
           type="button"
-          className="flex items-center justify-center gap-1.5 rounded py-2 text-xs font-bold text-[var(--color-text-secondary)]"
+          className="flex items-center justify-center gap-1.5 rounded-lg py-2.5 text-xs font-bold text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-surface-muted)]"
           onClick={loadComments}
         >
-          <CommentIcon size={18} /> {item._count.comments}
+          <CommentIcon size={18} /> <span className="hidden sm:inline">تعليق</span>
         </button>
         <button
           type="button"
           aria-pressed={item.isSaved}
-          className={`flex items-center justify-center gap-1.5 rounded py-2 text-xs font-bold ${item.isSaved ? "text-[var(--color-brand-active)]" : "text-[var(--color-text-secondary)]"}`}
+          className={`flex items-center justify-center gap-1.5 rounded-lg py-2.5 text-xs font-bold transition-colors hover:bg-[var(--color-surface-muted)] ${item.isSaved ? "text-[var(--color-brand-active)]" : "text-[var(--color-text-secondary)]"}`}
           onClick={() => action("save")}
         >
-          <BookmarkIcon size={18} fill={item.isSaved ? "currentColor" : "none"} /> حفظ
+          <BookmarkIcon size={18} fill={item.isSaved ? "currentColor" : "none"} />
+          <span className="hidden sm:inline">حفظ</span>
         </button>
         <button
           type="button"
-          className="flex items-center justify-center gap-1.5 rounded py-2 text-xs font-bold text-[var(--color-text-secondary)]"
+          className="flex items-center justify-center gap-1.5 rounded-lg py-2.5 text-xs font-bold text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-surface-muted)]"
           onClick={() => action("share")}
         >
-          <ShareIcon size={18} /> {item._count.shares}
+          <ShareIcon size={18} /> <span className="hidden sm:inline">مشاركة</span>
         </button>
       </div>
 
       {commentsOpen && (
-        <div className="border-t border-[var(--color-border)] bg-[var(--color-surface-muted)] p-4">
+        <div className="bg-[var(--color-surface)] p-4 sm:px-5">
           <div className="space-y-3">
             {comments.map((comment) => (
               <div key={comment.id} className="flex gap-2.5">
@@ -425,7 +491,7 @@ function PostCard({
                   comment.author.fullName,
                   "h-8 w-8",
                 )}
-                <div className="min-w-0 flex-1 rounded-[var(--radius-md)] bg-[var(--color-surface)] px-3 py-2">
+                <div className="min-w-0 flex-1 rounded-[18px] bg-[var(--color-surface-muted)] px-3.5 py-2.5">
                   <strong className="text-xs">{comment.author.fullName}</strong>
                   <p className="mt-1 whitespace-pre-wrap text-sm leading-6">
                     {comment.body}
@@ -476,7 +542,9 @@ export function CommunityFeed({ currentUser }: { currentUser: CurrentUser }) {
   const [loading, setLoading] = useState(true);
   const [body, setBody] = useState("");
   const [linkUrl, setLinkUrl] = useState("");
+  const [linkOpen, setLinkOpen] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
@@ -505,6 +573,7 @@ export function CommunityFeed({ currentUser }: { currentUser: CurrentUser }) {
   }, [currentUser]);
 
   async function uploadImage(file: File) {
+    setUploadingImage(true);
     const form = new FormData();
     form.set("file", file);
     const response = await fetch("/api/v1/community/images", {
@@ -512,6 +581,7 @@ export function CommunityFeed({ currentUser }: { currentUser: CurrentUser }) {
       body: form,
     });
     const json = await response.json();
+    setUploadingImage(false);
     if (!response.ok)
       return showToast(json.error?.message ?? "تعذّر رفع الصورة.", "error");
     setImageUrl(json.data.url);
@@ -536,6 +606,7 @@ export function CommunityFeed({ currentUser }: { currentUser: CurrentUser }) {
     setBody("");
     setImageUrl("");
     setLinkUrl("");
+    setLinkOpen(false);
     setFeed("all");
     await loadPosts();
     showToast("تم نشر المنشور.", "success");
@@ -548,41 +619,165 @@ export function CommunityFeed({ currentUser }: { currentUser: CurrentUser }) {
   }
 
   return (
-    <div className="relative mx-auto max-w-7xl px-4 py-8 lg:px-8 lg:py-12">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-4 top-6 -z-0 h-52 rounded-[2rem] bg-[radial-gradient(circle_at_18%_20%,rgba(214,246,29,.32),transparent_25%),linear-gradient(135deg,var(--forest-900),var(--forest-700))]"
-      />
-      <header className="relative z-10 px-5 py-8 text-[var(--color-text-on-dark)] sm:px-10">
-        <span className="text-xs font-black text-[var(--color-brand)]">
-          مساحة عراقية مهنية
-        </span>
-        <h1 className="mt-2 text-3xl font-black sm:text-5xl">المجتمع يصنع الترند</h1>
-        <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--forest-100)]">
-          شارك فكرة أو صورة أو رابط عمل خارجي، وتواصل حول الخبرة الحقيقية—بدون استضافة
-          فيديو وبدون أرباح اجتماعية.
-        </p>
+    <div className="mx-auto max-w-[1500px] px-3 py-4 sm:px-5 lg:px-7">
+      <header className="overflow-hidden rounded-[22px] bg-[var(--color-surface-dark)] text-[var(--color-text-on-dark)] shadow-[0_14px_34px_rgba(6,38,25,.14)]">
+        <div className="relative flex flex-col gap-5 px-5 py-6 sm:px-7 lg:flex-row lg:items-center lg:justify-between">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -start-16 -top-24 h-56 w-56 rounded-full bg-[var(--color-brand)] opacity-15 blur-3xl"
+          />
+          <div className="relative">
+            <div className="mb-1 flex items-center gap-2 text-[11px] font-black text-[var(--color-brand)]">
+              <span className="h-2 w-2 rounded-full bg-[var(--color-brand)]" />
+              مجتمع خلّيها ترند
+            </div>
+            <h1 className="text-2xl font-black sm:text-3xl">تواصل، شارك، واصنع الأثر</h1>
+            <p className="mt-1.5 text-xs leading-6 text-[var(--forest-100)] sm:text-sm">
+              مساحة عراقية مهنية تجمع صناع المحتوى حول الأفكار والخبرات الحقيقية.
+            </p>
+          </div>
+          <form
+            className="relative w-full lg:w-[360px]"
+            onSubmit={(event) => {
+              event.preventDefault();
+              setQuery(search.trim());
+            }}
+          >
+            <SearchIcon
+              className="absolute end-4 top-1/2 -translate-y-1/2 text-[var(--forest-200)]"
+              size={18}
+            />
+            <input
+              className="h-12 w-full rounded-[var(--radius-pill)] border border-[var(--forest-500)] bg-[var(--forest-600)] py-2 pe-11 ps-4 text-sm text-[var(--color-text-on-dark)] outline-none transition focus:border-[var(--color-brand)] focus:ring-2 focus:ring-[rgba(214,246,29,.15)]"
+              placeholder="ابحث عن منشور أو صانع محتوى..."
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+          </form>
+        </div>
       </header>
 
-      <div className="relative z-10 mt-8 grid items-start gap-7 lg:grid-cols-[minmax(0,720px)_320px] lg:justify-center">
-        <section className="min-w-0 space-y-5">
+      <nav
+        aria-label="خلاصات المجتمع"
+        className="mt-3 flex gap-2 overflow-x-auto rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-2 shadow-[var(--shadow-sm)] xl:hidden"
+      >
+        {feedOptions.map((option) => {
+          const Icon = option.icon;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => selectFeed(option.value)}
+              className={`flex min-w-fit flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-black transition-colors ${feed === option.value ? "bg-[var(--color-brand)] text-[var(--color-text-on-brand)]" : "text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)]"}`}
+            >
+              <Icon size={17} aria-hidden="true" /> {option.shortLabel}
+            </button>
+          );
+        })}
+      </nav>
+
+      <div className="mt-5 grid items-start gap-5 lg:grid-cols-[minmax(0,680px)_280px] lg:justify-center xl:grid-cols-[245px_minmax(0,680px)_280px]">
+        <aside className="hidden space-y-4 xl:sticky xl:top-24 xl:block">
+          <section className="rounded-[20px] border border-[var(--color-border)] bg-[var(--color-surface)] p-3 shadow-[var(--shadow-sm)]">
+            <h2 className="px-3 pb-3 pt-2 text-sm font-black">تصفح المجتمع</h2>
+            <div className="space-y-1">
+              {feedOptions.map((option) => {
+                const Icon = option.icon;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => selectFeed(option.value)}
+                    className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-start text-sm font-bold transition-colors ${feed === option.value ? "bg-[var(--trend-100)] text-[var(--color-text)]" : "text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)]"}`}
+                  >
+                    <span
+                      className={`flex h-9 w-9 items-center justify-center rounded-full ${feed === option.value ? "bg-[var(--color-brand)]" : "bg-[var(--color-surface-muted)]"}`}
+                    >
+                      <Icon size={18} aria-hidden="true" />
+                    </span>
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
+          <section className="rounded-[20px] border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+            <p className="text-xs font-black text-[var(--color-text-muted)]">
+              روابط سريعة
+            </p>
+            <div className="mt-3 space-y-1 text-sm font-bold">
+              <Link
+                href="/creators"
+                className="flex items-center gap-3 rounded-xl px-2 py-2.5 hover:bg-[var(--color-surface-muted)]"
+              >
+                <UsersIcon size={18} /> اكتشف صناع المحتوى
+              </Link>
+              <Link
+                href="/campaigns"
+                className="flex items-center gap-3 rounded-xl px-2 py-2.5 hover:bg-[var(--color-surface-muted)]"
+              >
+                <TrendingUpIcon size={18} /> الحملات المتاحة
+              </Link>
+            </div>
+          </section>
+        </aside>
+
+        <section aria-label="خلاصة المجتمع" className="min-w-0 space-y-4">
+          {currentUser && suggestions.length > 0 && (
+            <section className="overflow-hidden rounded-[20px] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-sm)] xl:hidden">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-sm font-black">حسابات تستحق المتابعة</h2>
+                <Link
+                  href="/creators"
+                  className="text-xs font-black text-[var(--color-brand-active)]"
+                >
+                  عرض الكل
+                </Link>
+              </div>
+              <div className="flex gap-5 overflow-x-auto pb-1">
+                {suggestions.map((suggestion) => (
+                  <Link
+                    key={suggestion.username}
+                    href={`/creators/${suggestion.username}`}
+                    className="flex w-20 flex-none flex-col items-center text-center"
+                  >
+                    <span className="rounded-full border-2 border-[var(--color-brand)] p-0.5">
+                      {avatar(
+                        {
+                          username: suggestion.username,
+                          avatarUrl: suggestion.avatarUrl,
+                        },
+                        suggestion.user.fullName,
+                        "h-14 w-14",
+                      )}
+                    </span>
+                    <strong className="mt-2 w-full truncate text-xs">
+                      {suggestion.user.fullName}
+                    </strong>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
+
           {currentUser?.role === "CREATOR" && (
             <form
               onSubmit={publish}
-              className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-[var(--shadow-md)]"
+              className="overflow-hidden rounded-[20px] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[0_1px_2px_rgba(6,38,25,.06),0_8px_24px_rgba(6,38,25,.04)]"
             >
-              <div className="flex gap-3">
+              <div className="flex gap-3 p-4 sm:p-5">
                 {avatar(null, currentUser.fullName)}
                 <textarea
-                  className="min-h-24 flex-1 resize-none border-0 bg-transparent p-2 text-[15px] leading-7 outline-none"
-                  placeholder="شنو الفكرة اللي تستحق تصير ترند؟"
+                  className="min-h-16 flex-1 resize-none rounded-[18px] border-0 bg-[var(--color-surface-muted)] px-4 py-3 text-[15px] leading-6 outline-none transition focus:ring-2 focus:ring-[var(--color-brand)]"
+                  placeholder={`بماذا تفكر، ${currentUser.fullName.split(" ")[0]}؟`}
                   value={body}
                   onChange={(event) => setBody(event.target.value)}
                   maxLength={2000}
                 />
               </div>
               {imageUrl && (
-                <div className="relative mt-3 overflow-hidden rounded-[var(--radius-lg)]">
+                <div className="relative mx-4 mb-4 overflow-hidden rounded-[var(--radius-lg)] sm:mx-5">
                   <img
                     src={imageUrl}
                     alt="معاينة صورة المنشور"
@@ -590,21 +785,38 @@ export function CommunityFeed({ currentUser }: { currentUser: CurrentUser }) {
                   />
                   <button
                     type="button"
-                    className="absolute left-3 top-3 rounded-full bg-[var(--color-surface-dark)] px-3 py-1 text-xs text-[var(--color-text-on-dark)]"
+                    className="absolute left-3 top-3 rounded-full bg-[var(--color-surface-dark)] px-3 py-1.5 text-xs font-bold text-[var(--color-text-on-dark)]"
                     onClick={() => setImageUrl("")}
                   >
-                    إزالة
+                    إزالة الصورة
                   </button>
                 </div>
               )}
-              <input
-                type="url"
-                dir="ltr"
-                className="mt-3 w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-3 py-2 text-sm"
-                placeholder="https:// رابط خارجي اختياري"
-                value={linkUrl}
-                onChange={(event) => setLinkUrl(event.target.value)}
-              />
+              {linkOpen && (
+                <div className="mx-4 mb-4 sm:mx-5">
+                  <label
+                    htmlFor="community-link"
+                    className="mb-2 block text-xs font-black"
+                  >
+                    أضف رابطاً خارجياً
+                  </label>
+                  <div className="relative">
+                    <LinkIcon
+                      size={18}
+                      className="absolute end-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]"
+                    />
+                    <input
+                      id="community-link"
+                      type="url"
+                      dir="ltr"
+                      className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-muted)] py-2.5 pe-10 ps-3 text-sm outline-none focus:border-[var(--color-brand-active)]"
+                      placeholder="https://example.com"
+                      value={linkUrl}
+                      onChange={(event) => setLinkUrl(event.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
               <input
                 ref={imageInputRef}
                 type="file"
@@ -615,71 +827,68 @@ export function CommunityFeed({ currentUser }: { currentUser: CurrentUser }) {
                   if (file) void uploadImage(file);
                 }}
               />
-              <div className="mt-4 flex items-center justify-between border-t border-[var(--color-border)] pt-4">
+              <div className="mx-4 flex items-center gap-1 border-t border-[var(--color-border)] py-2 sm:mx-5">
                 <button
                   type="button"
-                  className="btn-ghost gap-2 text-sm"
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-black text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-surface-muted)]"
                   onClick={() => imageInputRef.current?.click()}
+                  disabled={uploadingImage}
                 >
-                  <ImageIcon size={18} /> صورة
+                  <ImageIcon size={19} className="text-[var(--color-brand-active)]" />
+                  {uploadingImage ? "جارٍ الرفع..." : "صورة"}
+                </button>
+                <button
+                  type="button"
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-black text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-surface-muted)]"
+                  onClick={() => setLinkOpen((open) => !open)}
+                >
+                  <LinkIcon size={19} /> رابط خارجي
                 </button>
                 <button
                   type="submit"
-                  className="btn-primary text-sm"
-                  disabled={publishing || (!body.trim() && !imageUrl && !linkUrl)}
+                  className="ms-2 rounded-xl bg-[var(--color-brand)] px-5 py-2.5 text-xs font-black text-[var(--color-text-on-brand)] transition hover:bg-[var(--color-brand-hover)] disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={
+                    publishing ||
+                    uploadingImage ||
+                    (!body.trim() && !imageUrl && !linkUrl)
+                  }
                 >
-                  {publishing ? "جارٍ النشر..." : "انشر الآن"}
+                  {publishing ? "ينشر..." : "نشر"}
                 </button>
               </div>
             </form>
           )}
 
-          <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-3 shadow-[var(--shadow-sm)]">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex gap-1 overflow-x-auto">
-                {(
-                  [
-                    ["all", "الكل"],
-                    ["following", "أتابعهم"],
-                    ["saved", "المحفوظات"],
-                  ] as const
-                ).map(([value, label]) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => selectFeed(value)}
-                    className={`whitespace-nowrap rounded-[var(--radius-pill)] px-4 py-2 text-xs font-black ${feed === value ? "bg-[var(--color-brand)] text-[var(--color-text-on-brand)]" : "text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)]"}`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-              <form
-                className="relative"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  setQuery(search.trim());
+          <div className="flex items-center justify-between px-1 py-1">
+            <div>
+              <h2 className="text-base font-black">
+                {feedOptions.find((option) => option.value === feed)?.label}
+              </h2>
+              {query && (
+                <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+                  نتائج البحث عن «{query}»
+                </p>
+              )}
+            </div>
+            {query && (
+              <button
+                type="button"
+                className="text-xs font-black text-[var(--color-brand-active)]"
+                onClick={() => {
+                  setSearch("");
+                  setQuery("");
                 }}
               >
-                <SearchIcon
-                  className="absolute end-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]"
-                  size={17}
-                />
-                <input
-                  className="w-full rounded-[var(--radius-pill)] border border-[var(--color-border)] bg-[var(--color-surface-muted)] py-2 pe-10 ps-4 text-sm sm:w-56"
-                  placeholder="ابحث في المجتمع"
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                />
-              </form>
-            </div>
+                مسح البحث
+              </button>
+            )}
           </div>
 
           {loading ? (
             Array.from({ length: 3 }).map((_, index) => (
               <div
                 key={index}
-                className="h-64 animate-pulse rounded-[var(--radius-xl)] bg-[var(--color-surface)]"
+                className="h-72 animate-pulse rounded-[20px] border border-[var(--color-border)] bg-[var(--color-surface)]"
               />
             ))
           ) : posts.length ? (
@@ -694,8 +903,11 @@ export function CommunityFeed({ currentUser }: { currentUser: CurrentUser }) {
               />
             ))
           ) : (
-            <div className="rounded-[var(--radius-xl)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] p-12 text-center">
-              <h2 className="text-xl font-black">الخلاصة هادئة حالياً</h2>
+            <div className="rounded-[20px] border border-dashed border-[var(--color-border-strong)] bg-[var(--color-surface)] p-12 text-center">
+              <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[var(--trend-100)]">
+                <UsersIcon size={24} />
+              </span>
+              <h2 className="mt-4 text-xl font-black">الخلاصة هادئة حالياً</h2>
               <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
                 غيّر الفلتر أو كن أول من يشارك فكرة مفيدة.
               </p>
@@ -703,33 +915,32 @@ export function CommunityFeed({ currentUser }: { currentUser: CurrentUser }) {
           )}
         </section>
 
-        <aside className="space-y-5 lg:sticky lg:top-24">
-          <section className="rounded-[var(--radius-xl)] bg-[var(--color-surface-dark)] p-5 text-[var(--color-text-on-dark)] shadow-[var(--shadow-md)]">
-            <p className="text-xs font-black text-[var(--color-brand)]">قواعد المساحة</p>
-            <ul className="mt-4 space-y-3 text-xs leading-6 text-[var(--forest-100)]">
-              <li>• محتوى مهني واحترام متبادل.</li>
-              <li>• الصور والنصوص والروابط الخارجية فقط.</li>
-              <li>• لا أرباح على الإعجابات أو المتابعين.</li>
-              <li>• البلاغات تراجعها الإدارة قبل أي إجراء.</li>
-            </ul>
-          </section>
+        <aside className="hidden space-y-4 lg:sticky lg:top-24 lg:block">
           {currentUser && suggestions.length > 0 && (
-            <section className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
-              <h2 className="font-black">صناع محتوى قد يعجبونك</h2>
+            <section className="rounded-[20px] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-sm)]">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-black">أشخاص قد تعرفهم</h2>
+                <Link
+                  href="/creators"
+                  className="text-[11px] font-black text-[var(--color-brand-active)]"
+                >
+                  عرض الكل
+                </Link>
+              </div>
               <div className="mt-4 space-y-4">
                 {suggestions.map((suggestion) => (
                   <Link
                     key={suggestion.username}
                     href={`/creators/${suggestion.username}`}
-                    className="flex items-center gap-3"
+                    className="group flex items-center gap-3"
                   >
                     {avatar(
                       { username: suggestion.username, avatarUrl: suggestion.avatarUrl },
                       suggestion.user.fullName,
-                      "h-10 w-10",
+                      "h-11 w-11",
                     )}
-                    <span className="min-w-0">
-                      <strong className="block truncate text-sm">
+                    <span className="min-w-0 flex-1">
+                      <strong className="block truncate text-sm group-hover:text-[var(--color-brand-active)]">
                         {suggestion.user.fullName}
                       </strong>
                       <span
@@ -739,14 +950,41 @@ export function CommunityFeed({ currentUser }: { currentUser: CurrentUser }) {
                         @{suggestion.username}
                       </span>
                     </span>
-                    <span className="ms-auto rounded-full bg-[rgba(214,246,29,.18)] px-2 py-1 text-[10px] font-black">
-                      {suggestion.trustScore}
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--trend-100)]">
+                      <PlusIcon size={16} aria-hidden="true" />
                     </span>
                   </Link>
                 ))}
               </div>
             </section>
           )}
+
+          <section className="overflow-hidden rounded-[20px] bg-[var(--color-surface-dark)] text-[var(--color-text-on-dark)] shadow-[var(--shadow-md)]">
+            <div className="border-b border-[var(--forest-500)] p-5">
+              <p className="text-xs font-black text-[var(--color-brand)]">
+                مجتمع مهني وآمن
+              </p>
+              <h2 className="mt-1 text-lg font-black">قواعد المساحة</h2>
+            </div>
+            <ul className="space-y-3 p-5 text-xs leading-6 text-[var(--forest-100)]">
+              <li className="flex gap-2">
+                <span className="text-[var(--color-brand)]">●</span> محتوى مهني واحترام
+                متبادل.
+              </li>
+              <li className="flex gap-2">
+                <span className="text-[var(--color-brand)]">●</span> نصوص وصور وروابط
+                خارجية فقط.
+              </li>
+              <li className="flex gap-2">
+                <span className="text-[var(--color-brand)]">●</span> لا أرباح على
+                الإعجابات أو المتابعين.
+              </li>
+              <li className="flex gap-2">
+                <span className="text-[var(--color-brand)]">●</span> البلاغات تراجعها
+                الإدارة.
+              </li>
+            </ul>
+          </section>
         </aside>
       </div>
     </div>
