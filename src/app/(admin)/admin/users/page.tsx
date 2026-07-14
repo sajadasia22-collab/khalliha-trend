@@ -67,18 +67,18 @@ export default async function AdminUsersPage({
   );
 
   return (
-    <main className="min-h-screen bg-[var(--color-bg)] pb-20 text-[var(--color-text)] dir-rtl md:ps-64 md:pb-0">
+    <main className="min-h-screen overflow-x-clip bg-[var(--color-bg)] pb-20 text-[var(--color-text)] dir-rtl md:ps-64 md:pb-0">
       <DashboardHeader
         dashboardRole="admin"
         userLabel={`${admin.role === "SUPER_ADMIN" ? "مدير النظام" : "مشرف"}: ${admin.fullName}`}
       />
-      <section className="mx-auto max-w-7xl px-5 py-10 lg:px-8">
+      <section className="mx-auto min-w-0 max-w-7xl px-5 py-10 lg:px-8">
         <div className="mb-7 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-3">
             <span className="flex h-11 w-11 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-brand)]">
               <UsersIcon />
             </span>
-            <div>
+            <div className="min-w-0">
               <h1 className="text-3xl font-extrabold">إدارة المستخدمين</h1>
               <p className="text-sm font-medium text-[var(--color-text-secondary)]">
                 البحث في الحسابات ومراجعة حالتها ونشاطها واتخاذ الإجراءات الإدارية.
@@ -104,17 +104,17 @@ export default async function AdminUsersPage({
           ))}
         </div>
 
-        <form className="mb-5 grid gap-3 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 md:grid-cols-[1fr_180px_180px_auto]">
+        <form className="mb-5 grid min-w-0 gap-3 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 md:grid-cols-[minmax(0,1fr)_180px_180px_auto]">
           <input
             name="search"
             defaultValue={params.search}
             placeholder="ابحث بالاسم أو البريد أو الهاتف"
-            className="min-h-11 rounded-[var(--radius-md)] border border-[var(--color-border)] px-4 text-right focus:border-[var(--color-brand-active)] focus:outline-none"
+            className="min-h-11 min-w-0 max-w-full rounded-[var(--radius-md)] border border-[var(--color-border)] px-4 text-right focus:border-[var(--color-brand-active)] focus:outline-none"
           />
           <select
             name="role"
             defaultValue={role ?? ""}
-            className="min-h-11 rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 font-bold"
+            className="min-h-11 min-w-0 max-w-full rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 font-bold"
           >
             <option value="">كل الأدوار</option>
             {Object.entries(ROLE_LABELS).map(([value, label]) => (
@@ -126,7 +126,7 @@ export default async function AdminUsersPage({
           <select
             name="status"
             defaultValue={status ?? ""}
-            className="min-h-11 rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 font-bold"
+            className="min-h-11 min-w-0 max-w-full rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 font-bold"
           >
             <option value="">كل الحالات</option>
             {Object.entries(STATUS_LABELS).map(([value, label]) => (
