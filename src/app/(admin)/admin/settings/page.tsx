@@ -10,18 +10,21 @@ export default async function AdminSettingsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] dir-rtl md:ps-64 pb-20 md:pb-0">
+    <main
+      className="dashboard-page min-h-screen bg-[var(--color-bg)] pb-24 text-[var(--color-text)] md:ps-64 md:pb-0"
+      dir="rtl"
+    >
       <DashboardHeader
         dashboardRole="admin"
         userLabel={`${user.role === "SUPER_ADMIN" ? "مدير النظام" : "مشرف"}: ${user.fullName}`}
       />
 
-      <section className="mx-auto max-w-3xl px-5 py-12 lg:px-8">
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-5 lg:px-8 lg:py-10">
         <h1 className="fade-in-up mb-2 text-3xl font-extrabold">الإعدادات</h1>
         <p className="fade-in-up mb-8 font-medium text-[var(--color-text-secondary)]">
-          إدارة كلمة المرور وتفضيلات الإشعارات لحسابك.
+          كل أدوات التحكم بحسابك وخصوصيتك وتجربة استخدام المنصة في مكان واحد.
         </p>
-        <AccountSettings />
+        <AccountSettings dashboardRole="admin" />
       </section>
     </main>
   );

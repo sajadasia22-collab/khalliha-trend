@@ -1,14 +1,35 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState, type ComponentType } from "react";
 import Link from "next/link";
 import { PasswordField } from "../auth/PasswordField";
 import { Checkbox } from "../ui/Checkbox";
 import { Skeleton } from "../ui/Skeleton";
 import { Button } from "../ui/button";
 import { useToast } from "../ui/Toast";
-import { ShieldCheckIcon, BellIcon, UserIcon, InfoIcon, UsersIcon } from "../ui/icons";
-import { Tabs } from "../ui/Tabs";
+import {
+  ShieldCheckIcon,
+  BellIcon,
+  UserIcon,
+  InfoIcon,
+  UsersIcon,
+  SearchIcon,
+  ChevronStartIcon,
+  PaletteIcon,
+  SmartphoneIcon,
+  DataIcon,
+  ExportIcon,
+  LinkIcon,
+  type IconProps,
+} from "../ui/icons";
+import {
+  applyExperiencePreferences,
+  defaultExperiencePreferences,
+  EXPERIENCE_STORAGE_KEY,
+  readExperiencePreferences,
+  type ExperiencePreferences,
+} from "./ExperiencePreferencesLoader";
+import type { DashboardRole } from "../layout/dashboardNav";
 
 type NotificationType =
   | "CAMPAIGN_APPROVED"
@@ -20,7 +41,8 @@ type NotificationType =
   | "DISPUTE_UPDATED"
   | "FRAUD_FLAGGED"
   | "FOLLOW_RECEIVED"
-  | "COMMUNITY_ACTIVITY";
+  | "COMMUNITY_ACTIVITY"
+  | "MESSAGE_RECEIVED";
 
 type Preference = { type: NotificationType; enabled: boolean };
 
@@ -44,6 +66,7 @@ const typeLabels: Record<NotificationType, string> = {
   FRAUD_FLAGGED: "نتائج مراجعة الاحتيال",
   FOLLOW_RECEIVED: "المتابعون الجدد",
   COMMUNITY_ACTIVITY: "تفاعلات المجتمع",
+  MESSAGE_RECEIVED: "رسائل الحملات",
 };
 
 function ProfileSection() {
@@ -159,7 +182,7 @@ function ProfileSection() {
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <span className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1.5">
-              رقم الهاتف (اسم المستخدم)
+              رقم الهاتف
             </span>
             <input
               type="text"
@@ -534,7 +557,7 @@ function PrivacySection() {
         <div>
           <h2 className="text-lg font-extrabold">خصوصية المراسلة</h2>
           <p className="text-xs text-[var(--color-text-muted)]">
-            يُطبّق هذا الخيار عند تفعيل رسائل الحملات.
+            تحكم بمن يستطيع بدء محادثة حملة جديدة معك.
           </p>
         </div>
       </div>
@@ -708,7 +731,9 @@ function SessionSection() {
                   </span>
                 </span>
                 <time className="text-xs text-[var(--color-text-muted)]">
-                  {new Date(session.createdAt).toLocaleString("ar-IQ")}
+                  {new Date(session.createdAt).toLocaleString("ar-IQ", {
+                    numberingSystem: "latn",
+                  })}
                 </time>
               </li>
             ))
@@ -723,30 +748,400 @@ function SessionSection() {
   );
 }
 
-export function AccountSettings() {
-  const [activeTab, setActiveTab] = useState("profile");
+function AppearanceSection() {
+  const { showToast } = useToast();
+  const [preferences, setPreferences] = useState<ExperiencePreferences>(
+    defaultExperiencePreferences,
+  );
 
-  const tabItems = [
-    { value: "profile", label: "بيانات الحساب" },
-    { value: "following", label: "المتابَعون" },
-    { value: "privacy", label: "الخصوصية" },
-    { value: "security", label: "الأمان وكلمة المرور" },
-    { value: "notifications", label: "تفضيلات الإشعارات" },
-    { value: "sessions", label: "جلسة العمل الحالية" },
-  ];
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- browser-only preferences are unavailable during SSR.
+    setPreferences(readExperiencePreferences());
+  }, []);
+
+  function save(next: ExperiencePreferences) {
+    setPreferences(next);
+    localStorage.setItem(EXPERIENCE_STORAGE_KEY, JSON.stringify(next));
+    applyExperiencePreferences(next);
+    showToast("تم حفظ تفضيلات العرض على هذا الجهاز.", "success");
+  }
 
   return (
-    <div className="space-y-6">
-      <Tabs items={tabItems} value={activeTab} onChange={setActiveTab} />
+    <div className="space-y-5">
+      <section className="card rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-sm)]">
+        <div className="mb-5 flex items-center gap-3">
+          <span className="flex h-11 w-11 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-brand)] text-[var(--color-text-on-brand)]">
+            <PaletteIcon />
+          </span>
+          <div>
+            <h2 className="text-lg font-black">المظهر</h2>
+            <p className="text-xs text-[var(--color-text-muted)]">
+              اختر الشكل الأريح لعينك على هذا الجهاز.
+            </p>
+          </div>
+        </div>
+        <fieldset>
+          <legend className="mb-3 text-sm font-bold">نمط الألوان</legend>
+          <div className="grid grid-cols-3 gap-3">
+            {(
+              [
+                ["system", "حسب الجهاز"],
+                ["light", "فاتح"],
+                ["dark", "داكن"],
+              ] as const
+            ).map(([value, label]) => (
+              <label
+                key={value}
+                className={`cursor-pointer rounded-[var(--radius-md)] border p-3 text-center text-xs font-black transition ${
+                  preferences.theme === value
+                    ? "border-[var(--color-brand)] bg-[rgba(214,246,29,.16)]"
+                    : "border-[var(--color-border)] bg-[var(--color-surface-muted)]"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="theme"
+                  className="sr-only"
+                  checked={preferences.theme === value}
+                  onChange={() => save({ ...preferences, theme: value })}
+                />
+                <span className="mx-auto mb-2 block h-9 rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-sm)]" />
+                {label}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      </section>
 
-      <div className="mt-6">
+      <section className="card divide-y divide-[var(--color-border)] rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] px-5 shadow-[var(--shadow-sm)]">
+        <div className="flex items-center justify-between gap-4 py-5">
+          <div>
+            <h3 className="font-black">عرض مدمج</h3>
+            <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+              يقلل حجم العناصر حتى يظهر محتوى أكثر في اللوحات.
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={preferences.density === "compact"}
+            onClick={() =>
+              save({
+                ...preferences,
+                density: preferences.density === "compact" ? "comfortable" : "compact",
+              })
+            }
+            className={`relative h-7 w-12 flex-shrink-0 rounded-full transition ${preferences.density === "compact" ? "bg-[var(--color-brand)]" : "bg-[var(--color-border-strong)]"}`}
+          >
+            <span
+              className={`absolute top-1 h-5 w-5 rounded-full bg-[var(--color-surface)] shadow-[var(--shadow-sm)] transition ${preferences.density === "compact" ? "start-1" : "start-6"}`}
+            />
+          </button>
+        </div>
+        <div className="flex items-center justify-between gap-4 py-5">
+          <div>
+            <h3 className="font-black">تقليل الحركة</h3>
+            <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+              يوقف الحركات والانتقالات الطويلة لتجربة أهدأ.
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={preferences.reduceMotion}
+            onClick={() =>
+              save({ ...preferences, reduceMotion: !preferences.reduceMotion })
+            }
+            className={`relative h-7 w-12 flex-shrink-0 rounded-full transition ${preferences.reduceMotion ? "bg-[var(--color-brand)]" : "bg-[var(--color-border-strong)]"}`}
+          >
+            <span
+              className={`absolute top-1 h-5 w-5 rounded-full bg-[var(--color-surface)] shadow-[var(--shadow-sm)] transition ${preferences.reduceMotion ? "start-1" : "start-6"}`}
+            />
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function DataAndSupportSection() {
+  const { showToast } = useToast();
+  const [exporting, setExporting] = useState(false);
+
+  async function exportData() {
+    setExporting(true);
+    try {
+      const response = await fetch("/api/v1/account/export");
+      if (!response.ok) throw new Error("failed");
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `khalliha-trend-data-${new Date().toISOString().slice(0, 10)}.json`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+      showToast("تم تجهيز نسخة بياناتك.", "success");
+    } catch {
+      showToast("تعذّر تصدير البيانات حالياً.", "error");
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  return (
+    <div className="space-y-5">
+      <section className="card rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-sm)]">
+        <div className="flex items-start gap-4">
+          <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-brand)] text-[var(--color-text-on-brand)]">
+            <DataIcon />
+          </span>
+          <div className="flex-1">
+            <h2 className="text-lg font-black">نسخة من بياناتك</h2>
+            <p className="mt-1 text-sm leading-6 text-[var(--color-text-secondary)]">
+              نزّل ملف JSON يحتوي بيانات حسابك ونشاطك الأساسي ومحادثات الحملات الخاصة بك.
+            </p>
+            <button
+              type="button"
+              onClick={exportData}
+              disabled={exporting}
+              className="btn-primary mt-5 inline-flex items-center gap-2 text-sm"
+            >
+              <ExportIcon size={17} />
+              {exporting ? "جارٍ التجهيز..." : "تنزيل بياناتي"}
+            </button>
+          </div>
+        </div>
+      </section>
+      <section className="card rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-2 shadow-[var(--shadow-sm)]">
+        {[
+          ["/privacy", "سياسة الخصوصية", "كيف نحفظ بياناتك ونستخدمها"],
+          ["/terms", "الشروط والأحكام", "حقوقك والتزامات استخدام المنصة"],
+          ["/payment-policy", "سياسة الدفع", "قواعد الأرباح والسحب والإيداع"],
+        ].map(([href, title, description]) => (
+          <Link
+            key={href}
+            href={href}
+            className="flex items-center gap-3 rounded-[var(--radius-md)] p-4 transition hover:bg-[var(--color-surface-muted)]"
+          >
+            <LinkIcon className="text-[var(--color-text-muted)]" />
+            <span className="min-w-0 flex-1">
+              <strong className="block">{title}</strong>
+              <span className="block text-xs text-[var(--color-text-muted)]">
+                {description}
+              </span>
+            </span>
+            <ChevronStartIcon size={17} />
+          </Link>
+        ))}
+      </section>
+    </div>
+  );
+}
+
+type SettingItem = {
+  value: string;
+  label: string;
+  description: string;
+  group: string;
+  icon: ComponentType<IconProps>;
+};
+
+const settingItems: SettingItem[] = [
+  {
+    value: "profile",
+    label: "معلومات الحساب",
+    description: "الاسم والبريد ورقم الهاتف",
+    group: "الحساب",
+    icon: UserIcon,
+  },
+  {
+    value: "privacy",
+    label: "الخصوصية",
+    description: "المراسلة والحظر والكتم",
+    group: "الخصوصية والأمان",
+    icon: ShieldCheckIcon,
+  },
+  {
+    value: "security",
+    label: "كلمة المرور",
+    description: "تغيير كلمة المرور وحماية الدخول",
+    group: "الخصوصية والأمان",
+    icon: ShieldCheckIcon,
+  },
+  {
+    value: "sessions",
+    label: "الأجهزة وعمليات الدخول",
+    description: "راجع نشاط الدخول إلى حسابك",
+    group: "الخصوصية والأمان",
+    icon: SmartphoneIcon,
+  },
+  {
+    value: "notifications",
+    label: "الإشعارات",
+    description: "تحكم بما تريد استلامه",
+    group: "التفضيلات",
+    icon: BellIcon,
+  },
+  {
+    value: "appearance",
+    label: "المظهر وسهولة الاستخدام",
+    description: "الوضع الداكن والكثافة والحركة",
+    group: "التفضيلات",
+    icon: PaletteIcon,
+  },
+  {
+    value: "following",
+    label: "الحسابات المتابَعة",
+    description: "إدارة صناع المحتوى الذين تتابعهم",
+    group: "المحتوى والتواصل",
+    icon: UsersIcon,
+  },
+  {
+    value: "data",
+    label: "بياناتك والمساعدة",
+    description: "تصدير البيانات والسياسات",
+    group: "معلومات ودعم",
+    icon: DataIcon,
+  },
+];
+
+export function AccountSettings({ dashboardRole }: { dashboardRole: DashboardRole }) {
+  const [activeTab, setActiveTab] = useState("profile");
+  const [showMobileDetail, setShowMobileDetail] = useState(false);
+  const [search, setSearch] = useState("");
+  const filteredItems = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase("ar-IQ");
+    return query
+      ? settingItems.filter((item) =>
+          `${item.label} ${item.description} ${item.group}`
+            .toLocaleLowerCase("ar-IQ")
+            .includes(query),
+        )
+      : settingItems;
+  }, [search]);
+  const activeItem = settingItems.find((item) => item.value === activeTab)!;
+  const ActiveIcon = activeItem.icon;
+  const professionalHref =
+    dashboardRole === "creator"
+      ? "/creator/profile"
+      : dashboardRole === "brand"
+        ? "/brand/profile"
+        : "/admin/users";
+
+  return (
+    <div className="settings-center overflow-hidden rounded-[28px] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-md)] lg:grid lg:min-h-[720px] lg:grid-cols-[310px_1fr]">
+      <aside
+        className={`${showMobileDetail ? "hidden lg:block" : "block"} border-b border-[var(--color-border)] bg-[var(--color-surface-muted)] p-4 lg:border-e lg:border-b-0 lg:p-5`}
+      >
+        <label className="flex items-center gap-2 rounded-[var(--radius-pill)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 shadow-[var(--shadow-sm)]">
+          <SearchIcon size={18} />
+          <span className="sr-only">بحث في الإعدادات</span>
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="ابحث في الإعدادات"
+            className="w-full bg-transparent text-sm outline-none"
+          />
+        </label>
+
+        <Link
+          href={professionalHref}
+          className="mt-4 flex items-center gap-3 rounded-[var(--radius-lg)] bg-[var(--color-surface-dark)] p-4 text-[var(--color-text-on-dark)] shadow-[var(--shadow-sm)]"
+        >
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-brand)] text-[var(--color-text-on-brand)]">
+            <UserIcon size={18} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <strong className="block text-sm">ملفك على المنصة</strong>
+            <span className="block truncate text-[11px] text-[var(--forest-100)]">
+              تعديل الهوية والمعلومات المهنية
+            </span>
+          </span>
+          <ChevronStartIcon size={17} />
+        </Link>
+
+        <nav className="mt-5 space-y-5" aria-label="فئات الإعدادات">
+          {[...new Set(filteredItems.map((item) => item.group))].map((group) => (
+            <section key={group}>
+              <h2 className="mb-2 px-2 text-[10px] font-black uppercase tracking-wide text-[var(--color-text-muted)]">
+                {group}
+              </h2>
+              <div className="space-y-1">
+                {filteredItems
+                  .filter((item) => item.group === group)
+                  .map((item) => {
+                    const Icon = item.icon;
+                    const active = item.value === activeTab;
+                    return (
+                      <button
+                        key={item.value}
+                        type="button"
+                        onClick={() => {
+                          setActiveTab(item.value);
+                          setShowMobileDetail(true);
+                        }}
+                        aria-current={active ? "page" : undefined}
+                        className={`flex w-full items-center gap-3 rounded-[var(--radius-md)] p-3 text-start transition ${active ? "bg-[var(--color-surface)] shadow-[var(--shadow-sm)]" : "hover:bg-[var(--color-surface)]"}`}
+                      >
+                        <span
+                          className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full ${active ? "bg-[var(--color-brand)] text-[var(--color-text-on-brand)]" : "bg-[var(--color-surface)] text-[var(--color-text-secondary)]"}`}
+                        >
+                          <Icon size={17} />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <strong className="block text-sm">{item.label}</strong>
+                          <span className="block truncate text-[11px] text-[var(--color-text-muted)]">
+                            {item.description}
+                          </span>
+                        </span>
+                        <ChevronStartIcon
+                          size={15}
+                          className="text-[var(--color-text-muted)]"
+                        />
+                      </button>
+                    );
+                  })}
+              </div>
+            </section>
+          ))}
+          {filteredItems.length === 0 && (
+            <p className="rounded-[var(--radius-md)] bg-[var(--color-surface)] p-4 text-center text-sm text-[var(--color-text-muted)]">
+              لا توجد إعدادات مطابقة.
+            </p>
+          )}
+        </nav>
+      </aside>
+
+      <section
+        className={`${showMobileDetail ? "block" : "hidden lg:block"} min-w-0 bg-[var(--color-bg)] p-4 sm:p-6 lg:p-8`}
+      >
+        <button
+          type="button"
+          onClick={() => setShowMobileDetail(false)}
+          className="mb-5 inline-flex items-center gap-2 rounded-[var(--radius-pill)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-xs font-bold lg:hidden"
+        >
+          <ChevronStartIcon className="rotate-180" size={15} /> كل الإعدادات
+        </button>
+        <div className="mb-6 flex items-center gap-3">
+          <span className="flex h-11 w-11 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-brand)] text-[var(--color-text-on-brand)]">
+            <ActiveIcon />
+          </span>
+          <div>
+            <p className="text-[10px] font-black text-[var(--color-text-muted)]">
+              الإعدادات
+            </p>
+            <h2 className="text-xl font-black sm:text-2xl">{activeItem.label}</h2>
+          </div>
+        </div>
         {activeTab === "profile" && <ProfileSection />}
         {activeTab === "following" && <FollowingSection />}
         {activeTab === "privacy" && <PrivacySection />}
         {activeTab === "security" && <PasswordSection />}
         {activeTab === "notifications" && <NotificationPreferencesSection />}
         {activeTab === "sessions" && <SessionSection />}
-      </div>
+        {activeTab === "appearance" && <AppearanceSection />}
+        {activeTab === "data" && <DataAndSupportSection />}
+      </section>
     </div>
   );
 }

@@ -95,6 +95,7 @@ GET    /api/v1/account/privacy
 PATCH  /api/v1/account/privacy
 GET    /api/v1/account/relationships
 GET    /api/v1/account/sessions
+GET    /api/v1/account/export
 GET    /api/v1/admin/community-reports
 POST   /api/v1/admin/community-reports/:id/review
 ```
@@ -180,6 +181,23 @@ GET  /api/v1/notification-preferences
 PATCH /api/v1/notification-preferences
 ```
 
+`GET /api/v1/account/export` يعيد ملف JSON خاصاً بالمستخدم المسجّل فقط، مع `no-store` وrate limit وسجل Audit Log. لا يتضمن كلمات المرور أو الأسرار أو بيانات مستخدمين خارج علاقات الحساب الظاهرة له.
+
+### Campaign messaging
+
+```text
+GET  /api/v1/conversations?search=
+POST /api/v1/conversations
+GET  /api/v1/conversations/contacts
+GET  /api/v1/conversations/:id/messages?search=
+POST /api/v1/conversations/:id/messages
+POST /api/v1/conversations/:id/read
+POST /api/v1/conversations/:id/reports
+POST /api/v1/admin/conversation-reports/:id/review
+```
+
+إنشاء المحادثة يتطلب `campaignId` و`body`، ويضيف التاجر `creatorProfileId`. يتحقق السيرفر من عضوية الصانع في الحملة وملكية العلامة، ولا يعتمد على الدور أو الهوية المرسلة من المتصفح.
+
 ### Admin
 
 ```text
@@ -232,6 +250,13 @@ COMMUNITY_POST_NOT_FOUND
 COMMUNITY_COMMENT_NOT_FOUND
 COMMUNITY_REPORT_TARGET_NOT_FOUND
 COMMUNITY_REPORT_NOT_OPEN
+CONVERSATION_NOT_FOUND
+CAMPAIGN_CONTACT_NOT_FOUND
+MESSAGE_PERMISSION_DENIED
+CONVERSATION_BLOCKED
+MESSAGE_NOT_FOUND
+CANNOT_REPORT_OWN_MESSAGE
+REPORT_ALREADY_OPEN
 CAMPAIGN_NOT_FOUND
 CAMPAIGN_NOT_ACTIVE
 CAMPAIGN_BUDGET_EXHAUSTED

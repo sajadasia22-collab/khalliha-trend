@@ -55,6 +55,14 @@ import {
   Flag,
   VolumeX,
   Ban,
+  Palette,
+  SlidersHorizontal,
+  LockKeyhole,
+  Smartphone,
+  HelpCircle,
+  Database,
+  SunMoon,
+  ArrowDownToLine,
   type LucideProps,
 } from "lucide-react";
 import {
@@ -132,6 +140,7 @@ export const ArrowUpRightIcon = withDefaults(ArrowUpRight);
 export const DeviceUploadIcon = withDefaults(HardDriveUpload);
 export const HeartIcon = withDefaults(Heart);
 export const CommentIcon = withDefaults(MessageCircle);
+export const MessageIcon = withDefaults(MessageCircle);
 export const BookmarkIcon = withDefaults(Bookmark);
 export const ShareIcon = withDefaults(Share2);
 export const MoreIcon = withDefaults(MoreHorizontal);
@@ -140,6 +149,14 @@ export const SendIcon = withDefaults(Send);
 export const FlagIcon = withDefaults(Flag);
 export const MuteIcon = withDefaults(VolumeX);
 export const BlockIcon = withDefaults(Ban);
+export const PaletteIcon = withDefaults(Palette);
+export const PreferencesIcon = withDefaults(SlidersHorizontal);
+export const LockIcon = withDefaults(LockKeyhole);
+export const SmartphoneIcon = withDefaults(Smartphone);
+export const HelpIcon = withDefaults(HelpCircle);
+export const DataIcon = withDefaults(Database);
+export const ThemeIcon = withDefaults(SunMoon);
+export const ExportIcon = withDefaults(ArrowDownToLine);
 
 /** Real brand marks (official logo colors) for the cloud-storage source pickers. */
 function withBrandColor(Icon: IconType) {

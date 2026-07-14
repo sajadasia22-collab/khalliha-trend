@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Sans_Arabic } from "next/font/google";
 import { ToastProvider } from "../components/ui/Toast";
+import { ExperiencePreferencesLoader } from "../components/account/ExperiencePreferencesLoader";
 import "./globals.css";
 
 const ibmPlexSansArabic = IBM_Plex_Sans_Arabic({
@@ -29,6 +30,7 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl" className={ibmPlexSansArabic.variable}>
       <body>
+        <ExperiencePreferencesLoader />
         <noscript>
           <style>{`[data-reveal] { opacity: 1 !important; transform: none !important; }`}</style>
         </noscript>

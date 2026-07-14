@@ -185,6 +185,10 @@ erDiagram
   CreatorProfile ||--o{ CreatorPortfolioItem : showcases
   CampaignMembership ||--|| CampaignTermsSnapshot : stores
   CampaignMembership ||--o{ Submission : creates
+  Campaign ||--o{ Conversation : scopes
+  CreatorProfile ||--o{ Conversation : participates
+  Conversation ||--o{ ConversationMessage : contains
+  Conversation ||--o{ ConversationReport : receives
   SocialAccount ||--o{ Submission : used_by
   Submission ||--o{ MetricsSnapshot : records
   Submission ||--o{ EarningAccrual : earns

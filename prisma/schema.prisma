@@ -98,36 +98,40 @@ model User {
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
-  creatorProfile           CreatorProfile?
-  brandMembers             BrandMember[]
-  wallets                  Wallet[]
-  capturedSnapshots        MetricsSnapshot[]
-  deposits                 Deposit[]
-  payouts                  PayoutRequest[]
-  fraudSignals             FraudSignal[]
-  openedDisputes           Dispute[]                @relation("OpenedDisputes")
-  resolvedDisputes         Dispute[]                @relation("ResolvedDisputes")
-  disputeMessages          DisputeMessage[]
-  disputeAttachments       DisputeAttachment[]      @relation("DisputeAttachments")
-  trustScoreEvents         TrustScoreEvent[]
-  notifications            Notification[]
-  notificationPreferences  NotificationPreference[]
-  auditLogs                AuditLog[]
-  passwordResetTokens      PasswordResetToken[]
-  following                UserFollow[]             @relation("UserFollowing")
-  followers                UserFollow[]             @relation("UserFollowers")
-  communityPosts           CommunityPost[]
-  communityComments        CommunityComment[]
-  communityLikes           CommunityLike[]
-  communitySaves           CommunitySave[]
-  communityShares          CommunityShare[]
-  communityReports         CommunityReport[]        @relation("CommunityReportReporter")
-  reviewedCommunityReports CommunityReport[]        @relation("CommunityReportReviewer")
-  blocksInitiated          UserBlock[]              @relation("UserBlocker")
-  blocksReceived           UserBlock[]              @relation("UserBlocked")
-  mutesInitiated           UserMute[]               @relation("UserMuter")
-  mutesReceived            UserMute[]               @relation("UserMuted")
-  privacySettings          UserPrivacySettings?
+  creatorProfile              CreatorProfile?
+  brandMembers                BrandMember[]
+  wallets                     Wallet[]
+  capturedSnapshots           MetricsSnapshot[]
+  deposits                    Deposit[]
+  payouts                     PayoutRequest[]
+  fraudSignals                FraudSignal[]
+  openedDisputes              Dispute[]                @relation("OpenedDisputes")
+  resolvedDisputes            Dispute[]                @relation("ResolvedDisputes")
+  disputeMessages             DisputeMessage[]
+  disputeAttachments          DisputeAttachment[]      @relation("DisputeAttachments")
+  trustScoreEvents            TrustScoreEvent[]
+  notifications               Notification[]
+  notificationPreferences     NotificationPreference[]
+  auditLogs                   AuditLog[]
+  passwordResetTokens         PasswordResetToken[]
+  following                   UserFollow[]             @relation("UserFollowing")
+  followers                   UserFollow[]             @relation("UserFollowers")
+  communityPosts              CommunityPost[]
+  communityComments           CommunityComment[]
+  communityLikes              CommunityLike[]
+  communitySaves              CommunitySave[]
+  communityShares             CommunityShare[]
+  communityReports            CommunityReport[]        @relation("CommunityReportReporter")
+  reviewedCommunityReports    CommunityReport[]        @relation("CommunityReportReviewer")
+  blocksInitiated             UserBlock[]              @relation("UserBlocker")
+  blocksReceived              UserBlock[]              @relation("UserBlocked")
+  mutesInitiated              UserMute[]               @relation("UserMuter")
+  mutesReceived               UserMute[]               @relation("UserMuted")
+  privacySettings             UserPrivacySettings?
+  conversationsCreated        Conversation[]           @relation("ConversationCreator")
+  conversationMessages        ConversationMessage[]
+  conversationReports         ConversationReport[]     @relation("ConversationReportReporter")
+  reviewedConversationReports ConversationReport[]     @relation("ConversationReportReviewer")
 }
 
 model PasswordResetToken {
@@ -160,6 +164,7 @@ model CreatorProfile {
 
   user             User                   @relation(fields: [userId], references: [id])
   memberships      CampaignMembership[]
+  conversations    Conversation[]
   socialAccounts   SocialAccount[]
   portfolioItems   CreatorPortfolioItem[]
   trustScoreEvents TrustScoreEvent[]
@@ -436,10 +441,11 @@ model Campaign {
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
-  brand       BrandProfile           @relation(fields: [brandId], references: [id])
-  rates       CampaignPlatformRate[]
-  assets      CampaignAsset[]
-  memberships CampaignMembership[]
+  brand         BrandProfile           @relation(fields: [brandId], references: [id])
+  rates         CampaignPlatformRate[]
+  assets        CampaignAsset[]
+  memberships   CampaignMembership[]
+  conversations Conversation[]
 
   @@index([status, startsAt, endsAt])
   @@index([brandId])
@@ -485,6 +491,67 @@ model CampaignMembership {
   submissions    Submission[]
 
   @@unique([campaignId, creatorProfileId])
+}
+
+model Conversation {
+  id               String   @id @default(cuid())
+  campaignId       String
+  creatorProfileId String
+  createdByUserId  String
+  lastMessageAt    DateTime @default(now())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  campaign       Campaign              @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  creatorProfile CreatorProfile        @relation(fields: [creatorProfileId], references: [id], onDelete: Cascade)
+  createdBy      User                  @relation("ConversationCreator", fields: [createdByUserId], references: [id])
+  messages       ConversationMessage[]
+  reports        ConversationReport[]
+
+  @@unique([campaignId, creatorProfileId])
+  @@index([campaignId, lastMessageAt])
+  @@index([creatorProfileId, lastMessageAt])
+}
+
+model ConversationMessage {
+  id             String    @id @default(cuid())
+  conversationId String
+  senderUserId   String
+  body           String
+  readAt         DateTime?
+  removedAt      DateTime?
+  createdAt      DateTime  @default(now())
+
+  conversation Conversation         @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User                 @relation(fields: [senderUserId], references: [id], onDelete: Cascade)
+  reports      ConversationReport[]
+
+  @@index([conversationId, createdAt])
+  @@index([senderUserId, createdAt])
+}
+
+model ConversationReport {
+  id             String                @id @default(cuid())
+  conversationId String
+  messageId      String?
+  reporterId     String
+  reason         CommunityReportReason
+  details        String?
+  status         CommunityReportStatus @default(OPEN)
+  reviewNote     String?
+  reviewedById   String?
+  reviewedAt     DateTime?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  conversation Conversation         @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  message      ConversationMessage? @relation(fields: [messageId], references: [id], onDelete: SetNull)
+  reporter     User                 @relation("ConversationReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  reviewer     User?                @relation("ConversationReportReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([conversationId, createdAt])
+  @@index([reporterId, createdAt])
 }
 
 model Submission {
@@ -867,6 +934,7 @@ enum NotificationType {
   FRAUD_FLAGGED
   FOLLOW_RECEIVED
   COMMUNITY_ACTIVITY
+  MESSAGE_RECEIVED
   GENERIC
 }
 

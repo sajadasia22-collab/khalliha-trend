@@ -16,6 +16,7 @@ const USER_FACING_NOTIFICATION_TYPES: NotificationType[] = [
   NotificationType.FRAUD_FLAGGED,
   NotificationType.FOLLOW_RECEIVED,
   NotificationType.COMMUNITY_ACTIVITY,
+  NotificationType.MESSAGE_RECEIVED,
 ];
 
 export class AccountService {
@@ -97,5 +98,122 @@ export class AccountService {
         email: email || null,
       },
     });
+  }
+
+  static async exportUserData(userId: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+        phone: true,
+        role: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+        creatorProfile: {
+          select: {
+            username: true,
+            bio: true,
+            country: true,
+            governorate: true,
+            contentCategories: true,
+            languages: true,
+            isProfilePublic: true,
+            trustScore: true,
+            socialAccounts: {
+              select: { platform: true, handle: true, profileUrl: true, status: true },
+            },
+            portfolioItems: {
+              select: {
+                title: true,
+                description: true,
+                platform: true,
+                projectUrl: true,
+                createdAt: true,
+              },
+            },
+          },
+        },
+        brandMembers: {
+          select: {
+            role: true,
+            brand: {
+              select: {
+                name: true,
+                slug: true,
+                description: true,
+                verifiedAt: true,
+              },
+            },
+          },
+        },
+        communityPosts: {
+          select: { body: true, linkUrl: true, status: true, createdAt: true },
+          orderBy: { createdAt: "desc" },
+        },
+        notifications: {
+          select: { type: true, title: true, body: true, readAt: true, createdAt: true },
+          orderBy: { createdAt: "desc" },
+        },
+        following: {
+          select: {
+            createdAt: true,
+            followed: {
+              select: {
+                fullName: true,
+                creatorProfile: { select: { username: true } },
+              },
+            },
+          },
+        },
+      },
+    });
+    if (!user) throw new Error("USER_NOT_FOUND");
+
+    const [wallets, conversations] = await Promise.all([
+      prisma.wallet.findMany({
+        where: { userId },
+        select: { currency: true, createdAt: true },
+      }),
+      prisma.conversation.findMany({
+        where: {
+          OR: [
+            { creatorProfile: { userId } },
+            { campaign: { brand: { members: { some: { userId } } } } },
+          ],
+        },
+        select: {
+          campaign: { select: { title: true } },
+          creatorProfile: { select: { user: { select: { fullName: true } } } },
+          createdAt: true,
+          messages: {
+            select: {
+              body: true,
+              createdAt: true,
+              removedAt: true,
+              sender: { select: { fullName: true } },
+            },
+            orderBy: { createdAt: "asc" },
+          },
+        },
+        orderBy: { lastMessageAt: "desc" },
+      }),
+    ]);
+
+    return {
+      exportedAt: new Date().toISOString(),
+      account: user,
+      wallets,
+      conversations: conversations.map((conversation) => ({
+        ...conversation,
+        messages: conversation.messages.map((message) =>
+          message.removedAt
+            ? { ...message, body: "تمت إزالة هذه الرسالة بواسطة الإدارة." }
+            : message,
+        ),
+      })),
+    };
   }
 }

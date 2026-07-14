@@ -12,6 +12,9 @@ export type PermissionAction =
   | "dispute:create"
   | "dispute:read"
   | "social-account:manage"
+  | "message:read"
+  | "message:send"
+  | "message:report"
   // Brand actions
   | "brand:read-profile"
   | "brand:write-profile"
@@ -32,6 +35,7 @@ export type PermissionAction =
   | "payout:review"
   | "dispute:resolve"
   | "audit-log:read"
+  | "message-report:review"
   // Super Admin specific actions
   | "system:manage-admins";
 
@@ -46,6 +50,9 @@ export const CREATOR_PERMISSIONS: Set<PermissionAction> = new Set([
   "dispute:create",
   "dispute:read",
   "social-account:manage",
+  "message:read",
+  "message:send",
+  "message:report",
 ]);
 
 export const BRAND_PERMISSIONS: Set<PermissionAction> = new Set([
@@ -58,6 +65,9 @@ export const BRAND_PERMISSIONS: Set<PermissionAction> = new Set([
   "deposit:create",
   "deposit:read",
   "dispute:read",
+  "message:read",
+  "message:send",
+  "message:report",
 ]);
 
 export const ADMIN_PERMISSIONS: Set<PermissionAction> = new Set([
@@ -71,6 +81,7 @@ export const ADMIN_PERMISSIONS: Set<PermissionAction> = new Set([
   "payout:review",
   "dispute:resolve",
   "audit-log:read",
+  "message-report:review",
 ]);
 
 export function hasPermission(role: UserRole, action: PermissionAction): boolean {

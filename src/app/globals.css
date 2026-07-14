@@ -1,6 +1,23 @@
 @import "tailwindcss";
 @import "../../khalliha_trend_brand_identity/theme.css";
 
+[data-reduce-motion="true"] *,
+[data-reduce-motion="true"] *::before,
+[data-reduce-motion="true"] *::after {
+  scroll-behavior: auto !important;
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+[data-density="compact"] .dashboard-page {
+  font-size: 0.9375rem;
+}
+
+[data-density="compact"] .dashboard-page .card {
+  --radius-xl: 18px;
+}
+
 /* Exposes the semantic CSS custom properties from theme.css as real Tailwind
    utilities (bg-brand, rounded-lg, shadow-md, ease-brand, font-arabic) via
    "inline" theme vars — Tailwind reads the runtime var instead of copying its

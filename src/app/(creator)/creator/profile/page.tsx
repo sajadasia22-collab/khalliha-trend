@@ -6,7 +6,12 @@ import { ProfileForm } from "../../../../components/creator/ProfileForm";
 import { SocialAccountsManager } from "../../../../components/creator/SocialAccountsManager";
 import { PortfolioManager } from "../../../../components/creator/PortfolioManager";
 import { ScrollReveal } from "../../../../components/ui/ScrollReveal";
-import { BriefcaseIcon, LinkIcon } from "../../../../components/ui/icons";
+import {
+  BriefcaseIcon,
+  LinkIcon,
+  SettingsIcon,
+  UserIcon,
+} from "../../../../components/ui/icons";
 
 export default async function CreatorProfilePage() {
   const user = await getCurrentUser();
@@ -16,7 +21,10 @@ export default async function CreatorProfilePage() {
 
   const profile = await CreatorProfileService.getByUserId(user.id);
   return (
-    <main className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] dir-rtl md:ps-64 pb-20 md:pb-0">
+    <main
+      className="dashboard-page min-h-screen bg-[var(--color-bg)] pb-24 text-[var(--color-text)] md:ps-64 md:pb-0"
+      dir="rtl"
+    >
       <DashboardHeader
         dashboardRole="creator"
         userLabel={`صانع محتوى: ${user.fullName}`}
@@ -33,6 +41,26 @@ export default async function CreatorProfilePage() {
             جودة أعمالك.
           </p>
         </div>
+
+        <nav
+          className="sticky top-[69px] z-10 mb-6 flex gap-2 overflow-x-auto rounded-[var(--radius-pill)] border border-[var(--color-border)] bg-[var(--color-surface)] p-1.5 shadow-[var(--shadow-sm)]"
+          aria-label="أقسام تعديل الملف"
+        >
+          {[
+            { href: "#profile-identity", label: "الهوية", icon: UserIcon },
+            { href: "#profile-details", label: "المعلومات", icon: SettingsIcon },
+            { href: "#portfolio", label: "معرض الأعمال", icon: BriefcaseIcon },
+            { href: "#social-accounts", label: "الحسابات", icon: LinkIcon },
+          ].map(({ href, label, icon: Icon }) => (
+            <a
+              key={href}
+              href={href}
+              className="inline-flex flex-shrink-0 items-center gap-2 rounded-[var(--radius-pill)] px-4 py-2 text-xs font-black hover:bg-[var(--color-brand)]"
+            >
+              <Icon size={15} /> {label}
+            </a>
+          ))}
+        </nav>
 
         <ScrollReveal>
           <div className="mb-10">
@@ -52,7 +80,10 @@ export default async function CreatorProfilePage() {
         </ScrollReveal>
 
         <ScrollReveal delayMs={60}>
-          <div className="mb-10 overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-sm)]">
+          <div
+            id="portfolio"
+            className="mb-10 scroll-mt-28 overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-sm)]"
+          >
             <div className="mb-5 flex items-center gap-3">
               <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-brand)] text-[var(--color-text-on-brand)]">
                 <BriefcaseIcon aria-hidden="true" />
@@ -81,7 +112,10 @@ export default async function CreatorProfilePage() {
         </ScrollReveal>
 
         <ScrollReveal delayMs={80} className="tilt-3d">
-          <div className="tilt-3d-surface card overflow-hidden border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
+          <div
+            id="social-accounts"
+            className="tilt-3d-surface card scroll-mt-28 overflow-hidden border border-[var(--color-border)] bg-[var(--color-surface)] p-6"
+          >
             <div className="mb-4 flex items-center gap-3">
               <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-surface-muted)] text-[var(--forest-500)]">
                 <LinkIcon />

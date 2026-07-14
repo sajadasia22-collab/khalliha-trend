@@ -95,6 +95,36 @@ export async function middleware(request: NextRequest) {
       }
     }
 
+    if (request.method !== "GET" && pathname.startsWith("/api/v1/conversations")) {
+      const allowed = RateLimiter.isAllowed(`rate-limit:messaging:${ip}`, 60, 60 * 1000);
+      if (!allowed) {
+        return NextResponse.json(
+          {
+            error: {
+              code: "TOO_MANY_REQUESTS",
+              message: "رسائل كثيرة جداً. يرجى الانتظار دقيقة.",
+            },
+          },
+          { status: 429 },
+        );
+      }
+    }
+
+    if (pathname.startsWith("/api/v1/account/export")) {
+      const allowed = RateLimiter.isAllowed(`rate-limit:data-export:${ip}`, 5, 60 * 1000);
+      if (!allowed) {
+        return NextResponse.json(
+          {
+            error: {
+              code: "TOO_MANY_REQUESTS",
+              message: "طلبات تصدير كثيرة جداً. يرجى الانتظار دقيقة.",
+            },
+          },
+          { status: 429 },
+        );
+      }
+    }
+
     if (
       request.method === "POST" &&
       (pathname.startsWith("/api/v1/disputes") ||
@@ -135,6 +165,7 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/api/v1/admin") ||
     pathname.startsWith("/api/v1/social-accounts") ||
     pathname.startsWith("/api/v1/disputes") ||
+    pathname.startsWith("/api/v1/conversations") ||
     pathname.startsWith("/api/v1/account");
 
   if (isProtectedPath) {
@@ -227,6 +258,7 @@ export const config = {
     "/api/v1/admin/:path*",
     "/api/v1/social-accounts/:path*",
     "/api/v1/disputes/:path*",
+    "/api/v1/conversations/:path*",
     "/api/v1/community/:path*",
     "/api/v1/account/:path*",
     "/api/v1/auth/:path*",

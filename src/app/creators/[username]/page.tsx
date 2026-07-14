@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Footer } from "../../../components/layout/Footer";
 import { Navbar } from "../../../components/layout/Navbar";
 import { FollowButton } from "../../../components/creator/FollowButton";
+import { ProfileShareButton } from "../../../components/creator/ProfileShareButton";
 import { getCurrentUser } from "../../../lib/auth/session";
 import { platformIcons } from "../../../lib/campaigns";
 import { categoryLabels, platformLabels } from "../../../lib/campaigns";
@@ -15,6 +16,7 @@ import {
   CheckIcon,
   LinkIcon,
   UserIcon,
+  SettingsIcon,
 } from "../../../components/ui/icons";
 
 type PageProps = { params: Promise<{ username: string }> };
@@ -69,7 +71,7 @@ export default async function PublicCreatorProfilePage({ params }: PageProps) {
           <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_52%,rgba(6,38,25,.46))]" />
         </section>
 
-        <div className="mx-auto max-w-6xl px-5 lg:px-8">
+        <div className="mx-auto max-w-6xl px-4 sm:px-5 lg:px-8">
           <section className="relative -mt-16 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-[var(--shadow-lg)] sm:p-8">
             <div className="flex flex-col gap-6 sm:flex-row sm:items-end">
               <div className="h-28 w-28 flex-shrink-0 overflow-hidden rounded-full border-[6px] border-[var(--color-surface)] bg-[var(--color-brand)] shadow-[var(--shadow-md)] sm:h-36 sm:w-36">
@@ -119,20 +121,54 @@ export default async function PublicCreatorProfilePage({ params }: PageProps) {
                 </div>
               </div>
 
-              <FollowButton
-                username={profile.username}
-                isAuthenticated={Boolean(viewer)}
-                isOwnProfile={followState.isOwnProfile}
-                initialIsFollowing={followState.isFollowing}
-                initialFollowersCount={followState.followersCount}
-                followingCount={followState.followingCount}
-              />
+              <div className="flex flex-wrap items-center gap-2">
+                <FollowButton
+                  username={profile.username}
+                  isAuthenticated={Boolean(viewer)}
+                  isOwnProfile={followState.isOwnProfile}
+                  initialIsFollowing={followState.isFollowing}
+                  initialFollowersCount={followState.followersCount}
+                  followingCount={followState.followingCount}
+                />
+                <ProfileShareButton fullName={profile.user.fullName} />
+                {followState.isOwnProfile && (
+                  <a
+                    href="/creator/profile"
+                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--radius-pill)] bg-[var(--color-text)] px-4 text-sm font-black text-[var(--color-bg)]"
+                  >
+                    <SettingsIcon size={17} /> تعديل الملف
+                  </a>
+                )}
+              </div>
             </div>
           </section>
 
+          <nav
+            aria-label="أقسام الملف الشخصي"
+            className="sticky top-[69px] z-10 mt-4 flex gap-2 overflow-x-auto rounded-[var(--radius-pill)] border border-[var(--color-border)] bg-[var(--color-surface)] p-1.5 shadow-[var(--shadow-sm)]"
+          >
+            {[
+              ["#about", "نبذة"],
+              ["#work", "الأعمال"],
+              ["#accounts", "الحسابات"],
+              ["#profile-stats", "المؤشرات"],
+            ].map(([href, label]) => (
+              <a
+                key={href}
+                href={href}
+                className="flex-shrink-0 rounded-[var(--radius-pill)] px-4 py-2 text-xs font-black transition hover:bg-[var(--color-brand)]"
+              >
+                {label}
+              </a>
+            ))}
+          </nav>
+
           <div className="mt-8 grid gap-7 lg:grid-cols-[1fr_320px]">
             <div className="space-y-7">
-              <section className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-sm)]">
+              <section
+                id="about"
+                className="scroll-mt-36 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-sm)]"
+              >
                 <div className="mb-4 flex items-center gap-3">
                   <span className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-surface-muted)] text-[var(--color-brand-active)]">
                     <UserIcon aria-hidden="true" />
@@ -145,7 +181,10 @@ export default async function PublicCreatorProfilePage({ params }: PageProps) {
               </section>
 
               {profile.portfolioItems.length > 0 && (
-                <section className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-sm)]">
+                <section
+                  id="work"
+                  className="scroll-mt-36 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-sm)]"
+                >
                   <div className="mb-5 flex items-center gap-3">
                     <span className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-brand)] text-[var(--color-text-on-brand)]">
                       <BriefcaseIcon aria-hidden="true" />
@@ -204,7 +243,10 @@ export default async function PublicCreatorProfilePage({ params }: PageProps) {
                 </section>
               )}
 
-              <section className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-sm)]">
+              <section
+                id="accounts"
+                className="scroll-mt-36 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-sm)]"
+              >
                 <div className="mb-5 flex items-center gap-3">
                   <span className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-surface-muted)] text-[var(--color-brand-active)]">
                     <LinkIcon aria-hidden="true" />
@@ -252,7 +294,10 @@ export default async function PublicCreatorProfilePage({ params }: PageProps) {
             </div>
 
             <aside className="space-y-5">
-              <section className="overflow-hidden rounded-[var(--radius-xl)] bg-[var(--color-surface-dark)] p-6 text-[var(--color-text-on-dark)] shadow-[var(--shadow-md)]">
+              <section
+                id="profile-stats"
+                className="scroll-mt-36 overflow-hidden rounded-[var(--radius-xl)] bg-[var(--color-surface-dark)] p-6 text-[var(--color-text-on-dark)] shadow-[var(--shadow-md)]"
+              >
                 <p className="text-xs font-black text-[var(--color-brand)]">
                   مؤشرات الملف
                 </p>

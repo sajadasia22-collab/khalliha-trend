@@ -18,7 +18,7 @@ export function DashboardHeader({
     <>
       <Sidebar dashboardRole={dashboardRole} />
 
-      <header className="sticky top-0 z-20 border-b border-[rgba(210,221,214,.78)] bg-[rgba(250,252,251,.82)] shadow-[0_12px_34px_rgba(6,38,25,0.045)] backdrop-blur-xl">
+      <header className="sticky top-0 z-20 border-b border-[var(--color-border)] bg-[var(--color-surface)] shadow-[0_12px_34px_rgba(6,38,25,0.045)]">
         <div className="flex items-center justify-between gap-3 px-5 py-3.5 lg:px-8">
           <Link
             className="brand-lockup transition-transform hover:scale-[1.02] md:hidden"

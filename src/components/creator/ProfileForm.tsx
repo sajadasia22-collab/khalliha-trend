@@ -201,7 +201,10 @@ export function ProfileForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
-      <section className="overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-md)]">
+      <section
+        id="profile-identity"
+        className="scroll-mt-28 overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-md)]"
+      >
         <div className="relative h-44 overflow-hidden bg-[var(--color-surface-dark)] sm:h-56">
           {coverUrl ? (
             <img
@@ -296,7 +299,10 @@ export function ProfileForm({
         </div>
       )}
 
-      <section className="grid gap-6 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-[var(--shadow-sm)] sm:p-7 lg:grid-cols-2">
+      <section
+        id="profile-details"
+        className="scroll-mt-28 grid gap-6 rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-[var(--shadow-sm)] sm:p-7 lg:grid-cols-2"
+      >
         <div className="lg:col-span-2">
           <div className="mb-5 flex items-center justify-between gap-3 border-b border-[var(--color-border)] pb-4">
             <div>

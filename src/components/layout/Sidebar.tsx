@@ -9,7 +9,7 @@ export function Sidebar({ dashboardRole }: { dashboardRole: DashboardRole }) {
   const links = navByRole[dashboardRole];
 
   return (
-    <aside className="fixed inset-y-0 start-0 z-30 hidden w-64 flex-col border-e border-[var(--color-border)] bg-[rgba(250,252,251,0.86)] shadow-[18px_0_42px_rgba(6,38,25,0.06)] backdrop-blur-xl md:flex">
+    <aside className="fixed inset-y-0 start-0 z-30 hidden w-64 flex-col border-e border-[var(--color-border)] bg-[var(--color-surface)] shadow-[18px_0_42px_rgba(6,38,25,0.06)] md:flex">
       <Link className="brand-lockup px-6 py-6" href="/" aria-label="خلّيها ترند">
         <span className="brand-mark" aria-hidden="true" />
         <span>خلّيها ترند</span>

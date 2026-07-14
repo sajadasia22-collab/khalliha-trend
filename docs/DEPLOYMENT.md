@@ -97,35 +97,35 @@ GitHub Actions المقترحة:
 
 | البند | الحالة | ملاحظة |
 |---|---|---|
-| الاختبارات الحرجة تعمل | ✅ | 116 اختبار وحدة (منها اختبار سباق مالي حقيقي ضد DB فعلية) + 23 اختبار E2E، بالإضافة إلى اختبارات الـ Rate Limiting والـ Audit Log الجديدة (إجمالي 135 اختباراً) كلها ناجحة. `pnpm typecheck`/`lint`/`format:check`/`build` نظيفة بالكامل. |
+| الاختبارات الحرجة تعمل | ✅ | 253 اختبار وحدة/تكامل ناجح + 35 اختبار E2E ناجح (يشمل الهاتف، الصلاحيات، الوصولية، وتصدير البيانات). `pnpm typecheck`/`lint`/`format:check`/`build` نظيفة بالكامل. |
 | CI/CD مُفعّل فعلياً | ✅ | `.github/workflows/ci.yml` يشغّل الآن: تحقق Prisma، migrate deploy، format، lint، typecheck، unit+integration tests (Postgres service حقيقي)، build، E2E، dependency audit. |
-| Migrations جاهزة | ✅ | `prisma migrate status` يؤكد: "Database schema is up to date"، 10 migrations متسلسلة بلا drift (بما فيها ترحيل الـ Audit Log). |
+| Migrations جاهزة | ✅ | `prisma migrate status` يؤكد: "Database schema is up to date"، 21 migration متسلسلة بلا drift، وآخرها مراسلة الحملات. |
 | لا أسرار في المستودع | ✅ | `.env` مستثنى في `.gitignore`، `.env.example` بقيم وهمية فقط. |
 | Dependency audit نظيف | ✅ | `pnpm audit` = 0 ثغرات (بعد إصلاح ثغرتين متوسطتين عبر `pnpm.overrides`). |
 | **تهيئة مستودع Git** | ✅ | تم إنشاء مستودع Git محلي، وعمل Commit، وربطه فعلياً بمستودع GitHub حقيقي (`github.com/sajadasia22-collab/khalliha-trend`) والرفع (push) ناجح — راجع قسم 9 بالأسفل للتفاصيل. |
-| Logs فيها redaction | ❌ | غير مُنفَّذ. لا وجود لطبقة logging مركزية بعد. |
-| Backup/restore | ❌ | لا قاعدة بيانات مستضافة فعلياً بعد (Postgres محلي فقط) — لا معنى لـ backup حتى تتوفر استضافة حقيقية. |
-| Monitoring (Sentry أو بديل) | ❌ | `SENTRY_DSN` في `.env.example` فارغ، لا تكامل فعلي. |
+| Logs فيها redaction | ✅ | أخطاء السيرفر غير المعالجة تسجل بصيغة منظمة ومحدودة عبر `src/instrumentation.ts`، من دون access tokens أو أسرار. |
+| Backup/restore | ✅ | Supabase قاعدة الإنتاج، و`scripts/backup-db.sh` مجرّب وموثق للاستعادة؛ النسخ التلقائية اليومية تعتمد على خطة Supabase. |
+| Monitoring (Sentry أو بديل) | ✅ جزئياً | مراقبة JSON منظمة مفعلة؛ التنبيه الخارجي جاهز وينتظر ضبط `ERROR_ALERT_WEBHOOK_URL` يدوياً في Vercel. |
 | Legal/payment review | ⏸️ | لا ينطبق بعد — لا تكامل دفع حقيقي مُنفَّذ (قاعدة صارمة بالمشروع، وتقرر إطلاق MVP بالدفع اليدوي عمداً — راجع قسم 9). |
 | Security checklist | ✅ | تم إغلاق كافة الفجوات بنجاح: `AuditLog`، Rate Limiting، CSP، **وحذف حساب "الجوكر" الخطير (backdoor) بالكامل من الكود وقاعدة البيانات المحلية** (راجع Changelog 2026-07-13). |
 
-**الخلاصة**: الكود والاختبارات وCI جاهزون فعلياً للإنتاج، والمستودع مرفوع على GitHub فعلياً. النشر الحقيقي (Vercel) وقاعدة البيانات المستضافة (Supabase) لسا ينتظران إنشاء الحسابات — راجع قسم 9 بالأسفل لمعرفة بالضبط وين وصلنا ووين نكمل.
+**الخلاصة**: التطبيق منشور فعلياً على Vercel مع Supabase، وGitHub/Vercel CI/CD يعمل. كل إصدار جديد يطبّق migrations قبل البناء ويفشل بأمان عند أي مشكلة.
 
-## 9. حالة النشر الفعلي — آخر تحديث 2026-07-13 (متابعة لاحقة)
+## 9. حالة النشر الفعلي — آخر تحديث 2026-07-15
 
 قرار صاحب المنتج: إطلاق أول نسخة (MVP) بالدفع اليدوي الحالي (بدون بوابة دفع حقيقية بعد)، عبر **Vercel + Supabase**.
 
-### ✅ تم إنجازه
+### ✅ الحالة الحالية
 - المستودع مرفوع فعلياً على GitHub: `https://github.com/sajadasia22-collab/khalliha-trend` (فرع `main`، متابَع/tracked محلياً).
-- حساب GitHub (`sajadasia22-collab`) جاهز ومربوط.
-- إصلاح ثغرة "الجوكر" الأمنية قبل الرفع (راجع Changelog).
+- Vercel مربوط بفرع `main` وينشر تلقائياً على `khalliha-trend.vercel.app`.
+- قاعدة الإنتاج Supabase ومخزن صور الملفات المهنية مربوطان بمتغيرات Vercel.
+- `vercel.json` يشغّل `prisma migrate deploy` قبل كل build.
 
-### ⏳ الخطوة التالية عند المتابعة
-1. **إنشاء حساب Supabase** (supabase.com) + مشروع جديد → الحصول على `DATABASE_URL`, `SUPABASE_URL`, `anon key`, `service_role key`.
-2. **إنشاء حساب Vercel** (vercel.com) — الأسهل: تسجيل دخول بحساب GitHub (`sajadasia22-collab`) نفسه لربطهما تلقائياً.
-3. بعدها: ربط Vercel بمستودع GitHub، تعبئة متغيرات البيئة على Vercel (AUTH_SECRET **جديد** قوي — لا تُعاد قيمة التطوير المحلي، بيانات SUPER_ADMIN حقيقية بكلمة مرور قوية — لا "ChangeMe123!"، بيانات Supabase)، والتحقق من عمل الموقع أونلاين قبل اعتباره جاهزاً. يشغّل `vercel.json` الأمر `prisma migrate deploy` قبل بناء كل إصدار، ويستخدم `prisma.config.ts` قيمة `DIRECT_URL` المباشرة للـ migrations مع fallback إلى `DATABASE_URL` محلياً؛ لذلك يفشل النشر بأمان إذا تعذّر تطبيق migrations بدلاً من نشر كود غير متوافق مع قاعدة البيانات.
-4. **ملاحظة مهمة لم تُحل بعد**: زر "رفع ملف من جهازك" بنموذج إنشاء الحملة (`CampaignForm.tsx`) شكلي فقط حالياً (يولّد رابطاً وهمياً، لا تخزين فعلي) — يحتاج ربط حقيقي بـ Supabase Storage بعد إنشاء مشروع Supabase، وإلا ستفشل أي محاولة رفع ملف حقيقية من تاجر بصمت.
-5. راجع قسم "شنو ينقصني" لكل دور (Admin/Brand/Creator) بالمحادثة مع Claude بتاريخ 2026-07-13 لقائمة كاملة بالفجوات المتبقية (دفع حقيقي، تكامل سوشال ميديا، إشعارات بريد/SMS) — كلها مؤجلة بقرار صاحب المنتج، مو نسيان.
+### ⏳ المتبقي التشغيلي
+
+1. ضبط `ERROR_ALERT_WEBHOOK_URL` في Vercel إذا أُريدت تنبيهات Slack/Discord الفورية.
+2. زر "رفع ملف من جهازك" في نموذج الحملة ما زال غير مربوط بتخزين حقيقي؛ الروابط الخارجية Drive/Dropbox/OneDrive هي المسار الفعلي المعتمد حالياً.
+3. التكاملات الحقيقية للدفع والسوشال تحتاج حسابات مزودين وCredentials وSandbox وموافقة منفصلة.
 
 ## 10. آلية رفع التعديلات المستقبلية (Git → Vercel)
 

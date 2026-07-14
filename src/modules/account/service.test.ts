@@ -121,4 +121,14 @@ describe("AccountService", () => {
       });
     });
   });
+
+  describe("exportUserData", () => {
+    it("does not export anything when the authenticated user no longer exists", async () => {
+      vi.mocked(prisma.user.findUnique).mockResolvedValue(null);
+
+      await expect(AccountService.exportUserData("missing-user")).rejects.toThrow(
+        "USER_NOT_FOUND",
+      );
+    });
+  });
 });
