@@ -54,7 +54,7 @@ export class CreatorProfileService {
         user: { status: UserStatus.ACTIVE },
       },
       include: {
-        user: { select: { fullName: true, createdAt: true } },
+        user: { select: { id: true, fullName: true, createdAt: true } },
         socialAccounts: {
           where: { status: "VERIFIED" },
           orderBy: { createdAt: "desc" },

@@ -80,6 +80,21 @@ export async function middleware(request: NextRequest) {
       }
     }
 
+    if (request.method !== "GET" && pathname.startsWith("/api/v1/community")) {
+      const allowed = RateLimiter.isAllowed(`rate-limit:community:${ip}`, 120, 60 * 1000);
+      if (!allowed) {
+        return NextResponse.json(
+          {
+            error: {
+              code: "TOO_MANY_REQUESTS",
+              message: "تفاعلات كثيرة جداً. يرجى الانتظار دقيقة.",
+            },
+          },
+          { status: 429 },
+        );
+      }
+    }
+
     if (
       request.method === "POST" &&
       (pathname.startsWith("/api/v1/disputes") ||
@@ -212,6 +227,7 @@ export const config = {
     "/api/v1/admin/:path*",
     "/api/v1/social-accounts/:path*",
     "/api/v1/disputes/:path*",
+    "/api/v1/community/:path*",
     "/api/v1/account/:path*",
     "/api/v1/auth/:path*",
   ],

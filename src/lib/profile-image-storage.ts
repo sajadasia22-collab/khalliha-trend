@@ -3,7 +3,8 @@ import { createClient } from "@supabase/supabase-js";
 export const PROFILE_IMAGE_BUCKET = "profile-images";
 export const PROFILE_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
 
-export type ProfileImageKind = "avatar" | "cover" | `portfolio-${string}`;
+export type ProfileImageKind =
+  "avatar" | "cover" | `portfolio-${string}` | `community-${string}`;
 type SupportedImageMime = "image/jpeg" | "image/png" | "image/webp";
 
 const extensionByMime: Record<SupportedImageMime, string> = {

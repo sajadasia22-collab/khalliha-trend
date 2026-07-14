@@ -14,9 +14,23 @@ const USER_FACING_NOTIFICATION_TYPES: NotificationType[] = [
   NotificationType.PAYOUT_REVIEWED,
   NotificationType.DISPUTE_UPDATED,
   NotificationType.FRAUD_FLAGGED,
+  NotificationType.FOLLOW_RECEIVED,
+  NotificationType.COMMUNITY_ACTIVITY,
 ];
 
 export class AccountService {
+  static async getRecentSessions(userId: string) {
+    return prisma.auditLog.findMany({
+      where: {
+        actorId: userId,
+        action: { in: ["USER_LOGIN_SUCCESS", "USER_LOGIN_GOOGLE"] },
+      },
+      select: { id: true, ipAddress: true, userAgent: true, createdAt: true },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    });
+  }
+
   static async changePassword(
     userId: string,
     currentPassword: string,

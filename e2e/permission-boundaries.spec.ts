@@ -33,6 +33,18 @@ test.describe("Cross-role permission boundaries", () => {
     expect(json.error.code).toBe("UNAUTHENTICATED");
   });
 
+  test("follow mutations and the private following list require authentication", async ({
+    request,
+  }) => {
+    const follow = await request.post("/api/v1/creators/example/follow");
+    expect(follow.status()).toBe(401);
+    expect((await follow.json()).error.code).toBe("UNAUTHENTICATED");
+
+    const list = await request.get("/api/v1/account/following");
+    expect(list.status()).toBe(401);
+    expect((await list.json()).error.code).toBe("UNAUTHENTICATED");
+  });
+
   test("a CREATOR token is rejected by an admin-only API with 403", async ({
     request,
   }) => {

@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { PasswordField } from "../auth/PasswordField";
 import { Checkbox } from "../ui/Checkbox";
 import { Skeleton } from "../ui/Skeleton";
 import { Button } from "../ui/button";
 import { useToast } from "../ui/Toast";
-import { ShieldCheckIcon, BellIcon, UserIcon, InfoIcon } from "../ui/icons";
+import { ShieldCheckIcon, BellIcon, UserIcon, InfoIcon, UsersIcon } from "../ui/icons";
 import { Tabs } from "../ui/Tabs";
 
 type NotificationType =
@@ -17,9 +18,20 @@ type NotificationType =
   | "DEPOSIT_REVIEWED"
   | "PAYOUT_REVIEWED"
   | "DISPUTE_UPDATED"
-  | "FRAUD_FLAGGED";
+  | "FRAUD_FLAGGED"
+  | "FOLLOW_RECEIVED"
+  | "COMMUNITY_ACTIVITY";
 
 type Preference = { type: NotificationType; enabled: boolean };
+
+type FollowingCreator = {
+  followId: string;
+  fullName: string;
+  username: string;
+  avatarUrl: string | null;
+  bio: string | null;
+  contentCategories: string[];
+};
 
 const typeLabels: Record<NotificationType, string> = {
   CAMPAIGN_APPROVED: "اعتماد الحملة",
@@ -30,6 +42,8 @@ const typeLabels: Record<NotificationType, string> = {
   PAYOUT_REVIEWED: "مراجعة طلب السحب",
   DISPUTE_UPDATED: "تحديثات النزاعات",
   FRAUD_FLAGGED: "نتائج مراجعة الاحتيال",
+  FOLLOW_RECEIVED: "المتابعون الجدد",
+  COMMUNITY_ACTIVITY: "تفاعلات المجتمع",
 };
 
 function ProfileSection() {
@@ -344,103 +358,365 @@ function NotificationPreferencesSection() {
   );
 }
 
-function SessionSection() {
-  const [deviceInfo, setDeviceInfo] = useState({ os: "", browser: "", ip: "127.0.0.1" });
+function FollowingSection() {
+  const { showToast } = useToast();
+  const [items, setItems] = useState<FollowingCreator[] | null>(null);
+  const [busyUsername, setBusyUsername] = useState<string | null>(null);
 
   useEffect(() => {
-    const ua = navigator.userAgent;
-    let os = "غير معروف";
-    let browser = "غير معروف";
+    fetch("/api/v1/account/following")
+      .then(async (response) => {
+        const json = await response.json();
+        if (!response.ok) throw new Error("failed");
+        setItems(json.data);
+      })
+      .catch(() => setItems([]));
+  }, []);
 
-    if (ua.indexOf("Win") !== -1) os = "Windows OS";
-    else if (ua.indexOf("Mac") !== -1) os = "macOS";
-    else if (ua.indexOf("Linux") !== -1) os = "Linux";
-    else if (ua.indexOf("Android") !== -1) os = "Android";
-    else if (ua.indexOf("like Mac") !== -1) os = "iOS";
+  async function unfollow(username: string) {
+    setBusyUsername(username);
+    try {
+      const response = await fetch(
+        `/api/v1/creators/${encodeURIComponent(username)}/follow`,
+        { method: "DELETE" },
+      );
+      if (!response.ok) throw new Error("failed");
+      setItems((current) => current?.filter((item) => item.username !== username) ?? []);
+      showToast("تم إلغاء المتابعة.", "success");
+    } catch {
+      showToast("تعذّر إلغاء المتابعة، حاول مرة أخرى.", "error");
+    } finally {
+      setBusyUsername(null);
+    }
+  }
 
-    if (ua.indexOf("Firefox") !== -1) browser = "Mozilla Firefox";
-    else if (ua.indexOf("SamsungBrowser") !== -1) browser = "Samsung Browser";
-    else if (ua.indexOf("Opera") !== -1 || ua.indexOf("OPR") !== -1) browser = "Opera";
-    else if (ua.indexOf("Trident") !== -1) browser = "Internet Explorer";
-    else if (ua.indexOf("Edge") !== -1) browser = "Microsoft Edge";
-    else if (ua.indexOf("Chrome") !== -1) browser = "Google Chrome";
-    else if (ua.indexOf("Safari") !== -1) browser = "Apple Safari";
+  return (
+    <div className="card rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-sm">
+      <div className="mb-5 flex items-center gap-3">
+        <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-surface-muted)] text-[var(--color-brand-active)]">
+          <UsersIcon size={20} aria-hidden="true" />
+        </span>
+        <div>
+          <h2 className="text-lg font-extrabold text-[var(--color-text)]">
+            صناع المحتوى الذين تتابعهم
+          </h2>
+          <p className="text-xs text-[var(--color-text-muted)]">
+            وصول سريع للملفات المهنية التي تهمك.
+          </p>
+        </div>
+      </div>
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setDeviceInfo({ os, browser, ip: "127.0.0.1 (المتصفح الحالي)" });
+      {!items ? (
+        <div className="space-y-3">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <Skeleton key={index} className="h-20" />
+          ))}
+        </div>
+      ) : items.length === 0 ? (
+        <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface-muted)] p-6 text-center">
+          <p className="font-bold text-[var(--color-text-secondary)]">
+            لم تتابع أي صانع محتوى بعد.
+          </p>
+          <Link href="/creators" className="btn-primary mt-4 inline-flex text-sm">
+            استكشف صناع المحتوى
+          </Link>
+        </div>
+      ) : (
+        <ul className="space-y-3">
+          {items.map((item) => (
+            <li
+              key={item.followId}
+              className="flex flex-col gap-4 rounded-[var(--radius-lg)] border border-[var(--color-border)] p-4 sm:flex-row sm:items-center"
+            >
+              <Link
+                href={`/creators/${encodeURIComponent(item.username)}`}
+                className="flex min-w-0 flex-1 items-center gap-3"
+              >
+                <span className="flex h-12 w-12 flex-shrink-0 overflow-hidden rounded-full bg-[var(--color-brand)] text-[var(--color-text-on-brand)]">
+                  {item.avatarUrl ? (
+                    // The URL is restricted to the configured profile-image storage;
+                    // keep it consistent with the public creator profile rendering.
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={item.avatarUrl}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="flex h-full w-full items-center justify-center text-lg font-black">
+                      {item.fullName.slice(0, 1)}
+                    </span>
+                  )}
+                </span>
+                <span className="min-w-0">
+                  <strong className="block truncate">{item.fullName}</strong>
+                  <span
+                    className="block truncate text-xs text-[var(--color-text-muted)]"
+                    dir="ltr"
+                  >
+                    @{item.username}
+                  </span>
+                  {item.bio && (
+                    <span className="mt-1 block line-clamp-1 text-xs text-[var(--color-text-secondary)]">
+                      {item.bio}
+                    </span>
+                  )}
+                </span>
+              </Link>
+              <button
+                type="button"
+                className="btn-outline justify-center text-xs"
+                disabled={busyUsername === item.username}
+                onClick={() => unfollow(item.username)}
+              >
+                {busyUsername === item.username ? "جارٍ الإلغاء..." : "إلغاء المتابعة"}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function PrivacySection() {
+  const { showToast } = useToast();
+  const [permission, setPermission] = useState("CAMPAIGN_CONTACTS");
+  const [relationships, setRelationships] = useState<{
+    blocks: Array<{ id: string; fullName: string; username: string }>;
+    mutes: Array<{ id: string; fullName: string; username: string }>;
+  }>({ blocks: [], mutes: [] });
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    Promise.all([
+      fetch("/api/v1/account/privacy").then((response) => response.json()),
+      fetch("/api/v1/account/relationships").then((response) => response.json()),
+    ])
+      .then(([privacy, relationData]) => {
+        setPermission(privacy.data?.messagePermission ?? "CAMPAIGN_CONTACTS");
+        setRelationships(relationData.data ?? { blocks: [], mutes: [] });
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function save(value: string) {
+    setPermission(value);
+    const response = await fetch("/api/v1/account/privacy", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messagePermission: value }),
+    });
+    if (!response.ok) showToast("تعذّر حفظ إعداد الخصوصية.", "error");
+    else showToast("تم حفظ خصوصية المراسلة.", "success");
+  }
+
+  async function release(kind: "block" | "mute", username: string) {
+    const response = await fetch(
+      `/api/v1/community/users/${encodeURIComponent(username)}/${kind}`,
+      { method: "DELETE" },
+    );
+    if (!response.ok) return showToast("تعذّر تحديث القائمة.", "error");
+    setRelationships((current) => ({
+      ...current,
+      [kind === "block" ? "blocks" : "mutes"]: current[
+        kind === "block" ? "blocks" : "mutes"
+      ].filter((item) => item.username !== username),
+    }));
+    showToast(kind === "block" ? "تم رفع الحظر." : "تم إلغاء الكتم.", "success");
+  }
+
+  return (
+    <div className="card rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-sm">
+      <div className="mb-5 flex items-center gap-3">
+        <span className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-surface-muted)] text-[var(--color-brand-active)]">
+          <ShieldCheckIcon size={20} />
+        </span>
+        <div>
+          <h2 className="text-lg font-extrabold">خصوصية المراسلة</h2>
+          <p className="text-xs text-[var(--color-text-muted)]">
+            يُطبّق هذا الخيار عند تفعيل رسائل الحملات.
+          </p>
+        </div>
+      </div>
+      {loading ? (
+        <Skeleton className="h-36" />
+      ) : (
+        <>
+          <div className="space-y-3">
+            {[
+              ["CAMPAIGN_CONTACTS", "أطراف الحملات المشتركة فقط"],
+              ["FOLLOWING", "الحسابات التي أتابعها أيضاً"],
+              ["NOBODY", "لا أستقبل رسائل جديدة"],
+            ].map(([value, label]) => (
+              <label
+                key={value}
+                className="flex cursor-pointer items-center gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] p-4"
+              >
+                <input
+                  type="radio"
+                  name="messagePermission"
+                  value={value}
+                  checked={permission === value}
+                  onChange={() => save(value)}
+                />
+                <span className="text-sm font-bold">{label}</span>
+              </label>
+            ))}
+          </div>
+          <div className="mt-7 grid gap-5 sm:grid-cols-2">
+            {(
+              [
+                ["blocks", "الحسابات المحظورة", "block"],
+                ["mutes", "الحسابات المكتومة", "mute"],
+              ] as const
+            ).map(([key, title, kind]) => (
+              <section key={key}>
+                <h3 className="text-sm font-black">{title}</h3>
+                <ul className="mt-3 space-y-2">
+                  {relationships[key].map((item) => (
+                    <li
+                      key={item.id}
+                      className="flex items-center justify-between rounded-[var(--radius-md)] bg-[var(--color-surface-muted)] p-3 text-xs"
+                    >
+                      <span>
+                        <strong>{item.fullName}</strong>
+                        <span className="ms-1 text-[var(--color-text-muted)]" dir="ltr">
+                          @{item.username}
+                        </span>
+                      </span>
+                      <button
+                        type="button"
+                        className="font-black text-[var(--color-brand-active)]"
+                        onClick={() => release(kind, item.username)}
+                      >
+                        إلغاء
+                      </button>
+                    </li>
+                  ))}
+                  {relationships[key].length === 0 && (
+                    <li className="text-xs text-[var(--color-text-muted)]">
+                      القائمة فارغة.
+                    </li>
+                  )}
+                </ul>
+              </section>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+type SessionData = {
+  current: { ipAddress: string | null; userAgent: string | null };
+  recent: Array<{
+    id: string;
+    ipAddress: string | null;
+    userAgent: string | null;
+    createdAt: string;
+  }>;
+};
+
+function describeAgent(agent: string | null) {
+  if (!agent) return "جهاز غير معروف";
+  const browser = agent.includes("Firefox")
+    ? "Firefox"
+    : agent.includes("Edg")
+      ? "Edge"
+      : agent.includes("Chrome")
+        ? "Chrome"
+        : agent.includes("Safari")
+          ? "Safari"
+          : "متصفح";
+  const os = agent.includes("Android")
+    ? "Android"
+    : agent.includes("iPhone") || agent.includes("iPad")
+      ? "iOS"
+      : agent.includes("Mac")
+        ? "macOS"
+        : agent.includes("Windows")
+          ? "Windows"
+          : agent.includes("Linux")
+            ? "Linux"
+            : "نظام غير معروف";
+  return `${browser} على ${os}`;
+}
+
+function SessionSection() {
+  const [data, setData] = useState<SessionData | null>(null);
+  useEffect(() => {
+    fetch("/api/v1/account/sessions")
+      .then((response) => response.json())
+      .then((json) => setData(json.data ?? null))
+      .catch(() => setData(null));
   }, []);
 
   return (
     <div className="space-y-6">
-      <div className="card border border-[var(--color-border)] bg-[var(--color-surface)] p-6 rounded-[var(--radius-xl)] shadow-[var(--shadow-sm)]">
+      <div className="card rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-sm)]">
         <div className="mb-5 flex items-center gap-3">
-          <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-surface-muted)] text-[var(--color-brand-active)]">
+          <span className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-surface-muted)] text-[var(--color-brand-active)]">
             <InfoIcon size={20} />
           </span>
-          <h2 className="text-lg font-extrabold text-[var(--color-text)]">
-            تفاصيل الجلسة الحالية
-          </h2>
+          <div>
+            <h2 className="text-lg font-extrabold">الجلسة الحالية</h2>
+            <p className="text-xs text-[var(--color-text-muted)]">
+              بيانات حقيقية من الطلب الحالي، وليست قيماً تجريبية.
+            </p>
+          </div>
         </div>
-
-        <div className="space-y-4">
-          <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed font-medium">
-            نعرض لك هنا تفاصيل جهازك وجلسة العمل الحالية المستخدمة للوصول إلى المنصة
-            لأغراض الحماية والأمان وتتبع النشاط.
-          </p>
-
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div className="bg-[var(--color-surface-muted)] p-4 rounded-[var(--radius-md)] border border-[var(--color-border)]">
-              <span className="block text-[10px] text-[var(--color-text-muted)] font-bold uppercase">
-                نظام التشغيل
+        {!data ? (
+          <Skeleton className="h-24" />
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="rounded-[var(--radius-md)] bg-[var(--color-surface-muted)] p-4">
+              <span className="text-[10px] font-bold text-[var(--color-text-muted)]">
+                الجهاز والمتصفح
               </span>
-              <strong className="block text-sm text-[var(--color-text)] mt-1">
-                {deviceInfo.os}
+              <strong className="mt-1 block text-sm">
+                {describeAgent(data.current.userAgent)}
               </strong>
             </div>
-            <div className="bg-[var(--color-surface-muted)] p-4 rounded-[var(--radius-md)] border border-[var(--color-border)]">
-              <span className="block text-[10px] text-[var(--color-text-muted)] font-bold uppercase">
-                برنامج التصفح
+            <div className="rounded-[var(--radius-md)] bg-[var(--color-surface-muted)] p-4">
+              <span className="text-[10px] font-bold text-[var(--color-text-muted)]">
+                عنوان الاتصال
               </span>
-              <strong className="block text-sm text-[var(--color-text)] mt-1">
-                {deviceInfo.browser}
-              </strong>
-            </div>
-            <div className="bg-[var(--color-surface-muted)] p-4 rounded-[var(--radius-md)] border border-[var(--color-border)]">
-              <span className="block text-[10px] text-[var(--color-text-muted)] font-bold uppercase">
-                عنوان الـ IP
-              </span>
-              <strong className="block text-sm text-[var(--color-text)] mt-1">
-                {deviceInfo.ip}
+              <strong className="mt-1 block text-sm" dir="ltr">
+                {data.current.ipAddress ?? "غير متاح"}
               </strong>
             </div>
           </div>
-        </div>
+        )}
       </div>
-
-      <div className="card border border-[rgba(214,246,29,0.15)] bg-[rgba(214,246,29,0.02)] p-6 rounded-[var(--radius-xl)] shadow-[var(--shadow-sm)]">
-        <h3 className="text-sm font-extrabold text-[var(--color-text)] flex items-center gap-2 mb-4 border-b border-[rgba(200,214,206,0.1)] pb-3">
-          <span className="h-2 w-2 rounded-full bg-[var(--color-brand)] animate-pulse" />
-          <span>سجل أمان حسابك (Security Audit Trail)</span>
-        </h3>
-        <ul className="space-y-3 text-xs text-[var(--color-text-secondary)] font-medium">
-          <li className="flex justify-between items-center py-1 border-b border-[rgba(200,214,206,0.06)]">
-            <span>تسجيل دخول ناجح (هذا المتصفح)</span>
-            <span className="text-[10px] font-mono text-[var(--color-text-muted)]">
-              نشط الآن
-            </span>
-          </li>
-          <li className="flex justify-between items-center py-1 border-b border-[rgba(200,214,206,0.06)]">
-            <span>التحقق من صلاحية الجلسة واسترداد المحفظة</span>
-            <span className="text-[10px] font-mono text-[var(--color-text-muted)]">
-              قبل دقيقة
-            </span>
-          </li>
-          <li className="flex justify-between items-center py-1">
-            <span>تحديث إعدادات الحساب</span>
-            <span className="text-[10px] font-mono text-[var(--color-text-muted)]">
-              قبل قليل
-            </span>
-          </li>
+      <div className="card rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-sm)]">
+        <h3 className="font-extrabold">آخر عمليات الدخول المسجلة</h3>
+        <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+          راجع الجهاز والوقت، وغيّر كلمة المرور فوراً إذا لاحظت نشاطاً غريباً.
+        </p>
+        <ul className="mt-5 divide-y divide-[var(--color-border)]">
+          {data?.recent.length ? (
+            data.recent.map((session) => (
+              <li
+                key={session.id}
+                className="flex flex-col gap-1 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"
+              >
+                <span>
+                  <strong>{describeAgent(session.userAgent)}</strong>
+                  <span className="ms-2 text-xs text-[var(--color-text-muted)]" dir="ltr">
+                    {session.ipAddress ?? "IP غير متاح"}
+                  </span>
+                </span>
+                <time className="text-xs text-[var(--color-text-muted)]">
+                  {new Date(session.createdAt).toLocaleString("ar-IQ")}
+                </time>
+              </li>
+            ))
+          ) : (
+            <li className="py-6 text-center text-sm text-[var(--color-text-secondary)]">
+              لا توجد عمليات دخول مسجلة بعد.
+            </li>
+          )}
         </ul>
       </div>
     </div>
@@ -452,6 +728,8 @@ export function AccountSettings() {
 
   const tabItems = [
     { value: "profile", label: "بيانات الحساب" },
+    { value: "following", label: "المتابَعون" },
+    { value: "privacy", label: "الخصوصية" },
     { value: "security", label: "الأمان وكلمة المرور" },
     { value: "notifications", label: "تفضيلات الإشعارات" },
     { value: "sessions", label: "جلسة العمل الحالية" },
@@ -463,6 +741,8 @@ export function AccountSettings() {
 
       <div className="mt-6">
         {activeTab === "profile" && <ProfileSection />}
+        {activeTab === "following" && <FollowingSection />}
+        {activeTab === "privacy" && <PrivacySection />}
         {activeTab === "security" && <PasswordSection />}
         {activeTab === "notifications" && <NotificationPreferencesSection />}
         {activeTab === "sessions" && <SessionSection />}

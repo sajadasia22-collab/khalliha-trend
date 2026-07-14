@@ -9,6 +9,7 @@ const navLinks = [
   { href: "/", label: "الرئيسية" },
   { href: "/campaigns", label: "الحملات" },
   { href: "/creators", label: "صناع المحتوى" },
+  { href: "/community", label: "المجتمع" },
   { href: "/how-it-works", label: "كيف تعمل المنصة" },
 ];
 

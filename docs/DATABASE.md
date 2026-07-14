@@ -20,6 +20,16 @@
 - UserSessionMetadata
 - CreatorProfile
 - CreatorPortfolioItem
+- UserFollow
+- CommunityPost
+- CommunityComment
+- CommunityLike
+- CommunitySave
+- CommunityShare
+- CommunityReport
+- UserBlock
+- UserMute
+- UserPrivacySettings
 - BrandProfile
 - BrandMember
 - BrandVerification
@@ -151,6 +161,16 @@ sum(debits) == sum(credits)
 ```mermaid
 erDiagram
   User ||--o| CreatorProfile : has
+  User ||--o{ UserFollow : follows
+  User ||--o{ UserFollow : followed_by
+  User ||--o{ CommunityPost : publishes
+  CommunityPost ||--o{ CommunityComment : receives
+  CommunityPost ||--o{ CommunityLike : receives
+  CommunityPost ||--o{ CommunitySave : saved_as
+  CommunityPost ||--o{ CommunityShare : shared_as
+  CommunityPost ||--o{ CommunityReport : reported_in
+  User ||--o{ UserBlock : controls
+  User ||--o{ UserMute : controls
   User ||--o{ BrandMember : joins
   BrandProfile ||--o{ BrandMember : has
   BrandProfile ||--o{ Campaign : owns

@@ -1,12 +1,14 @@
 /* eslint-disable @next/next/no-img-element -- URLs are restricted to the configured profile image store; avoid turning Next into an open image proxy. */
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Footer } from "../../../components/layout/Footer";
 import { Navbar } from "../../../components/layout/Navbar";
+import { FollowButton } from "../../../components/creator/FollowButton";
+import { getCurrentUser } from "../../../lib/auth/session";
 import { platformIcons } from "../../../lib/campaigns";
 import { categoryLabels, platformLabels } from "../../../lib/campaigns";
 import { CreatorProfileService } from "../../../modules/creator/service";
+import { FollowService } from "../../../modules/follows/service";
 import {
   ArrowUpRightIcon,
   BriefcaseIcon,
@@ -30,8 +32,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function PublicCreatorProfilePage({ params }: PageProps) {
   const { username } = await params;
-  const profile = await CreatorProfileService.getPublicByUsername(username);
+  const [profile, viewer] = await Promise.all([
+    CreatorProfileService.getPublicByUsername(username),
+    getCurrentUser(),
+  ]);
   if (!profile || !profile.username) notFound();
+
+  const followState = await FollowService.getState(viewer?.id ?? null, profile.user.id);
 
   const completedCampaigns = profile.memberships.filter(
     (membership) => membership.campaign.status === "COMPLETED",
@@ -112,12 +119,14 @@ export default async function PublicCreatorProfilePage({ params }: PageProps) {
                 </div>
               </div>
 
-              <Link
-                href="/campaigns"
-                className="btn-primary justify-center px-6 py-3 text-sm"
-              >
-                استكشف الحملات
-              </Link>
+              <FollowButton
+                username={profile.username}
+                isAuthenticated={Boolean(viewer)}
+                isOwnProfile={followState.isOwnProfile}
+                initialIsFollowing={followState.isFollowing}
+                initialFollowersCount={followState.followersCount}
+                followingCount={followState.followingCount}
+              />
             </div>
           </section>
 

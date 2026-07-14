@@ -62,10 +62,41 @@ GET /api/v1/campaigns
 GET /api/v1/campaigns/:id
 GET /api/v1/categories
 GET /api/v1/creators
+POST /api/v1/creators/:username/follow
+DELETE /api/v1/creators/:username/follow
+GET /api/v1/account/following
 ```
 
 صفحات الملفات المهنية العامة متاحة عبر `/creators/:username` ولا تعيد بيانات محفظة أو
 حملات خاصة. الدليل المقسّم إلى صفحات متاح عبر `/api/v1/creators`.
+
+### Community
+
+```text
+GET    /api/v1/community/posts?feed=all|following|saved&search=
+POST   /api/v1/community/posts
+PATCH  /api/v1/community/posts/:id
+DELETE /api/v1/community/posts/:id
+POST   /api/v1/community/posts/:id/like
+POST   /api/v1/community/posts/:id/save
+POST   /api/v1/community/posts/:id/share
+GET    /api/v1/community/posts/:id/comments
+POST   /api/v1/community/posts/:id/comments
+DELETE /api/v1/community/comments/:id
+POST   /api/v1/community/images
+POST   /api/v1/community/reports
+GET    /api/v1/community/suggestions
+POST   /api/v1/community/users/:username/block
+DELETE /api/v1/community/users/:username/block
+POST   /api/v1/community/users/:username/mute
+DELETE /api/v1/community/users/:username/mute
+GET    /api/v1/account/privacy
+PATCH  /api/v1/account/privacy
+GET    /api/v1/account/relationships
+GET    /api/v1/account/sessions
+GET    /api/v1/admin/community-reports
+POST   /api/v1/admin/community-reports/:id/review
+```
 
 ### Creator
 
@@ -183,6 +214,16 @@ PORTFOLIO_IMAGE_UPLOAD_FAILED
 PORTFOLIO_LIMIT_REACHED
 PORTFOLIO_URL_EXISTS
 PORTFOLIO_ITEM_NOT_FOUND
+FOLLOW_TARGET_NOT_FOUND
+CANNOT_FOLLOW_SELF
+FOLLOW_UPDATE_FAILED
+COMMUNITY_CREATOR_ONLY
+PUBLIC_CREATOR_PROFILE_REQUIRED
+COMMUNITY_IMAGE_NOT_OWNED
+COMMUNITY_POST_NOT_FOUND
+COMMUNITY_COMMENT_NOT_FOUND
+COMMUNITY_REPORT_TARGET_NOT_FOUND
+COMMUNITY_REPORT_NOT_OPEN
 CAMPAIGN_NOT_FOUND
 CAMPAIGN_NOT_ACTIVE
 CAMPAIGN_BUDGET_EXHAUSTED

@@ -67,7 +67,10 @@ export function Tabs({
       ref={listRef}
       role="tablist"
       onKeyDown={handleKeyDown}
-      className={["relative flex gap-1 border-b border-[var(--color-border)]", className]
+      className={[
+        "relative flex gap-1 overflow-x-auto whitespace-nowrap border-b border-[var(--color-border)]",
+        className,
+      ]
         .filter(Boolean)
         .join(" ")}
     >

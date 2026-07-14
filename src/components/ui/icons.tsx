@@ -45,6 +45,16 @@ import {
   ArrowLeft,
   ArrowUpRight,
   HardDriveUpload,
+  Heart,
+  MessageCircle,
+  Bookmark,
+  Share2,
+  MoreHorizontal,
+  Image,
+  Send,
+  Flag,
+  VolumeX,
+  Ban,
   type LucideProps,
 } from "lucide-react";
 import {
@@ -120,6 +130,16 @@ export const ArrowStartIcon = withDefaults(ArrowRight);
 export const ArrowEndIcon = withDefaults(ArrowLeft);
 export const ArrowUpRightIcon = withDefaults(ArrowUpRight);
 export const DeviceUploadIcon = withDefaults(HardDriveUpload);
+export const HeartIcon = withDefaults(Heart);
+export const CommentIcon = withDefaults(MessageCircle);
+export const BookmarkIcon = withDefaults(Bookmark);
+export const ShareIcon = withDefaults(Share2);
+export const MoreIcon = withDefaults(MoreHorizontal);
+export const ImageIcon = withDefaults(Image);
+export const SendIcon = withDefaults(Send);
+export const FlagIcon = withDefaults(Flag);
+export const MuteIcon = withDefaults(VolumeX);
+export const BlockIcon = withDefaults(Ban);
 
 /** Real brand marks (official logo colors) for the cloud-storage source pickers. */
 function withBrandColor(Icon: IconType) {
