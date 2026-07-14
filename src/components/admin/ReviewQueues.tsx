@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { platformLabels, formatBudget } from "../../lib/campaigns";
 import { EmptyState } from "../ui/EmptyState";
+import { Modal } from "../ui/Modal";
 import { useToast } from "../ui/Toast";
 
 type BrandVerificationItem = {
@@ -59,6 +60,15 @@ type PayoutItem = {
   user: { fullName: string; email: string | null };
 };
 
+type PendingDecision = {
+  title: string;
+  fieldLabel: string;
+  placeholder: string;
+  submitLabel: string;
+  required: boolean;
+  onSubmit: (value: string) => Promise<boolean>;
+};
+
 function SectionHeader({ title, count }: { title: string; count: number }) {
   return (
     <div className="mb-4 flex items-center justify-between gap-3">
@@ -105,12 +115,48 @@ export function ReviewQueues({
   const [qualifiedViews, setQualifiedViews] = useState("");
   const [metricsNote, setMetricsNote] = useState("");
   const [submittingMetrics, setSubmittingMetrics] = useState(false);
+  const [pendingDecision, setPendingDecision] = useState<PendingDecision | null>(null);
+  const [decisionValue, setDecisionValue] = useState("");
+  const [submittingDecision, setSubmittingDecision] = useState(false);
 
-  const reviewBrand = async (id: string, decision: "APPROVED" | "REJECTED") => {
-    const note =
-      decision === "REJECTED"
-        ? (window.prompt("سبب الرفض (اختياري):") ?? undefined)
-        : undefined;
+  const openDecision = (decision: PendingDecision) => {
+    setDecisionValue("");
+    setPendingDecision(decision);
+  };
+
+  const closeDecision = () => {
+    if (submittingDecision) return;
+    setPendingDecision(null);
+    setDecisionValue("");
+  };
+
+  const submitDecision = async () => {
+    if (!pendingDecision) return;
+    const value = decisionValue.trim();
+    if (pendingDecision.required && !value) {
+      showToast("هذا الحقل مطلوب لإكمال القرار.", "error");
+      return;
+    }
+
+    setSubmittingDecision(true);
+    try {
+      const saved = await pendingDecision.onSubmit(value);
+      if (saved) {
+        setPendingDecision(null);
+        setDecisionValue("");
+      }
+    } catch {
+      showToast("تعذّر الاتصال بالسيرفر. لم يُحفظ القرار.", "error");
+    } finally {
+      setSubmittingDecision(false);
+    }
+  };
+
+  const reviewBrand = async (
+    id: string,
+    decision: "APPROVED" | "REJECTED",
+    note?: string,
+  ) => {
     const response = await fetch(`/api/v1/admin/brand-verifications/${id}/review`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -118,14 +164,23 @@ export function ReviewQueues({
     });
     if (response.ok) {
       setBrandVerifications((current) => current.filter((item) => item.id !== id));
+      showToast(
+        decision === "APPROVED" ? "تم توثيق العلامة." : "تم رفض الطلب.",
+        "success",
+      );
+      return true;
+    } else {
+      const data = await response.json();
+      showToast(data.error?.message || "تعذّرت مراجعة العلامة.", "error");
+      return false;
     }
   };
 
-  const reviewSocialAccount = async (id: string, decision: "VERIFIED" | "REJECTED") => {
-    const rejectionReason =
-      decision === "REJECTED"
-        ? (window.prompt("سبب الرفض (اختياري):") ?? undefined)
-        : undefined;
+  const reviewSocialAccount = async (
+    id: string,
+    decision: "VERIFIED" | "REJECTED",
+    rejectionReason?: string,
+  ) => {
     const response = await fetch(`/api/v1/admin/social-accounts/${id}/review`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -133,17 +188,23 @@ export function ReviewQueues({
     });
     if (response.ok) {
       setSocialAccounts((current) => current.filter((item) => item.id !== id));
+      showToast(
+        decision === "VERIFIED" ? "تم توثيق الحساب." : "تم رفض الحساب.",
+        "success",
+      );
+      return true;
+    } else {
+      const data = await response.json();
+      showToast(data.error?.message || "تعذّرت مراجعة الحساب.", "error");
+      return false;
     }
   };
 
   const reviewCampaign = async (
     id: string,
     decision: "APPROVE" | "REQUEST_CHANGES" | "REJECT",
+    note?: string,
   ) => {
-    const note =
-      decision !== "APPROVE"
-        ? (window.prompt("ملاحظة للتاجر (اختياري):") ?? undefined)
-        : undefined;
     const response = await fetch(`/api/v1/admin/campaigns/${id}/review`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -151,25 +212,23 @@ export function ReviewQueues({
     });
     if (response.ok) {
       setCampaigns((current) => current.filter((item) => item.id !== id));
+      showToast("تم حفظ قرار مراجعة الحملة.", "success");
+      return true;
+    } else {
+      const data = await response.json();
+      showToast(data.error?.message || "تعذّرت مراجعة الحملة.", "error");
+      return false;
     }
   };
 
   const reviewSubmission = async (
     id: string,
     decision: "APPROVE" | "REJECT" | "REQUEST_REVISION",
+    note?: string,
   ) => {
-    const note =
-      decision !== "APPROVE"
-        ? (window.prompt(
-            decision === "REJECT"
-              ? "سبب الرفض (إلزامي):"
-              : "ملاحظات التعديل المطلوبة (إلزامية):",
-          ) ?? undefined)
-        : undefined;
-
     if (decision !== "APPROVE" && !note) {
       showToast("يجب إدخال ملاحظة أو سبب لإكمال هذا الإجراء.", "error");
-      return;
+      return false;
     }
 
     const response = await fetch(`/api/v1/admin/submissions/${id}/review`, {
@@ -188,20 +247,22 @@ export function ReviewQueues({
       } else {
         setSubmissions((current) => current.filter((item) => item.id !== id));
       }
+      return true;
     } else {
       const data = await response.json();
       showToast(data.error?.message || "فشلت عملية المراجعة.", "error");
+      return false;
     }
   };
 
-  const reviewDeposit = async (id: string, decision: "APPROVE" | "REJECT") => {
-    const note =
-      decision === "REJECT"
-        ? (window.prompt("سبب الرفض (إلزامي):") ?? undefined)
-        : undefined;
+  const reviewDeposit = async (
+    id: string,
+    decision: "APPROVE" | "REJECT",
+    note?: string,
+  ) => {
     if (decision === "REJECT" && !note) {
       showToast("يجب كتابة سبب الرفض المالي.", "error");
-      return;
+      return false;
     }
 
     const response = await fetch(`/api/v1/admin/financial`, {
@@ -213,27 +274,26 @@ export function ReviewQueues({
     if (response.ok) {
       showToast("تم معالجة الإيداع بنجاح!", "success");
       setDeposits((current) => current.filter((item) => item.id !== id));
+      return true;
     } else {
       const data = await response.json();
       showToast(data.error?.message || "فشلت معالجة الإيداع.", "error");
+      return false;
     }
   };
 
-  const reviewPayout = async (id: string, decision: "APPROVE" | "REJECT") => {
-    const note =
-      decision === "REJECT"
-        ? (window.prompt("سبب الرفض (إلزامي):") ?? undefined)
-        : undefined;
+  const reviewPayout = async (
+    id: string,
+    decision: "APPROVE" | "REJECT",
+    value?: string,
+  ) => {
+    const note = decision === "REJECT" ? value : undefined;
     if (decision === "REJECT" && !note) {
       showToast("يجب كتابة سبب الرفض المالي.", "error");
-      return;
+      return false;
     }
 
-    const referenceNumber =
-      decision === "APPROVE"
-        ? (window.prompt("رقم التحويل / مرجع المعاملة لزين كاش أو فاست باي (اختياري):") ??
-          undefined)
-        : undefined;
+    const referenceNumber = decision === "APPROVE" ? value : undefined;
 
     const response = await fetch(`/api/v1/admin/financial`, {
       method: "POST",
@@ -244,9 +304,11 @@ export function ReviewQueues({
     if (response.ok) {
       showToast("تم معالجة طلب السحب والتحويل بنجاح!", "success");
       setPayouts((current) => current.filter((item) => item.id !== id));
+      return true;
     } else {
       const data = await response.json();
       showToast(data.error?.message || "فشلت معالجة طلب السحب.", "error");
+      return false;
     }
   };
 
@@ -336,7 +398,18 @@ export function ReviewQueues({
                   </button>
                   <button
                     type="button"
-                    onClick={() => reviewBrand(item.id, "REJECTED")}
+                    onClick={() =>
+                      openDecision({
+                        title: "رفض توثيق العلامة",
+                        fieldLabel: "سبب الرفض",
+                        placeholder:
+                          "وضّح سبب القرار حتى تعرف العلامة ما الذي تحتاج تعديله.",
+                        submitLabel: "تأكيد الرفض",
+                        required: false,
+                        onSubmit: (note) =>
+                          reviewBrand(item.id, "REJECTED", note || undefined),
+                      })
+                    }
                     className="btn-secondary px-4 py-2 text-xs"
                   >
                     رفض
@@ -380,7 +453,18 @@ export function ReviewQueues({
                   </button>
                   <button
                     type="button"
-                    onClick={() => reviewSocialAccount(item.id, "REJECTED")}
+                    onClick={() =>
+                      openDecision({
+                        title: "رفض توثيق الحساب",
+                        fieldLabel: "سبب الرفض",
+                        placeholder:
+                          "مثال: الرابط لا يطابق اسم المستخدم أو الحساب غير متاح.",
+                        submitLabel: "تأكيد الرفض",
+                        required: false,
+                        onSubmit: (reason) =>
+                          reviewSocialAccount(item.id, "REJECTED", reason || undefined),
+                      })
+                    }
                     className="btn-secondary px-4 py-2 text-xs"
                   >
                     رفض
@@ -420,14 +504,33 @@ export function ReviewQueues({
                   </button>
                   <button
                     type="button"
-                    onClick={() => reviewCampaign(item.id, "REQUEST_CHANGES")}
+                    onClick={() =>
+                      openDecision({
+                        title: "طلب تعديلات على الحملة",
+                        fieldLabel: "التعديلات المطلوبة",
+                        placeholder: "اكتب ملاحظات واضحة وقابلة للتنفيذ للتاجر.",
+                        submitLabel: "إرسال طلب التعديل",
+                        required: true,
+                        onSubmit: (note) =>
+                          reviewCampaign(item.id, "REQUEST_CHANGES", note),
+                      })
+                    }
                     className="btn-secondary px-4 py-2 text-xs"
                   >
                     طلب تعديلات
                   </button>
                   <button
                     type="button"
-                    onClick={() => reviewCampaign(item.id, "REJECT")}
+                    onClick={() =>
+                      openDecision({
+                        title: "رفض الحملة",
+                        fieldLabel: "سبب الرفض",
+                        placeholder: "وضّح سبب رفض الحملة.",
+                        submitLabel: "تأكيد الرفض",
+                        required: true,
+                        onSubmit: (note) => reviewCampaign(item.id, "REJECT", note),
+                      })
+                    }
                     className="btn-secondary px-4 py-2 text-xs"
                   >
                     رفض
@@ -488,14 +591,33 @@ export function ReviewQueues({
                     </button>
                     <button
                       type="button"
-                      onClick={() => reviewSubmission(item.id, "REQUEST_REVISION")}
+                      onClick={() =>
+                        openDecision({
+                          title: "طلب تعديل المنشور",
+                          fieldLabel: "ملاحظات التعديل",
+                          placeholder: "اكتب المطلوب تعديله بصورة محددة.",
+                          submitLabel: "إرسال الملاحظات",
+                          required: true,
+                          onSubmit: (note) =>
+                            reviewSubmission(item.id, "REQUEST_REVISION", note),
+                        })
+                      }
                       className="btn-secondary px-4 py-2 text-xs"
                     >
                       طلب تعديل
                     </button>
                     <button
                       type="button"
-                      onClick={() => reviewSubmission(item.id, "REJECT")}
+                      onClick={() =>
+                        openDecision({
+                          title: "رفض المنشور",
+                          fieldLabel: "سبب الرفض",
+                          placeholder: "اكتب سبب الرفض الذي سيظهر لصانع المحتوى.",
+                          submitLabel: "تأكيد الرفض",
+                          required: true,
+                          onSubmit: (note) => reviewSubmission(item.id, "REJECT", note),
+                        })
+                      }
                       className="btn-secondary px-4 py-2 text-xs"
                     >
                       رفض المنشور
@@ -721,7 +843,16 @@ export function ReviewQueues({
                   </button>
                   <button
                     type="button"
-                    onClick={() => reviewDeposit(item.id, "REJECT")}
+                    onClick={() =>
+                      openDecision({
+                        title: "رفض طلب شحن الرصيد",
+                        fieldLabel: "سبب الرفض المالي",
+                        placeholder: "مثال: تعذّر مطابقة رقم الحوالة مع المبلغ.",
+                        submitLabel: "تأكيد رفض الإيداع",
+                        required: true,
+                        onSubmit: (note) => reviewDeposit(item.id, "REJECT", note),
+                      })
+                    }
                     className="btn-secondary px-4 py-2 text-xs"
                   >
                     رفض الطلب
@@ -784,14 +915,34 @@ export function ReviewQueues({
                 <div className="flex gap-2 pt-2">
                   <button
                     type="button"
-                    onClick={() => reviewPayout(item.id, "APPROVE")}
+                    onClick={() =>
+                      openDecision({
+                        title: "اعتماد التحويل المالي",
+                        fieldLabel: "رقم التحويل أو مرجع المعاملة",
+                        placeholder:
+                          "اختياري: أدخل مرجع زين كاش أو فاست باي أو التحويل المصرفي.",
+                        submitLabel: "اعتماد التحويل",
+                        required: false,
+                        onSubmit: (reference) =>
+                          reviewPayout(item.id, "APPROVE", reference || undefined),
+                      })
+                    }
                     className="btn-primary px-4 py-2 text-xs"
                   >
                     اعتماد التحويل المالي
                   </button>
                   <button
                     type="button"
-                    onClick={() => reviewPayout(item.id, "REJECT")}
+                    onClick={() =>
+                      openDecision({
+                        title: "رفض طلب السحب",
+                        fieldLabel: "سبب الرفض المالي",
+                        placeholder: "اكتب سبباً واضحاً لإرجاع المبلغ المحجوز.",
+                        submitLabel: "تأكيد رفض السحب",
+                        required: true,
+                        onSubmit: (note) => reviewPayout(item.id, "REJECT", note),
+                      })
+                    }
                     className="btn-secondary px-4 py-2 text-xs"
                   >
                     رفض طلب السحب
@@ -809,6 +960,68 @@ export function ReviewQueues({
           </div>
         )}
       </div>
+
+      <Modal
+        open={Boolean(pendingDecision)}
+        onClose={closeDecision}
+        title={pendingDecision?.title ?? "تأكيد القرار"}
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={closeDecision}
+              disabled={submittingDecision}
+              className="btn-secondary px-5 py-2.5 text-sm disabled:opacity-50"
+            >
+              إلغاء
+            </button>
+            <button
+              type="button"
+              onClick={submitDecision}
+              disabled={
+                submittingDecision ||
+                Boolean(pendingDecision?.required && !decisionValue.trim())
+              }
+              className="btn-primary px-5 py-2.5 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {submittingDecision
+                ? "جاري الحفظ..."
+                : (pendingDecision?.submitLabel ?? "حفظ القرار")}
+            </button>
+          </>
+        }
+      >
+        <label
+          htmlFor="review-decision-note"
+          className="block text-sm font-black text-[var(--color-text)]"
+        >
+          {pendingDecision?.fieldLabel}
+          {pendingDecision?.required ? (
+            <span className="ms-1 text-[var(--color-danger)]">*</span>
+          ) : (
+            <span className="ms-2 text-xs font-semibold text-[var(--color-text-muted)]">
+              اختياري
+            </span>
+          )}
+        </label>
+        <textarea
+          id="review-decision-note"
+          value={decisionValue}
+          onChange={(event) => setDecisionValue(event.target.value)}
+          placeholder={pendingDecision?.placeholder}
+          maxLength={1000}
+          rows={5}
+          required={pendingDecision?.required}
+          disabled={submittingDecision}
+          className="mt-3 w-full resize-y rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-3 text-sm leading-7 text-[var(--color-text)] outline-none transition focus:border-[var(--color-brand)] focus:ring-2 focus:ring-[rgba(214,246,29,.18)] disabled:opacity-60"
+        />
+        <div className="mt-2 flex items-center justify-between text-[11px] font-semibold text-[var(--color-text-muted)]">
+          <span>
+            {pendingDecision?.required ? "مطلوب لإكمال القرار" : "يمكن تركه فارغاً"}
+          </span>
+          <span>{decisionValue.length}/1000</span>
+        </div>
+      </Modal>
     </div>
   );
 }

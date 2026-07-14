@@ -35,9 +35,6 @@ type AssetRow = {
   type: "upload" | "google_drive" | "dropbox" | "onedrive";
   url: string;
   label: string;
-  fileName?: string;
-  fileSize?: number;
-  uploadProgress?: number;
 };
 
 type InitialValues = {
@@ -107,11 +104,6 @@ export function CampaignForm({
         type,
         url: asset.url,
         label: asset.label,
-        fileName:
-          type === "upload"
-            ? decodeURIComponent(asset.url.split("/").pop() || "")
-            : undefined,
-        uploadProgress: type === "upload" ? 100 : undefined,
       };
     });
   });
@@ -792,30 +784,9 @@ export function CampaignForm({
         {/* Always-visible selector panel */}
         <div className="p-4 rounded-[var(--radius-md)] border border-[rgba(200,214,206,0.04)] space-y-3">
           <span className="block text-[10px] font-bold text-[var(--color-text-secondary)]">
-            اختر المنصة لإضافة ملف أو رابط أصل جديد:
+            اختر خدمة مشاركة وأضف رابطاً متاحاً لصناع المحتوى:
           </span>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <button
-              type="button"
-              onClick={() =>
-                setAssets((current) => [
-                  ...current,
-                  {
-                    id: `new-${Date.now()}-${Math.random()}`,
-                    type: "upload",
-                    url: "",
-                    label: "",
-                  },
-                ])
-              }
-              className="flex flex-col items-center gap-1.5 p-2 rounded-[var(--radius-md)] hover:bg-[var(--color-surface)] transition-all font-bold text-xs text-[var(--color-text)] text-center w-full"
-            >
-              <span className="flex items-center justify-center w-16 h-16 rounded-[var(--radius-md)] bg-[var(--color-surface)] border border-[var(--color-border)]">
-                <DeviceUploadIcon className="w-8 h-8 text-[var(--color-text-secondary)]" />
-              </span>
-              <span className="leading-tight">رفع ملف من جهازك</span>
-            </button>
-
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
             <button
               type="button"
               onClick={() =>
@@ -922,157 +893,55 @@ export function CampaignForm({
                   </button>
                 </div>
 
-                {asset.type === "upload" ? (
-                  <div className="space-y-3">
-                    <div className="grid gap-3 sm:grid-cols-2 items-center">
-                      <div>
-                        <label
-                          htmlFor={`asset-${asset.id}-upload-label`}
-                          className="block text-[10px] font-bold text-[var(--color-text-muted)] mb-1"
-                        >
-                          اسم الملف / الوصف
-                        </label>
-                        <input
-                          id={`asset-${asset.id}-upload-label`}
-                          value={asset.label}
-                          onChange={(e) => updateAsset(index, { label: e.target.value })}
-                          placeholder="مثال: الشعار الرسمي بدقة عالية"
-                          className="min-h-[40px] w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-xs focus:border-[var(--color-brand)] focus:outline-none focus:ring-2 focus:ring-[rgba(214,246,29,0.18)]"
-                          disabled={isLoading}
-                        />
-                      </div>
-                      <div>
-                        <label
-                          htmlFor={`file-picker-${asset.id}`}
-                          className="block text-[10px] font-bold text-[var(--color-text-muted)] mb-1"
-                        >
-                          ملف التحميل (أقصى حجم: 100 ميغابايت)
-                        </label>
-                        <div className="flex items-center gap-3">
-                          <input
-                            type="file"
-                            id={`file-picker-${asset.id}`}
-                            className="hidden"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (!file) return;
-
-                              if (file.size > 100 * 1024 * 1024) {
-                                showToast(
-                                  "حجم الملف يتجاوز الحد الأقصى المسموح به وهو 100 ميغابايت.",
-                                  "error",
-                                );
-                                e.target.value = "";
-                                return;
-                              }
-
-                              updateAsset(index, {
-                                fileName: file.name,
-                                fileSize: file.size,
-                                uploadProgress: 10,
-                              });
-
-                              let progress = 10;
-                              const interval = setInterval(() => {
-                                progress += 30;
-                                if (progress >= 100) {
-                                  progress = 100;
-                                  clearInterval(interval);
-                                  updateAsset(index, {
-                                    uploadProgress: 100,
-                                    url: `https://assets.khallihatrend.com/brand-uploads/${encodeURIComponent(
-                                      file.name,
-                                    )}`,
-                                    label: asset.label || file.name.split(".")[0],
-                                  });
-                                  showToast("تم رفع الملف بنجاح!", "success");
-                                } else {
-                                  updateAsset(index, { uploadProgress: progress });
-                                }
-                              }, 300);
-                            }}
-                          />
-                          <button
-                            type="button"
-                            onClick={() =>
-                              document.getElementById(`file-picker-${asset.id}`)?.click()
-                            }
-                            className="btn-secondary min-h-[40px] px-4 py-2 text-xs font-bold w-full"
-                          >
-                            {asset.fileName ? "🔄 تغيير الملف" : "📤 اختيار ملف من جهازك"}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    {asset.fileName && (
-                      <div className="bg-[var(--color-surface-dark)] p-3 rounded-[var(--radius-sm)] space-y-2">
-                        <div className="flex items-center justify-between text-[10px]">
-                          <span className="font-semibold text-[var(--color-text-secondary)]">
-                            {asset.fileName}
-                          </span>
-                          <span className="text-[var(--color-text-muted)] font-bold">
-                            {(asset.fileSize
-                              ? asset.fileSize / (1024 * 1024)
-                              : 0
-                            ).toFixed(2)}{" "}
-                            MB / 100 MB
-                          </span>
-                        </div>
-                        {asset.uploadProgress !== undefined && (
-                          <div className="w-full bg-[var(--color-border)] h-1 rounded-full overflow-hidden">
-                            <div
-                              className="bg-[var(--color-brand)] h-full transition-all duration-300"
-                              style={{ width: `${asset.uploadProgress}%` }}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    )}
+                {asset.type === "upload" && (
+                  <p className="rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-surface-muted)] p-3 text-xs leading-6 text-[var(--color-text-secondary)]">
+                    هذا رابط قديم أُضيف قبل إيقاف الرفع التجريبي. استبدله برابط مشاركة
+                    حقيقي من غوغل درايف أو دروب بوكس أو ون درايف، أو احذفه.
+                  </p>
+                )}
+                <div className="grid gap-3 sm:grid-cols-[1fr_2.5fr] items-center">
+                  <div>
+                    <label
+                      htmlFor={`asset-${asset.id}-link-label`}
+                      className="block text-[10px] font-bold text-[var(--color-text-muted)] mb-1"
+                    >
+                      اسم الرابط
+                    </label>
+                    <input
+                      id={`asset-${asset.id}-link-label`}
+                      value={asset.label}
+                      onChange={(e) => updateAsset(index, { label: e.target.value })}
+                      placeholder="مثال: مجلد ملفات الهوية المفتوحة"
+                      className="min-h-[40px] w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-xs focus:border-[var(--color-brand)] focus:outline-none focus:ring-2 focus:ring-[rgba(214,246,29,0.18)]"
+                    />
                   </div>
-                ) : (
-                  <div className="grid gap-3 sm:grid-cols-[1fr_2.5fr] items-center">
-                    <div>
-                      <label
-                        htmlFor={`asset-${asset.id}-link-label`}
-                        className="block text-[10px] font-bold text-[var(--color-text-muted)] mb-1"
-                      >
-                        اسم الرابط
-                      </label>
+                  <div>
+                    <label
+                      htmlFor={`asset-${asset.id}-url`}
+                      className="block text-[10px] font-bold text-[var(--color-text-muted)] mb-1"
+                    >
+                      رابط المشاركة
+                    </label>
+                    <div className="relative flex items-center">
                       <input
-                        id={`asset-${asset.id}-link-label`}
-                        value={asset.label}
-                        onChange={(e) => updateAsset(index, { label: e.target.value })}
-                        placeholder="مثال: مجلد ملفات الهوية المفتوحة"
-                        className="min-h-[40px] w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-xs focus:border-[var(--color-brand)] focus:outline-none focus:ring-2 focus:ring-[rgba(214,246,29,0.18)]"
-                      />
-                    </div>
-                    <div>
-                      <label
-                        htmlFor={`asset-${asset.id}-url`}
-                        className="block text-[10px] font-bold text-[var(--color-text-muted)] mb-1"
-                      >
-                        رابط المشاركة
-                      </label>
-                      <div className="relative flex items-center">
-                        <input
-                          id={`asset-${asset.id}-url`}
-                          value={asset.url}
-                          onChange={(e) => updateAsset(index, { url: e.target.value })}
-                          placeholder={
-                            asset.type === "google_drive"
+                        id={`asset-${asset.id}-url`}
+                        value={asset.url}
+                        onChange={(e) => updateAsset(index, { url: e.target.value })}
+                        placeholder={
+                          asset.type === "upload"
+                            ? "https://drive.google.com/drive/folders/..."
+                            : asset.type === "google_drive"
                               ? "https://drive.google.com/drive/folders/..."
                               : asset.type === "dropbox"
                                 ? "https://www.dropbox.com/sh/..."
                                 : "https://onedrive.live.com/..."
-                          }
-                          dir="ltr"
-                          className="min-h-[40px] w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-xs focus:border-[var(--color-brand)] focus:outline-none focus:ring-2 focus:ring-[rgba(214,246,29,0.18)]"
-                        />
-                      </div>
+                        }
+                        dir="ltr"
+                        className="min-h-[40px] w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-xs focus:border-[var(--color-brand)] focus:outline-none focus:ring-2 focus:ring-[rgba(214,246,29,0.18)]"
+                      />
                     </div>
                   </div>
-                )}
+                </div>
               </div>
             ))
           )}

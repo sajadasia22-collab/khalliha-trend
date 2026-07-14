@@ -1,38 +1,71 @@
 import { expect, test } from "@playwright/test";
+import { navByRole } from "../src/components/layout/dashboardNav";
 
-test("mobile dashboard keeps four primary destinations and moves the rest under More", async ({
-  page,
-}) => {
-  test.skip(!process.env.DATABASE_URL, "requires the local/CI PostgreSQL database");
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/api/dev/quick-login?role=CREATOR");
-  await page.goto("/creator/settings");
+for (const account of [
+  { role: "CREATOR", settings: "/creator/settings" },
+  { role: "BRAND", settings: "/brand/settings" },
+  { role: "ADMIN", settings: "/admin/settings" },
+] as const) {
+  test(`mobile ${account.role.toLowerCase()} dashboard keeps four primary destinations and moves the rest under More`, async ({
+    page,
+  }) => {
+    test.skip(!process.env.DATABASE_URL, "requires the local/CI PostgreSQL database");
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`/api/dev/quick-login?role=${account.role}`);
+    await page.goto(account.settings);
 
-  const primaryNav = page.getByRole("navigation", {
-    name: "التنقل الأساسي داخل اللوحة",
+    const primaryNav = page.getByRole("navigation", {
+      name: "التنقل الأساسي داخل اللوحة",
+    });
+    await expect(primaryNav).toBeVisible();
+    await expect(primaryNav.getByRole("link")).toHaveCount(4);
+    await expect(primaryNav.getByRole("button", { name: "المزيد" })).toBeVisible();
+
+    const noHorizontalOverflow = await page.evaluate(
+      () =>
+        document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1,
+    );
+    expect(noHorizontalOverflow).toBe(true);
+
+    // Next's local-only dev toolbar occupies the bottom-left corner where the RTL
+    // "More" tab sits; force bypasses that test-environment overlay. It is absent
+    // from production builds.
+    await primaryNav
+      .getByRole("button", { name: "المزيد" })
+      .evaluate((button: HTMLButtonElement) => button.click());
+    const moreDialog = page.getByRole("dialog", { name: "كل الأقسام" });
+    await expect(moreDialog).toBeVisible();
+    await expect(moreDialog.getByRole("link", { name: /الإعدادات/ })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(moreDialog).toBeHidden();
   });
-  await expect(primaryNav).toBeVisible();
-  await expect(primaryNav.getByRole("link")).toHaveCount(4);
-  await expect(primaryNav.getByRole("button", { name: "المزيد" })).toBeVisible();
+}
 
-  const noHorizontalOverflow = await page.evaluate(
-    () =>
-      document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1,
-  );
-  expect(noHorizontalOverflow).toBe(true);
+for (const account of [
+  { role: "CREATOR", navRole: "creator" },
+  { role: "BRAND", navRole: "brand" },
+  { role: "ADMIN", navRole: "admin" },
+] as const) {
+  test(`all ${account.navRole} menu destinations load without mobile overflow`, async ({
+    page,
+  }) => {
+    test.skip(!process.env.DATABASE_URL, "requires the local/CI PostgreSQL database");
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`/api/dev/quick-login?role=${account.role}`);
 
-  // Next's local-only dev toolbar occupies the bottom-left corner where the RTL
-  // "More" tab sits; force bypasses that test-environment overlay. It is absent
-  // from production builds.
-  await primaryNav
-    .getByRole("button", { name: "المزيد" })
-    .evaluate((button: HTMLButtonElement) => button.click());
-  const moreDialog = page.getByRole("dialog", { name: "كل الأقسام" });
-  await expect(moreDialog).toBeVisible();
-  await expect(moreDialog.getByRole("link", { name: /الإعدادات/ })).toBeVisible();
-  await page.keyboard.press("Escape");
-  await expect(moreDialog).toBeHidden();
-});
+    for (const item of navByRole[account.navRole]) {
+      const response = await page.goto(item.href);
+      expect(response?.status(), item.href).toBeLessThan(400);
+      await expect(page.locator("body")).toBeVisible();
+      const noHorizontalOverflow = await page.evaluate(
+        () =>
+          document.documentElement.scrollWidth <=
+          document.documentElement.clientWidth + 1,
+      );
+      expect(noHorizontalOverflow, `horizontal overflow on ${item.href}`).toBe(true);
+    }
+  });
+}
 
 test("mobile settings use a category screen and a focused detail screen", async ({
   page,
