@@ -213,9 +213,9 @@
 - `src/lib/permissions/rbac.test.ts` أصبح مصفوفة صلاحيات كاملة (كل الأدوار × كل الصلاحيات المعرّفة) بدل عينات محدودة.
 - اختبارات IDOR e2e جديدة (`e2e/permission-boundaries.spec.ts`) تتحقق من رفض كل دور للـ APIs غير المخصصة له عبر الـ pipeline الفعلي (HTTP status/JSON)، فوق `src/proxy.test.ts` الموجود مسبقاً.
 - `pnpm audit` كشف ثغرتين متوسطتين (transitive عبر next وprisma، أدوات وقت-بناء فقط) وتم تثبيتهما عبر `pnpm.overrides`. `pnpm audit` الآن نظيف.
-- تحقق threat model موثّق بالتفصيل في `docs/THREAT_MODEL.md` §8. الفجوات الثلاث التي رُصدت وقتها (نموذج `AuditLog`، rate limiting، CSP/security headers) **أُغلقت لاحقاً بالكامل** — راجع «الفجوات التي أُغلقت» في `THREAT_MODEL.md` §8؛ المتبقي الوحيد هو اختبارات رفع الملفات (لا ينطبق: لا توجد ميزة رفع بعد).
+- تحقق threat model موثّق بالتفصيل في `docs/THREAT_MODEL.md` §8. الفجوات التي رُصدت وقتها (`AuditLog` وrate limiting وCSP واختبارات رفع الملفات) **أُغلقت بالكامل**؛ أدلة النزاعات ورفع صور الملفات والمجتمع تستخدم تحقق magic bytes وحدود حجم واختبارات صلاحيات.
 
-## المرحلة 13: Staging والنشر - منشورة على الإنتاج (Monitoring/Backup مؤجلان)
+## المرحلة 13: Staging والنشر - مكتملة ومنشورة على الإنتاج
 
 - Staging deployment config.
 - Migrations.
