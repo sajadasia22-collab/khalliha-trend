@@ -8,6 +8,7 @@ import { CloseIcon, MenuIcon } from "../ui/icons";
 const navLinks = [
   { href: "/", label: "الرئيسية" },
   { href: "/campaigns", label: "الحملات" },
+  { href: "/creators", label: "صناع المحتوى" },
   { href: "/how-it-works", label: "كيف تعمل المنصة" },
 ];
 

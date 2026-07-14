@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
-const PAGES_TO_SCAN = ["/", "/campaigns", "/login"];
+const PAGES_TO_SCAN = ["/", "/campaigns", "/creators", "/login"];
 
 for (const path of PAGES_TO_SCAN) {
   test(`accessibility: ${path} has no critical axe violations`, async ({ page }) => {

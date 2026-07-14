@@ -1,4 +1,6 @@
+/* eslint-disable @next/next/no-img-element -- creator avatars are storage URLs and follow the existing safe plain-img policy. */
 import { prisma } from "../../lib/prisma";
+import Link from "next/link";
 import { CampaignCategory, CampaignStatus, Platform } from "../../generated/prisma/enums";
 import { categoryLabels, platformLabels } from "../../lib/campaigns";
 import { CampaignCard } from "../../components/campaigns/CampaignCard";
@@ -16,7 +18,11 @@ export const metadata = {
 type SearchParams = Promise<{ platform?: string; category?: string; search?: string }>;
 
 type TopCreator = Prisma.CreatorProfileGetPayload<{
-  include: {
+  select: {
+    id: true;
+    username: true;
+    avatarUrl: true;
+    trustScore: true;
     user: { select: { fullName: true } };
     socialAccounts: { select: { platform: true; handle: true } };
   };
@@ -110,10 +116,30 @@ function LeaderboardSection({
                     <span className="inline-flex h-6 w-6 items-center justify-center rounded-[var(--radius-sm)] bg-[var(--color-brand)] font-mono text-xs font-black text-[var(--color-text-on-brand)]">
                       {rankIcon}
                     </span>
+                    <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--color-surface)] font-black text-[var(--color-text)]">
+                      {creator.avatarUrl ? (
+                        <img
+                          src={creator.avatarUrl}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        creator.user.fullName.slice(0, 1)
+                      )}
+                    </span>
                     <div className="min-w-0">
-                      <h4 className="font-extrabold text-[var(--color-text)] truncate">
-                        {creator.user.fullName}
-                      </h4>
+                      {creator.username ? (
+                        <Link
+                          href={`/creators/${encodeURIComponent(creator.username)}`}
+                          className="block truncate font-extrabold text-[var(--color-text)] hover:text-[var(--color-brand)]"
+                        >
+                          {creator.user.fullName}
+                        </Link>
+                      ) : (
+                        <h4 className="truncate font-extrabold text-[var(--color-text)]">
+                          {creator.user.fullName}
+                        </h4>
+                      )}
                       <p className="text-[9px] text-[var(--color-text-secondary)] mt-0.5 truncate">
                         {creator.socialAccounts.length > 0
                           ? creator.socialAccounts
@@ -244,11 +270,14 @@ export default async function CampaignsPage({
   const topCreators = await prisma.creatorProfile
     .findMany({
       take: 5,
+      where: { isProfilePublic: true },
       orderBy: { trustScore: "desc" },
-      include: {
-        user: {
-          select: { fullName: true },
-        },
+      select: {
+        id: true,
+        username: true,
+        avatarUrl: true,
+        trustScore: true,
+        user: { select: { fullName: true } },
         socialAccounts: {
           where: { status: "VERIFIED" },
           select: { platform: true, handle: true },

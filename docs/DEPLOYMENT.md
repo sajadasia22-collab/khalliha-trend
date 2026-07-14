@@ -34,6 +34,11 @@ GOOGLE_CLIENT_SECRET=
 ```
 
 ملاحظة: `SUPABASE_SERVICE_ROLE_KEY` سيرفر فقط ولا يصل للمتصفح.
+
+رفع صورة وغلاف صانع المحتوى يستخدم Supabase Storage عبر السيرفر. ينشئ التطبيق bucket
+عاماً باسم `profile-images` عند أول رفع مع MIME allowlist وحد 5MB. يجب أن تكون
+`SUPABASE_URL` و`SUPABASE_SERVICE_ROLE_KEY` معرفتين في بيئة Vercel قبل تفعيل الميزة؛
+الصور عامة لأن صفحة الملف نفسها عامة، بينما مفتاح service role لا يُرسل للمتصفح.
 ملاحظة: `RESEND_API_KEY` مطلوب لإرسال رسائل استعادة كلمة المرور فعلياً على الإنتاج (بدونه محلياً فقط، الرابط يُطبع بالـ console بدل الإرسال الحقيقي — راجع Changelog 2026-07-13).
 
 ### إعداد Google OAuth

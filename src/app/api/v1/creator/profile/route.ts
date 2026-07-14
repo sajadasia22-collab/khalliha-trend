@@ -1,32 +1,24 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { getAuthSecret, verifyJWT } from "../../../../../lib/auth/jwt";
+import { getCurrentUser } from "../../../../../lib/auth/session";
 import { errorResponse, newRequestId } from "../../../../../lib/api/response";
 import { CreatorProfileService } from "../../../../../modules/creator/service";
 import { updateCreatorProfileSchema } from "../../../../../modules/creator/schemas";
 
-const COOKIE_NAME = "khalliha_trend_session";
-
-async function requireUserId(): Promise<string | null> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(COOKIE_NAME)?.value;
-  if (!token) {
-    return null;
-  }
-  const payload = (await verifyJWT(token, getAuthSecret())) as { userId?: string } | null;
-  return payload?.userId ?? null;
-}
-
 export async function GET() {
   const requestId = newRequestId();
-  const userId = await requireUserId();
-  if (!userId) {
+  const user = await getCurrentUser();
+  if (!user) {
     return errorResponse("UNAUTHENTICATED", "الرجاء تسجيل الدخول أولاً.", 401, {
       requestId,
     });
   }
+  if (user.role !== "CREATOR") {
+    return errorResponse("FORBIDDEN", "هذا الإجراء متاح فقط لصناع المحتوى.", 403, {
+      requestId,
+    });
+  }
 
-  const profile = await CreatorProfileService.getByUserId(userId);
+  const profile = await CreatorProfileService.getByUserId(user.id);
   if (!profile) {
     return errorResponse("PROFILE_NOT_FOUND", "الملف الشخصي غير موجود.", 404, {
       requestId,
@@ -38,9 +30,14 @@ export async function GET() {
 
 export async function PATCH(request: Request) {
   const requestId = newRequestId();
-  const userId = await requireUserId();
-  if (!userId) {
+  const user = await getCurrentUser();
+  if (!user) {
     return errorResponse("UNAUTHENTICATED", "الرجاء تسجيل الدخول أولاً.", 401, {
+      requestId,
+    });
+  }
+  if (user.role !== "CREATOR") {
+    return errorResponse("FORBIDDEN", "هذا الإجراء متاح فقط لصناع المحتوى.", 403, {
       requestId,
     });
   }
@@ -54,6 +51,18 @@ export async function PATCH(request: Request) {
     });
   }
 
-  const profile = await CreatorProfileService.updateByUserId(userId, parsed.data);
-  return NextResponse.json({ data: profile });
+  try {
+    const profile = await CreatorProfileService.updateByUserId(user.id, parsed.data);
+    return NextResponse.json({ data: profile });
+  } catch (error) {
+    if (error instanceof Error && error.message === "USERNAME_TAKEN") {
+      return errorResponse("USERNAME_TAKEN", "اسم المستخدم مستخدم بالفعل.", 409, {
+        requestId,
+      });
+    }
+
+    return errorResponse("PROFILE_UPDATE_FAILED", "فشل حفظ الملف الشخصي.", 500, {
+      requestId,
+    });
+  }
 }

@@ -19,6 +19,7 @@
 - UserRole
 - UserSessionMetadata
 - CreatorProfile
+- CreatorPortfolioItem
 - BrandProfile
 - BrandMember
 - BrandVerification
@@ -97,6 +98,7 @@ Currency: IQD, USD
 - BrandProfile يملك Campaigns.
 - Campaign يملك PlatformRates وRequirements وAssets.
 - CampaignMembership يربط CreatorProfile مع Campaign ويحفظ CampaignTermsSnapshot.
+- CreatorPortfolioItem يرتبط بملف صانع واحد ويحفظ رابط منشور مطبّعاً وصورة غلاف وترتيب العرض.
 - Submission يرتبط بـCampaignMembership وSocialAccount.
 - MetricsSnapshot يرتبط بـSubmission ولا يعدل بعد الإنشاء.
 - EarningAccrual يرتبط بـSubmission وMetricsSnapshot.
@@ -112,6 +114,7 @@ Currency: IQD, USD
 - `User.email` unique عند وجوده.
 - `User.phone` unique عند وجوده.
 - `SocialAccount.platform + platformUserId` unique.
+- `CreatorPortfolioItem.creatorProfileId + projectUrl` unique.
 - `Submission.platform + platformPostId` unique.
 - `CampaignMembership.campaignId + creatorProfileId` unique عند عدم السماح بأكثر من انضمام.
 - `LedgerTransaction.idempotencyKey` unique.
@@ -156,6 +159,7 @@ erDiagram
   Campaign ||--o{ CampaignAsset : has
   Campaign ||--o{ CampaignMembership : receives
   CreatorProfile ||--o{ CampaignMembership : joins
+  CreatorProfile ||--o{ CreatorPortfolioItem : showcases
   CampaignMembership ||--|| CampaignTermsSnapshot : stores
   CampaignMembership ||--o{ Submission : creates
   SocialAccount ||--o{ Submission : used_by

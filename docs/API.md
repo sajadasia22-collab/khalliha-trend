@@ -61,13 +61,24 @@ GET  /api/v1/me
 GET /api/v1/campaigns
 GET /api/v1/campaigns/:id
 GET /api/v1/categories
+GET /api/v1/creators
 ```
+
+صفحات الملفات المهنية العامة متاحة عبر `/creators/:username` ولا تعيد بيانات محفظة أو
+حملات خاصة. الدليل المقسّم إلى صفحات متاح عبر `/api/v1/creators`.
 
 ### Creator
 
 ```text
 GET   /api/v1/creator/profile
 PATCH /api/v1/creator/profile
+POST  /api/v1/creator/profile/image
+GET   /api/v1/creator/portfolio
+POST  /api/v1/creator/portfolio
+PATCH /api/v1/creator/portfolio/:id
+DELETE /api/v1/creator/portfolio/:id
+POST  /api/v1/creator/portfolio/:id/image
+PATCH /api/v1/creator/portfolio/reorder
 GET   /api/v1/creator/campaigns/joined
 POST  /api/v1/campaigns/:id/join
 GET   /api/v1/creator/submissions
@@ -164,6 +175,14 @@ UNAUTHENTICATED
 FORBIDDEN
 VALIDATION_ERROR
 RATE_LIMITED
+TOO_MANY_REQUESTS
+USERNAME_TAKEN
+PROFILE_STORAGE_NOT_CONFIGURED
+PROFILE_IMAGE_UPLOAD_FAILED
+PORTFOLIO_IMAGE_UPLOAD_FAILED
+PORTFOLIO_LIMIT_REACHED
+PORTFOLIO_URL_EXISTS
+PORTFOLIO_ITEM_NOT_FOUND
 CAMPAIGN_NOT_FOUND
 CAMPAIGN_NOT_ACTIVE
 CAMPAIGN_BUDGET_EXHAUSTED
