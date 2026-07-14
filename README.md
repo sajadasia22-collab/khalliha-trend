@@ -105,7 +105,7 @@ http://localhost:3000
 - تسجيل وتسجيل دخول وتسجيل خروج عبر `/api/v1/auth/*`.
 - جلسات JWT (HS256) بكوكي httpOnly.
 - اختيار الدور (Creator/Brand) عند التسجيل؛ Super Admin لا ينشأ من التسجيل العام.
-- RBAC على مستوى السيرفر عبر `src/middleware.ts` وحماية مسارات `/creator`، `/brand`، `/admin` وما يقابلها تحت `/api/v1`.
+- RBAC على مستوى السيرفر عبر `src/proxy.ts` وحماية مسارات `/creator`، `/brand`، `/admin` وما يقابلها تحت `/api/v1`.
 - لوحات تحكم أولية لكل دور (Creator، Brand، Admin).
 - `prisma/seed.ts` لإنشاء Super Admin أولي عبر متغيرات بيئة.
 - اختبارات وحدة وتكامل لـ JWT وRBAC وmiddleware وAuthService.

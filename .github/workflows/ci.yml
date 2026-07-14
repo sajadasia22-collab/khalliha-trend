@@ -11,7 +11,7 @@ env:
   DATABASE_URL: "postgresql://postgres:postgres@127.0.0.1:5432/khalliha_trend?schema=public"
   DIRECT_URL: "postgresql://postgres:postgres@127.0.0.1:5432/khalliha_trend?schema=public"
   # AUTH_SECRET is intentionally NOT set here: several unit tests (e.g.
-  # middleware.test.ts) sign tokens with the hardcoded dev-only fallback
+  # proxy.test.ts) sign tokens with the hardcoded dev-only fallback
   # secret and expect the server to verify against that same fallback. Setting
   # a real AUTH_SECRET at job level would make those signatures mismatch and
   # every RBAC test fail. It's set only on the E2E step below, which reads it
@@ -36,15 +36,13 @@ jobs:
           --health-retries 5
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.31.0
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: pnpm

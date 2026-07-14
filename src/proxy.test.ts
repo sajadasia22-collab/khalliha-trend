@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { NextRequest } from "next/server";
-import { middleware } from "./middleware";
+import { proxy } from "./proxy";
 import { RateLimiter } from "./lib/rate-limit";
 import { DEV_ONLY_FALLBACK_SECRET, signJWT } from "./lib/auth/jwt";
 
@@ -28,15 +28,15 @@ function requestTo(path: string, token?: string): NextRequest {
   return new NextRequest(url, { headers });
 }
 
-describe("middleware route protection", () => {
+describe("proxy route protection", () => {
   it("redirects unauthenticated page requests to /login", async () => {
-    const response = await middleware(requestTo("/creator/dashboard"));
+    const response = await proxy(requestTo("/creator/dashboard"));
     expect(response.status).toBe(307);
     expect(response.headers.get("location")).toBe("http://localhost:3000/login");
   });
 
   it("returns 401 JSON for unauthenticated API requests", async () => {
-    const response = await middleware(requestTo("/api/v1/admin/users"));
+    const response = await proxy(requestTo("/api/v1/admin/users"));
     expect(response.status).toBe(401);
     const json = await response.json();
     expect(json.error.code).toBe("UNAUTHENTICATED");
@@ -44,14 +44,14 @@ describe("middleware route protection", () => {
 
   it("redirects a wrong-role page request to /unauthorized", async () => {
     const token = await tokenFor("CREATOR");
-    const response = await middleware(requestTo("/admin/dashboard", token));
+    const response = await proxy(requestTo("/admin/dashboard", token));
     expect(response.status).toBe(307);
     expect(response.headers.get("location")).toBe("http://localhost:3000/unauthorized");
   });
 
   it("returns 403 JSON for a wrong-role API request", async () => {
     const token = await tokenFor("BRAND");
-    const response = await middleware(requestTo("/api/v1/creator/profile", token));
+    const response = await proxy(requestTo("/api/v1/creator/profile", token));
     expect(response.status).toBe(403);
     const json = await response.json();
     expect(json.error.code).toBe("FORBIDDEN");
@@ -59,7 +59,7 @@ describe("middleware route protection", () => {
 
   it("allows a correctly-scoped request through", async () => {
     const token = await tokenFor("CREATOR");
-    const response = await middleware(requestTo("/creator/dashboard", token));
+    const response = await proxy(requestTo("/creator/dashboard", token));
     expect(response.status).toBe(200);
     expect(response.headers.get("location")).toBeNull();
   });
@@ -67,30 +67,30 @@ describe("middleware route protection", () => {
   it("allows ADMIN and SUPER_ADMIN into /admin", async () => {
     for (const role of ["ADMIN", "SUPER_ADMIN"]) {
       const token = await tokenFor(role);
-      const response = await middleware(requestTo("/admin/dashboard", token));
+      const response = await proxy(requestTo("/admin/dashboard", token));
       expect(response.status).toBe(200);
     }
   });
 
   it("gates /api/v1/social-accounts to CREATOR only", async () => {
-    const unauth = await middleware(requestTo("/api/v1/social-accounts"));
+    const unauth = await proxy(requestTo("/api/v1/social-accounts"));
     expect(unauth.status).toBe(401);
 
     const brandToken = await tokenFor("BRAND");
-    const forbidden = await middleware(requestTo("/api/v1/social-accounts", brandToken));
+    const forbidden = await proxy(requestTo("/api/v1/social-accounts", brandToken));
     expect(forbidden.status).toBe(403);
 
     const creatorToken = await tokenFor("CREATOR");
-    const allowed = await middleware(requestTo("/api/v1/social-accounts", creatorToken));
+    const allowed = await proxy(requestTo("/api/v1/social-accounts", creatorToken));
     expect(allowed.status).toBe(200);
   });
 
   it("keeps login reachable for account switching but protects registration", async () => {
     const token = await tokenFor("BRAND");
-    const loginResponse = await middleware(requestTo("/login", token));
+    const loginResponse = await proxy(requestTo("/login", token));
     expect(loginResponse.status).toBe(200);
 
-    const registerResponse = await middleware(requestTo("/register", token));
+    const registerResponse = await proxy(requestTo("/register", token));
     expect(registerResponse.status).toBe(307);
     expect(registerResponse.headers.get("location")).toBe(
       "http://localhost:3000/brand/dashboard",
@@ -98,7 +98,7 @@ describe("middleware route protection", () => {
   });
 });
 
-describe("middleware rate limiting", () => {
+describe("proxy rate limiting", () => {
   beforeEach(() => {
     RateLimiter.reset();
   });
@@ -109,12 +109,12 @@ describe("middleware rate limiting", () => {
 
     // Auth route limit is 10. Let's make 10 requests.
     for (let i = 0; i < 10; i++) {
-      const response = await middleware(loginRequest());
+      const response = await proxy(loginRequest());
       expect(response.status).toBe(200);
     }
 
     // The 11th request should be rate limited and return status 429
-    const limitedResponse = await middleware(loginRequest());
+    const limitedResponse = await proxy(loginRequest());
     expect(limitedResponse.status).toBe(429);
     const json = await limitedResponse.json();
     expect(json.error.code).toBe("TOO_MANY_REQUESTS");
@@ -130,11 +130,11 @@ describe("middleware rate limiting", () => {
 
     // Financial route limit is 20. Let's make 20 requests.
     for (let i = 0; i < 20; i++) {
-      const response = await middleware(payoutRequest());
+      const response = await proxy(payoutRequest());
       expect(response.status).toBe(200);
     }
 
-    const limitedResponse = await middleware(payoutRequest());
+    const limitedResponse = await proxy(payoutRequest());
     expect(limitedResponse.status).toBe(429);
     const json = await limitedResponse.json();
     expect(json.error.code).toBe("TOO_MANY_REQUESTS");
@@ -148,11 +148,11 @@ describe("middleware rate limiting", () => {
 
     // Forgot-password limit is 5. Let's make 5 requests.
     for (let i = 0; i < 5; i++) {
-      const response = await middleware(forgotRequest());
+      const response = await proxy(forgotRequest());
       expect(response.status).toBe(200);
     }
 
-    const limitedResponse = await middleware(forgotRequest());
+    const limitedResponse = await proxy(forgotRequest());
     expect(limitedResponse.status).toBe(429);
     const json = await limitedResponse.json();
     expect(json.error.code).toBe("TOO_MANY_REQUESTS");
@@ -165,11 +165,11 @@ describe("middleware rate limiting", () => {
       });
 
     for (let i = 0; i < 10; i++) {
-      const response = await middleware(resetRequest());
+      const response = await proxy(resetRequest());
       expect(response.status).toBe(200);
     }
 
-    const limitedResponse = await middleware(resetRequest());
+    const limitedResponse = await proxy(resetRequest());
     expect(limitedResponse.status).toBe(429);
     const json = await limitedResponse.json();
     expect(json.error.code).toBe("TOO_MANY_REQUESTS");

@@ -111,10 +111,10 @@ pnpm build
 - اختبارات وحدة وE2E مبدئية.
 - CI مبدئي.
 - تسجيل/دخول/خروج عبر `/api/v1/auth/*` مع جلسات JWT.
-- RBAC على مستوى السيرفر عبر `src/middleware.ts` وحماية المسارات حسب الدور.
+- RBAC على مستوى السيرفر عبر `src/proxy.ts` وحماية المسارات حسب الدور.
 - لوحات تحكم أولية لـ Creator وBrand وAdmin.
 - `prisma/seed.ts` لإنشاء Super Admin أولي (بدون بيانات حقيقية في الكود).
-- اختبارات تكامل لحماية المسارات (`src/middleware.test.ts`).
+- اختبارات تكامل لحماية المسارات (`src/proxy.test.ts`).
 - تنقل متجاوب (`Navbar`/`Footer`) وصفحة Discover campaigns وتفاصيل الحملة.
 - صفحات ثابتة: كيف تعمل المنصة، الشروط، الخصوصية، سياسة الدفع.
 - `GET /api/v1/campaigns` و`GET /api/v1/campaigns/:id` (عامة، حملات ACTIVE فقط).

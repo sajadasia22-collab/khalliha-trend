@@ -5,8 +5,8 @@ import { resolveAuthSecret } from "./helpers/auth-secret";
 const testSecret = resolveAuthSecret();
 const COOKIE_NAME = "khalliha_trend_session";
 
-// End-to-end permission-boundary checks. src/middleware.test.ts already unit
-// tests the middleware() function directly; these instead go through the
+// End-to-end permission-boundary checks. src/proxy.test.ts already unit
+// tests the proxy() function directly; these instead go through the
 // real Next.js request pipeline (actual HTTP status codes, cookie parsing,
 // JSON error shape) for the highest-value cross-role denial paths.
 async function tokenFor(role: "CREATOR" | "BRAND" | "ADMIN") {
@@ -111,24 +111,17 @@ test.describe("Cross-role permission boundaries", () => {
     await expect(page).toHaveURL(/\/unauthorized/);
   });
 
-  test("an ADMIN token is granted access to the admin dashboard", async ({
+  test("an authenticated ADMIN is granted access to the admin dashboard", async ({
     page,
-    context,
   }) => {
     test.skip(
       !process.env.DATABASE_URL,
       "requires a live database for the server component",
     );
-    const token = await tokenFor("ADMIN");
-    await context.addCookies([
-      {
-        name: COOKIE_NAME,
-        value: token,
-        domain: "127.0.0.1",
-        path: "/",
-      },
-    ]);
-
+    await page.goto("/api/dev/quick-login?role=ADMIN");
+    // The local Next dev server canonicalizes the redirect host to `localhost`
+    // while Playwright's baseURL is `127.0.0.1`. Request the protected page on
+    // the baseURL explicitly so the dev-only session cookie stays same-host.
     await page.goto("/admin/dashboard");
     await expect(page).toHaveURL(/\/admin\/dashboard/);
   });
