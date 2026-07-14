@@ -146,12 +146,21 @@ export function BrandAnalytics() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
+              <caption className="sr-only">أداء حملات العلامة التجارية</caption>
               <thead>
                 <tr className="border-t border-[var(--color-border)] text-start text-xs font-bold text-[var(--color-text-muted)] bg-[var(--color-surface-muted)]">
-                  <th className="px-6 py-3 text-start">الحملة</th>
-                  <th className="px-6 py-3 text-start">الحالة</th>
-                  <th className="px-6 py-3 text-start">المشاهدات المؤهلة</th>
-                  <th className="px-6 py-3 text-start">الإنفاق</th>
+                  <th scope="col" className="px-6 py-3 text-start">
+                    الحملة
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-start">
+                    الحالة
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-start">
+                    المشاهدات المؤهلة
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-start">
+                    الإنفاق
+                  </th>
                 </tr>
               </thead>
               <tbody>

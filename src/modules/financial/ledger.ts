@@ -79,9 +79,13 @@ export class LedgerEngine {
         where: {
           userId_currency: { userId, currency },
         },
-        include: { financialAccount: true },
       });
-      if (doubleCheck) return doubleCheck;
+      if (doubleCheck) {
+        const financialAccount = await transaction.financialAccount.findUniqueOrThrow({
+          where: { id: doubleCheck.financialAccountId },
+        });
+        return { ...doubleCheck, financialAccount };
+      }
 
       // 1. Create the logical financial account
       const financialAccount = await transaction.financialAccount.create({
@@ -98,10 +102,9 @@ export class LedgerEngine {
           financialAccountId: financialAccount.id,
           currency,
         },
-        include: { financialAccount: true },
       });
 
-      return wallet;
+      return { ...wallet, financialAccount };
     };
 
     if (tx) {

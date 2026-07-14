@@ -28,7 +28,7 @@ export async function POST(
     });
   }
 
-  const parsed = schema.safeParse(await request.json());
+  const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
     return errorResponse("VALIDATION_ERROR", "المدخلات غير صالحة.", 400, {
       requestId,

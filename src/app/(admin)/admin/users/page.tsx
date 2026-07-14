@@ -202,6 +202,7 @@ export default async function AdminUsersPage({
 
           <div className="hidden overflow-x-auto md:block">
             <table className="w-full min-w-[900px] text-right text-sm">
+              <caption className="sr-only">قائمة مستخدمي المنصة</caption>
               <thead className="bg-[var(--color-surface-muted)] text-xs text-[var(--color-text-secondary)]">
                 <tr>
                   <th className="px-5 py-4">المستخدم</th>

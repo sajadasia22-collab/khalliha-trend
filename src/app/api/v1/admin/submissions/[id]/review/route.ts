@@ -1,11 +1,8 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { z } from "zod";
-import { getAuthSecret, verifyJWT } from "../../../../../../../lib/auth/jwt";
 import { errorResponse, newRequestId } from "../../../../../../../lib/api/response";
+import { requireAdminApiUser } from "../../../../../../../lib/auth/admin-api";
 import { SubmissionService } from "../../../../../../../modules/submissions/service";
-
-const COOKIE_NAME = "khalliha_trend_session";
 
 const reviewSubmissionSchema = z.object({
   decision: z.enum(["APPROVE", "REJECT", "REQUEST_REVISION"]),
@@ -19,24 +16,8 @@ export async function POST(
   const requestId = newRequestId();
   const { id: submissionId } = await params;
 
-  const cookieStore = await cookies();
-  const token = cookieStore.get(COOKIE_NAME)?.value;
-  if (!token) {
-    return errorResponse("UNAUTHENTICATED", "الرجاء تسجيل الدخول أولاً.", 401, {
-      requestId,
-    });
-  }
-  const payload = (await verifyJWT(token, getAuthSecret())) as { userId?: string } | null;
-  if (!payload?.userId) {
-    return errorResponse(
-      "UNAUTHENTICATED",
-      "جلسة عمل غير صالحة أو منتهية الصلاحية.",
-      401,
-      {
-        requestId,
-      },
-    );
-  }
+  const auth = await requireAdminApiUser(requestId);
+  if (!auth.ok) return auth.response;
 
   try {
     const body = await request.json();
@@ -49,7 +30,7 @@ export async function POST(
     }
 
     const submission = await SubmissionService.reviewSubmission(
-      payload.userId,
+      auth.user.id,
       submissionId,
       parsed.data.decision,
       parsed.data.note,

@@ -15,7 +15,9 @@ export async function POST(
     return errorResponse("UNAUTHENTICATED", "الرجاء تسجيل الدخول أولاً.", 401, {
       requestId,
     });
-  const parsed = reviewConversationReportSchema.safeParse(await request.json());
+  const parsed = reviewConversationReportSchema.safeParse(
+    await request.json().catch(() => null),
+  );
   if (!parsed.success)
     return errorResponse("VALIDATION_ERROR", "بيانات القرار غير صالحة.", 400, {
       requestId,

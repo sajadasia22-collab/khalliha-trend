@@ -42,7 +42,7 @@ export async function PATCH(request: Request) {
     });
   }
 
-  const body = await request.json();
+  const body = await request.json().catch(() => null);
   const parsed = updateCreatorProfileSchema.safeParse(body);
   if (!parsed.success) {
     return errorResponse("VALIDATION_ERROR", "المدخلات غير صالحة", 400, {

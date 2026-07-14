@@ -283,10 +283,10 @@ export class FraudService {
     submissionId: string,
     reopen = false,
   ) {
-    const [signals, existing] = await Promise.all([
-      tx.fraudSignal.findMany({ where: { submissionId } }),
-      tx.fraudAssessment.findUnique({ where: { submissionId } }),
-    ]);
+    // This helper also receives an interactive transaction client. Queries on
+    // that single pg client must not overlap (pg 9 removes that behavior).
+    const signals = await tx.fraudSignal.findMany({ where: { submissionId } });
+    const existing = await tx.fraudAssessment.findUnique({ where: { submissionId } });
     const fraudScore = clampScore(
       signals.reduce((sum, signal) => sum + signal.scoreImpact, 0),
     );

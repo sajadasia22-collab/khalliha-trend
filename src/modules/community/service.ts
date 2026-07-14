@@ -206,19 +206,33 @@ export class CommunityService {
       ? await getLinkPreview(input.linkUrl)
       : { title: null, description: null, imageUrl: null };
 
-    return prisma.communityPost.create({
-      data: {
-        authorId: userId,
-        body: input.body || null,
-        imageUrl: imageUrls[0] || null,
-        linkUrl: input.linkUrl || null,
-        linkTitle: preview.title,
-        linkDescription: preview.description,
-        linkImageUrl: preview.imageUrl,
-        images: {
-          create: imageUrls.map((url, sortOrder) => ({ url, sortOrder })),
+    const postId = await prisma.$transaction(async (tx) => {
+      const post = await tx.communityPost.create({
+        data: {
+          authorId: userId,
+          body: input.body || null,
+          imageUrl: imageUrls[0] || null,
+          linkUrl: input.linkUrl || null,
+          linkTitle: preview.title,
+          linkDescription: preview.description,
+          linkImageUrl: preview.imageUrl,
         },
-      },
+        select: { id: true },
+      });
+      if (imageUrls.length) {
+        await tx.communityPostImage.createMany({
+          data: imageUrls.map((url, sortOrder) => ({
+            postId: post.id,
+            url,
+            sortOrder,
+          })),
+        });
+      }
+      return post.id;
+    });
+
+    return prisma.communityPost.findUniqueOrThrow({
+      where: { id: postId },
       include: postInclude(userId),
     });
   }
@@ -234,20 +248,28 @@ export class CommunityService {
     const preview = input.linkUrl
       ? await getLinkPreview(input.linkUrl)
       : { title: null, description: null, imageUrl: null };
-    const updated = await prisma.communityPost.update({
-      where: { id: postId },
-      data: {
-        body: input.body || null,
-        imageUrl: imageUrls[0] || null,
-        linkUrl: input.linkUrl || null,
-        linkTitle: preview.title,
-        linkDescription: preview.description,
-        linkImageUrl: preview.imageUrl,
-        images: {
-          deleteMany: {},
-          create: imageUrls.map((url, sortOrder) => ({ url, sortOrder })),
+    await prisma.$transaction(async (tx) => {
+      await tx.communityPost.update({
+        where: { id: postId },
+        data: {
+          body: input.body || null,
+          imageUrl: imageUrls[0] || null,
+          linkUrl: input.linkUrl || null,
+          linkTitle: preview.title,
+          linkDescription: preview.description,
+          linkImageUrl: preview.imageUrl,
         },
-      },
+        select: { id: true },
+      });
+      await tx.communityPostImage.deleteMany({ where: { postId } });
+      if (imageUrls.length) {
+        await tx.communityPostImage.createMany({
+          data: imageUrls.map((url, sortOrder) => ({ postId, url, sortOrder })),
+        });
+      }
+    });
+    const updated = await prisma.communityPost.findUniqueOrThrow({
+      where: { id: postId },
       include: postInclude(userId),
     });
     const previousUrls = post.images.length

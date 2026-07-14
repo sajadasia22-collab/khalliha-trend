@@ -252,6 +252,7 @@ export function EarningSummary() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse text-right">
+              <caption className="sr-only">سجل أرباح صانع المحتوى</caption>
               <thead>
                 <tr className="border-b border-[var(--color-border)] text-xs font-extrabold text-[var(--color-text-secondary)]">
                   <th className="py-3 px-4">الحملة</th>

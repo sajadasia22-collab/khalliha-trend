@@ -16,7 +16,9 @@ export async function POST(
     });
   }
 
-  const parsed = createDisputeMessageSchema.safeParse(await request.json());
+  const parsed = createDisputeMessageSchema.safeParse(
+    await request.json().catch(() => null),
+  );
   if (!parsed.success) {
     return errorResponse("VALIDATION_ERROR", "المدخلات غير صالحة.", 400, {
       requestId,

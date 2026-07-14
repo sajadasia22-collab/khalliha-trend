@@ -38,7 +38,9 @@ export async function POST(request: Request) {
     return errorResponse("UNAUTHENTICATED", "الرجاء تسجيل الدخول أولاً.", 401, {
       requestId,
     });
-  const parsed = createConversationSchema.safeParse(await request.json());
+  const parsed = createConversationSchema.safeParse(
+    await request.json().catch(() => null),
+  );
   if (!parsed.success)
     return errorResponse("VALIDATION_ERROR", "المدخلات غير صالحة.", 400, {
       requestId,

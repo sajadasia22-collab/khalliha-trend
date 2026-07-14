@@ -34,8 +34,11 @@ export class CreatorDirectoryService {
         : {}),
     };
 
-    const { items, total } = await prisma.$transaction(async (transaction) => {
-      const items = await transaction.creatorProfile.findMany({
+    // These are independent read queries. Running the relation-heavy lookup
+    // inside one interactive pg transaction makes Prisma execute nested reads
+    // concurrently on a single client (deprecated in pg 8, removed in pg 9).
+    const [items, total] = await Promise.all([
+      prisma.creatorProfile.findMany({
         where,
         select: {
           id: true,
@@ -63,10 +66,9 @@ export class CreatorDirectoryService {
         orderBy: [{ trustScore: "desc" }, { updatedAt: "desc" }],
         skip: (input.page - 1) * input.pageSize,
         take: input.pageSize,
-      });
-      const total = await transaction.creatorProfile.count({ where });
-      return { items, total };
-    });
+      }),
+      prisma.creatorProfile.count({ where }),
+    ]);
 
     return {
       items,

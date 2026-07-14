@@ -84,22 +84,22 @@ export class DisputeService {
           },
         });
 
-        await Promise.all([
-          tx.disputeMessage.create({
-            data: {
-              disputeId: dispute.id,
-              senderUserId: userId,
-              body: input.description,
-            },
-          }),
-          tx.earningAccrual.updateMany({
-            where: {
-              submissionId: input.submissionId,
-              status: EarningStatus.PENDING_VERIFICATION,
-            },
-            data: { status: EarningStatus.HELD },
-          }),
-        ]);
+        // Interactive transactions use one PostgreSQL client. Keep its queries
+        // sequential so pg does not receive overlapping client.query() calls.
+        await tx.disputeMessage.create({
+          data: {
+            disputeId: dispute.id,
+            senderUserId: userId,
+            body: input.description,
+          },
+        });
+        await tx.earningAccrual.updateMany({
+          where: {
+            submissionId: input.submissionId,
+            status: EarningStatus.PENDING_VERIFICATION,
+          },
+          data: { status: EarningStatus.HELD },
+        });
 
         return { dispute, submission };
       },

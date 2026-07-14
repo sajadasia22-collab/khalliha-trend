@@ -333,13 +333,24 @@ export function BrandDeposits() {
             {/* Desktop / tablet: full table */}
             <div className="hidden overflow-x-auto sm:block">
               <table className="w-full text-sm border-collapse text-right">
+                <caption className="sr-only">سجل إيداعات العلامة التجارية</caption>
                 <thead>
                   <tr className="border-b border-[var(--color-border)] text-xs font-extrabold text-[var(--color-text-secondary)] bg-[var(--color-surface-muted)]">
-                    <th className="py-3 px-4">المبلغ</th>
-                    <th className="py-3 px-4">رقم المرجع</th>
-                    <th className="py-3 px-4">الحالة</th>
-                    <th className="py-3 px-4">تاريخ الطلب</th>
-                    <th className="py-3 px-4">ملاحظات</th>
+                    <th scope="col" className="py-3 px-4">
+                      المبلغ
+                    </th>
+                    <th scope="col" className="py-3 px-4">
+                      رقم المرجع
+                    </th>
+                    <th scope="col" className="py-3 px-4">
+                      الحالة
+                    </th>
+                    <th scope="col" className="py-3 px-4">
+                      تاريخ الطلب
+                    </th>
+                    <th scope="col" className="py-3 px-4">
+                      ملاحظات
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--color-border)]">

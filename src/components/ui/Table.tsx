@@ -12,11 +12,13 @@ export function Table<T>({
   columns,
   rows,
   rowKey,
+  caption = "جدول البيانات",
   emptyMessage = "لا توجد بيانات لعرضها حالياً.",
 }: {
   columns: TableColumn<T>[];
   rows: T[];
   rowKey: (row: T) => string;
+  caption?: string;
   emptyMessage?: string;
 }) {
   if (rows.length === 0) {
@@ -32,6 +34,7 @@ export function Table<T>({
       {/* Real table from md up */}
       <div className="hidden overflow-x-auto md:block">
         <table className="w-full border-collapse text-sm">
+          <caption className="sr-only">{caption}</caption>
           <thead>
             <tr className="border-b border-[var(--color-border)] text-xs font-extrabold text-[var(--color-text-secondary)]">
               {columns.map((column) => (

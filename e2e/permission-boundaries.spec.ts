@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
+import { UserRole, UserStatus } from "../src/generated/prisma/enums";
 import { signJWT } from "../src/lib/auth/jwt";
+import { prisma } from "../src/lib/prisma";
 import { resolveAuthSecret } from "./helpers/auth-secret";
 
 const testSecret = resolveAuthSecret();
@@ -55,6 +57,45 @@ test.describe("Cross-role permission boundaries", () => {
     expect(response.status()).toBe(403);
     const json = await response.json();
     expect(json.error.code).toBe("FORBIDDEN");
+  });
+
+  test("a suspended admin token is rejected by legacy admin APIs", async ({
+    request,
+  }) => {
+    test.skip(!process.env.DATABASE_URL, "requires a live database");
+    const userId = `suspended-admin-${crypto.randomUUID()}`;
+    await prisma.user.create({
+      data: {
+        id: userId,
+        fullName: "مشرف موقوف للاختبار",
+        email: `${userId}@example.com`,
+        passwordHash: "not-used-by-this-test",
+        role: UserRole.ADMIN,
+        status: UserStatus.SUSPENDED,
+      },
+    });
+
+    try {
+      const token = await signJWT(
+        {
+          userId,
+          fullName: "مشرف موقوف للاختبار",
+          email: `${userId}@example.com`,
+          role: "ADMIN",
+          status: "ACTIVE",
+          exp: Math.floor(Date.now() / 1000) + 3600,
+        },
+        testSecret,
+      );
+      const response = await request.get("/api/v1/admin/campaigns/review", {
+        headers: { cookie: `${COOKIE_NAME}=${token}` },
+      });
+
+      expect(response.status()).toBe(401);
+      expect((await response.json()).error.code).toBe("UNAUTHENTICATED");
+    } finally {
+      await prisma.user.delete({ where: { id: userId } }).catch(() => {});
+    }
   });
 
   test("user status administration is protected by the admin boundary", async ({

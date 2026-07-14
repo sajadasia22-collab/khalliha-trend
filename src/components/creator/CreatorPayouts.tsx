@@ -339,14 +339,27 @@ export function CreatorPayouts() {
             {/* Desktop / tablet: full table */}
             <div className="hidden overflow-x-auto sm:block">
               <table className="w-full text-sm border-collapse text-right">
+                <caption className="sr-only">سجل طلبات السحب</caption>
                 <thead>
                   <tr className="border-b border-[var(--color-border)] text-xs font-extrabold text-[var(--color-text-secondary)]">
-                    <th className="py-2.5 px-3">المبلغ</th>
-                    <th className="py-2.5 px-3">الوسيلة</th>
-                    <th className="py-2.5 px-3">رقم الحساب</th>
-                    <th className="py-2.5 px-3">رقم التحويل</th>
-                    <th className="py-2.5 px-3">الحالة</th>
-                    <th className="py-2.5 px-3">تاريخ الطلب</th>
+                    <th scope="col" className="py-2.5 px-3">
+                      المبلغ
+                    </th>
+                    <th scope="col" className="py-2.5 px-3">
+                      الوسيلة
+                    </th>
+                    <th scope="col" className="py-2.5 px-3">
+                      رقم الحساب
+                    </th>
+                    <th scope="col" className="py-2.5 px-3">
+                      رقم التحويل
+                    </th>
+                    <th scope="col" className="py-2.5 px-3">
+                      الحالة
+                    </th>
+                    <th scope="col" className="py-2.5 px-3">
+                      تاريخ الطلب
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--color-border)]">

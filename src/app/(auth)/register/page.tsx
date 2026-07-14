@@ -221,8 +221,8 @@ export default function RegisterPage() {
           />
 
           {/* Role selection radio buttons */}
-          <div>
-            <span className="block text-sm font-bold mb-3">نوع الحساب</span>
+          <fieldset>
+            <legend className="block text-sm font-bold mb-3">نوع الحساب</legend>
             <div className="grid grid-cols-2 gap-4">
               <label
                 className={`flex items-center justify-center p-4 border rounded-[var(--radius-md)] cursor-pointer font-bold transition-all ${
@@ -262,7 +262,7 @@ export default function RegisterPage() {
                 علامة تجارية / تاجر
               </label>
             </div>
-          </div>
+          </fieldset>
 
           {/* Conditional Brand Name field */}
           {role === UserRole.BRAND && (
