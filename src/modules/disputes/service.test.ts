@@ -21,6 +21,11 @@ vi.mock("../../lib/prisma", () => {
     disputeMessage: {
       create: vi.fn(),
     },
+    disputeAttachment: {
+      count: vi.fn(),
+      create: vi.fn(),
+      findUnique: vi.fn(),
+    },
     earningAccrual: {
       updateMany: vi.fn(),
     },
@@ -144,6 +149,132 @@ describe("DisputeService", () => {
       DisputeService.resolve("admin-1", "dispute-1", "CREATOR", "قرار نهائي"),
     ).rejects.toThrow("مسبقاً");
     expect(prisma.creatorProfile.update).not.toHaveBeenCalled();
+  });
+
+  it("stores a valid PNG evidence attachment for a participant", async () => {
+    const pngBytes = new Uint8Array(16);
+    pngBytes.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    vi.mocked(prisma.dispute.findUnique).mockResolvedValue({
+      id: "dispute-1",
+      title: "نزاع",
+      status: "OPEN",
+      submission,
+    } as any);
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({
+      id: "creator-user",
+      fullName: "صانع",
+      role: UserRole.CREATOR,
+    } as any);
+    vi.mocked(prisma.disputeAttachment.count).mockResolvedValue(0);
+    vi.mocked(prisma.disputeAttachment.create).mockResolvedValue({
+      id: "att-1",
+      fileName: "proof.png",
+      mimeType: "image/png",
+      sizeBytes: 16,
+      createdAt: new Date(),
+      uploadedBy: { id: "creator-user", fullName: "صانع", role: UserRole.CREATOR },
+    } as any);
+
+    const result = await DisputeService.addAttachment("creator-user", "dispute-1", {
+      fileName: "../evil/proof.png",
+      data: pngBytes,
+    });
+
+    expect(result.id).toBe("att-1");
+    expect(prisma.disputeAttachment.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          fileName: "proof.png",
+          mimeType: "image/png",
+        }),
+      }),
+    );
+  });
+
+  it("rejects attachments whose bytes are not an allowed type", async () => {
+    const zipBytes = new Uint8Array(16);
+    zipBytes.set([0x50, 0x4b, 0x03, 0x04]);
+    vi.mocked(prisma.dispute.findUnique).mockResolvedValue({
+      id: "dispute-1",
+      status: "OPEN",
+      submission,
+    } as any);
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({
+      id: "creator-user",
+      fullName: "صانع",
+      role: UserRole.CREATOR,
+    } as any);
+
+    await expect(
+      DisputeService.addAttachment("creator-user", "dispute-1", {
+        fileName: "fake.png",
+        data: zipBytes,
+      }),
+    ).rejects.toThrow("غير مدعوم");
+    expect(prisma.disputeAttachment.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects attachments on a closed dispute", async () => {
+    const pngBytes = new Uint8Array(16);
+    pngBytes.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    vi.mocked(prisma.dispute.findUnique).mockResolvedValue({
+      id: "dispute-1",
+      status: "CLOSED",
+      submission,
+    } as any);
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({
+      id: "creator-user",
+      fullName: "صانع",
+      role: UserRole.CREATOR,
+    } as any);
+
+    await expect(
+      DisputeService.addAttachment("creator-user", "dispute-1", {
+        fileName: "proof.png",
+        data: pngBytes,
+      }),
+    ).rejects.toThrow("مغلق");
+  });
+
+  it("rejects attachments beyond the per-dispute limit", async () => {
+    const pngBytes = new Uint8Array(16);
+    pngBytes.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    vi.mocked(prisma.dispute.findUnique).mockResolvedValue({
+      id: "dispute-1",
+      status: "OPEN",
+      submission,
+    } as any);
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({
+      id: "creator-user",
+      fullName: "صانع",
+      role: UserRole.CREATOR,
+    } as any);
+    vi.mocked(prisma.disputeAttachment.count).mockResolvedValue(10);
+
+    await expect(
+      DisputeService.addAttachment("creator-user", "dispute-1", {
+        fileName: "proof.png",
+        data: pngBytes,
+      }),
+    ).rejects.toThrow("للحد الأقصى من المرفقات");
+  });
+
+  it("blocks a stranger from downloading dispute evidence", async () => {
+    vi.mocked(prisma.dispute.findUnique).mockResolvedValue({
+      id: "dispute-1",
+      status: "OPEN",
+      submission,
+    } as any);
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({
+      id: "stranger",
+      fullName: "غريب",
+      role: UserRole.CREATOR,
+    } as any);
+
+    await expect(
+      DisputeService.getAttachment("stranger", "dispute-1", "att-1"),
+    ).rejects.toThrow("لا تملك صلاحية");
+    expect(prisma.disputeAttachment.findUnique).not.toHaveBeenCalled();
   });
 
   it("admin can list all disputes", async () => {

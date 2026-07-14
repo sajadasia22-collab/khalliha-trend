@@ -54,6 +54,14 @@ export default async function CreatorDisputesPage({
               createdAt: message.createdAt.toISOString(),
               sender: message.sender,
             })),
+            attachments: item.attachments.map((attachment) => ({
+              id: attachment.id,
+              fileName: attachment.fileName,
+              mimeType: attachment.mimeType,
+              sizeBytes: attachment.sizeBytes,
+              createdAt: attachment.createdAt.toISOString(),
+              uploadedBy: attachment.uploadedBy,
+            })),
           }))}
           eligibleSubmissions={submissions.map((item) => ({
             id: item.id,

@@ -9,6 +9,12 @@ import {
 import type { CreateDisputeInput } from "./schemas";
 import { NotificationService } from "../notifications/service";
 import { AuditLogService } from "../audit-log/service";
+import {
+  MAX_ATTACHMENT_SIZE_BYTES,
+  MAX_ATTACHMENTS_PER_DISPUTE,
+  sanitizeAttachmentFileName,
+  sniffAttachmentMimeType,
+} from "../../lib/uploads";
 
 export const ACTIVE_DISPUTE_STATUSES = [
   DisputeStatus.OPEN,
@@ -185,6 +191,17 @@ export class DisputeService {
           orderBy: { createdAt: "asc" },
           include: { sender: { select: { id: true, fullName: true, role: true } } },
         },
+        attachments: {
+          orderBy: { createdAt: "asc" },
+          select: {
+            id: true,
+            fileName: true,
+            mimeType: true,
+            sizeBytes: true,
+            createdAt: true,
+            uploadedBy: { select: { id: true, fullName: true, role: true } },
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -251,6 +268,17 @@ export class DisputeService {
         messages: {
           orderBy: { createdAt: "asc" },
           include: { sender: { select: { id: true, fullName: true, role: true } } },
+        },
+        attachments: {
+          orderBy: { createdAt: "asc" },
+          select: {
+            id: true,
+            fileName: true,
+            mimeType: true,
+            sizeBytes: true,
+            createdAt: true,
+            uploadedBy: { select: { id: true, fullName: true, role: true } },
+          },
         },
       },
       orderBy: [{ status: "asc" }, { createdAt: "desc" }],
@@ -453,5 +481,138 @@ export class DisputeService {
       },
     });
     return result;
+  }
+
+  // يحمل النزاع ويتحقق أن المستخدم طرف فيه (صانع/عضو علامة) أو مدير.
+  private static async getParticipationContext(userId: string, disputeId: string) {
+    const dispute = await prisma.dispute.findUnique({
+      where: { id: disputeId },
+      include: {
+        submission: {
+          include: {
+            socialAccount: { include: { creatorProfile: true } },
+            campaignMembership: {
+              include: {
+                campaign: { include: { brand: { include: { members: true } } } },
+              },
+            },
+          },
+        },
+      },
+    });
+    if (!dispute) throw new Error("النزاع غير موجود");
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    const isAdmin = user?.role === UserRole.ADMIN || user?.role === UserRole.SUPER_ADMIN;
+    const isCreator = dispute.submission.socialAccount.creatorProfile.userId === userId;
+    const isBrandMember =
+      dispute.submission.campaignMembership.campaign.brand.members.some(
+        (member) => member.userId === userId,
+      );
+    if (!user || (!isAdmin && !isCreator && !isBrandMember)) {
+      throw new Error("لا تملك صلاحية الوصول إلى هذا النزاع");
+    }
+    return { dispute, user, isAdmin };
+  }
+
+  static async addAttachment(
+    userId: string,
+    disputeId: string,
+    file: { fileName: string; data: Uint8Array<ArrayBuffer> },
+  ) {
+    const { dispute, user, isAdmin } = await this.getParticipationContext(
+      userId,
+      disputeId,
+    );
+    if ((CLOSED_DISPUTE_STATUSES as readonly DisputeStatus[]).includes(dispute.status)) {
+      throw new Error("لا يمكن إضافة دليل إلى نزاع مغلق");
+    }
+
+    if (file.data.length === 0) throw new Error("الملف فارغ");
+    if (file.data.length > MAX_ATTACHMENT_SIZE_BYTES) {
+      throw new Error("حجم الملف يتجاوز الحد الأقصى (2MB)");
+    }
+    const detectedMimeType = sniffAttachmentMimeType(file.data);
+    if (!detectedMimeType) {
+      throw new Error("نوع الملف غير مدعوم — المسموح: PNG, JPEG, WebP, PDF");
+    }
+
+    const existingCount = await prisma.disputeAttachment.count({
+      where: { disputeId },
+    });
+    if (existingCount >= MAX_ATTACHMENTS_PER_DISPUTE) {
+      throw new Error("وصل النزاع للحد الأقصى من المرفقات (10)");
+    }
+
+    const attachment = await prisma.disputeAttachment.create({
+      data: {
+        disputeId,
+        uploadedByUserId: userId,
+        fileName: sanitizeAttachmentFileName(file.fileName),
+        mimeType: detectedMimeType,
+        sizeBytes: file.data.length,
+        data: file.data,
+      },
+      select: {
+        id: true,
+        fileName: true,
+        mimeType: true,
+        sizeBytes: true,
+        createdAt: true,
+        uploadedBy: { select: { id: true, fullName: true, role: true } },
+      },
+    });
+
+    const participantIds = new Set([
+      dispute.submission.socialAccount.creatorProfile.userId,
+      ...dispute.submission.campaignMembership.campaign.brand.members.map(
+        (member) => member.userId,
+      ),
+    ]);
+    const recipients = await prisma.user.findMany({
+      where: {
+        OR: [
+          { id: { in: [...participantIds].filter((id) => id !== userId) } },
+          ...(isAdmin ? [] : [{ role: { in: [UserRole.ADMIN, UserRole.SUPER_ADMIN] } }]),
+        ],
+      },
+      select: { id: true, role: true },
+    });
+    await Promise.all(
+      recipients.map((recipient) =>
+        NotificationService.notify(
+          recipient.id,
+          NotificationType.DISPUTE_UPDATED,
+          "دليل جديد على نزاع",
+          `أُضيف مرفق دليل إلى نزاع «${dispute.title}».`,
+          participantLink(recipient.role),
+        ),
+      ),
+    );
+
+    await AuditLogService.log({
+      actorId: userId,
+      action: "DISPUTE_ATTACHMENT_ADD",
+      targetType: "Dispute",
+      targetId: disputeId,
+      after: {
+        attachmentId: attachment.id,
+        fileName: attachment.fileName,
+        mimeType: attachment.mimeType,
+        sizeBytes: attachment.sizeBytes,
+      },
+    });
+    return { ...attachment, uploaderName: user.fullName };
+  }
+
+  static async getAttachment(userId: string, disputeId: string, attachmentId: string) {
+    await this.getParticipationContext(userId, disputeId);
+    const attachment = await prisma.disputeAttachment.findUnique({
+      where: { id: attachmentId },
+    });
+    if (!attachment || attachment.disputeId !== disputeId) {
+      throw new Error("المرفق غير موجود");
+    }
+    return attachment;
   }
 }

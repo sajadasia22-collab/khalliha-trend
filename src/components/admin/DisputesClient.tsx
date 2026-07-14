@@ -48,7 +48,20 @@ type DisputeItem = {
     createdAt: string;
     sender: { id: string; fullName: string; role: string };
   }>;
+  attachments: Array<{
+    id: string;
+    fileName: string;
+    mimeType: string;
+    sizeBytes: number;
+    createdAt: string;
+    uploadedBy: { id: string; fullName: string; role: string };
+  }>;
 };
+
+function formatFileSize(sizeBytes: number) {
+  if (sizeBytes >= 1024 * 1024) return `${(sizeBytes / (1024 * 1024)).toFixed(1)}MB`;
+  return `${Math.max(1, Math.round(sizeBytes / 1024))}KB`;
+}
 
 export function DisputesClient({
   initialItems,
@@ -282,6 +295,31 @@ export function DisputesClient({
                 </div>
               ))}
             </div>
+            {item.attachments.length > 0 && (
+              <div className="mt-4 border-t border-[var(--color-border)] pt-4">
+                <p className="mb-2 text-xs font-black">
+                  الأدلة المرفقة ({item.attachments.length})
+                </p>
+                <ul className="flex flex-wrap gap-2">
+                  {item.attachments.map((attachment) => (
+                    <li key={attachment.id}>
+                      <a
+                        href={`/api/v1/disputes/${item.id}/attachments/${attachment.id}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-xs font-bold hover:border-[var(--forest-200)]"
+                      >
+                        📎 {attachment.fileName}
+                        <span className="text-[10px] font-black text-[var(--color-text-muted)]">
+                          {formatFileSize(attachment.sizeBytes)} ·{" "}
+                          {attachment.uploadedBy.fullName}
+                        </span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             {!resolved && (
               <div className="mt-4 flex gap-2 border-t border-[var(--color-border)] pt-4">
                 <input

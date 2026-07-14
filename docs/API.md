@@ -166,6 +166,8 @@ POST /api/v1/creator/payouts
 GET  /api/v1/disputes
 POST /api/v1/disputes
 POST /api/v1/disputes/:id/messages
+POST /api/v1/disputes/:id/attachments                 (multipart، حقل file)
+GET  /api/v1/disputes/:id/attachments/:attachmentId   (أطراف النزاع والمدراء)
 ```
 
 ### Notifications

@@ -34,7 +34,20 @@ export type DisputeCenterItem = {
     createdAt: string;
     sender: { id: string; fullName: string; role: string };
   }>;
+  attachments: Array<{
+    id: string;
+    fileName: string;
+    mimeType: string;
+    sizeBytes: number;
+    createdAt: string;
+    uploadedBy: { id: string; fullName: string; role: string };
+  }>;
 };
+
+function formatFileSize(sizeBytes: number) {
+  if (sizeBytes >= 1024 * 1024) return `${(sizeBytes / (1024 * 1024)).toFixed(1)}MB`;
+  return `${Math.max(1, Math.round(sizeBytes / 1024))}KB`;
+}
 
 export type EligibleSubmission = {
   id: string;
@@ -166,6 +179,43 @@ export function DisputeCenter({
         ),
       );
       setReply("");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function uploadAttachment(file: File) {
+    if (!selected) return;
+    setBusy(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const response = await fetch(`/api/v1/disputes/${selected.id}/attachments`, {
+        method: "POST",
+        body: formData,
+      });
+      const json = await response.json();
+      if (!response.ok) {
+        showToast(json.error?.message ?? "تعذر رفع الدليل", "error");
+        return;
+      }
+      setItems((current) =>
+        current.map((item) =>
+          item.id === selected.id
+            ? {
+                ...item,
+                attachments: [
+                  ...item.attachments,
+                  {
+                    ...json.data,
+                    createdAt: new Date(json.data.createdAt).toISOString(),
+                  },
+                ],
+              }
+            : item,
+        ),
+      );
+      showToast("تم رفع الدليل", "success");
     } finally {
       setBusy(false);
     }
@@ -373,6 +423,31 @@ export function DisputeCenter({
                   );
                 })}
               </div>
+              {selected.attachments.length > 0 && (
+                <div className="border-t border-[var(--color-border)] p-4">
+                  <p className="mb-2 text-xs font-black">
+                    الأدلة المرفقة ({selected.attachments.length})
+                  </p>
+                  <ul className="flex flex-wrap gap-2">
+                    {selected.attachments.map((attachment) => (
+                      <li key={attachment.id}>
+                        <a
+                          href={`/api/v1/disputes/${selected.id}/attachments/${attachment.id}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-3 py-2 text-xs font-bold hover:border-[var(--forest-200)]"
+                        >
+                          📎 {attachment.fileName}
+                          <span className="text-[10px] font-black text-[var(--color-text-muted)]">
+                            {formatFileSize(attachment.sizeBytes)} ·{" "}
+                            {attachment.uploadedBy.fullName}
+                          </span>
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               {selected.resolutionNote && (
                 <div className="border-t border-[var(--color-border)] bg-[var(--trend-50)] p-4">
                   <p className="text-xs font-black">قرار الإدارة</p>
@@ -384,6 +459,24 @@ export function DisputeCenter({
                   onSubmit={sendReply}
                   className="flex gap-3 border-t border-[var(--color-border)] p-4"
                 >
+                  <label
+                    className={`btn-secondary grid cursor-pointer place-items-center px-4 text-sm font-black ${busy ? "pointer-events-none opacity-50" : ""}`}
+                    title="أرفق دليلاً (PNG, JPEG, WebP, PDF — حتى 2MB)"
+                  >
+                    📎
+                    <span className="sr-only">أرفق دليلاً</span>
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp,application/pdf"
+                      className="hidden"
+                      disabled={busy}
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        event.target.value = "";
+                        if (file) void uploadAttachment(file);
+                      }}
+                    />
+                  </label>
                   <input
                     value={reply}
                     onChange={(event) => setReply(event.target.value)}

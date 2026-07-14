@@ -108,6 +108,7 @@ model User {
   openedDisputes           Dispute[]                @relation("OpenedDisputes")
   resolvedDisputes         Dispute[]                @relation("ResolvedDisputes")
   disputeMessages          DisputeMessage[]
+  disputeAttachments       DisputeAttachment[]      @relation("DisputeAttachments")
   trustScoreEvents         TrustScoreEvent[]
   notifications            Notification[]
   notificationPreferences  NotificationPreference[]
@@ -814,13 +815,32 @@ model Dispute {
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 
-  submission Submission       @relation(fields: [submissionId], references: [id])
-  openedBy   User             @relation("OpenedDisputes", fields: [openedByUserId], references: [id])
-  resolvedBy User?            @relation("ResolvedDisputes", fields: [resolvedByUserId], references: [id])
-  messages   DisputeMessage[]
+  submission  Submission          @relation(fields: [submissionId], references: [id])
+  openedBy    User                @relation("OpenedDisputes", fields: [openedByUserId], references: [id])
+  resolvedBy  User?               @relation("ResolvedDisputes", fields: [resolvedByUserId], references: [id])
+  messages    DisputeMessage[]
+  attachments DisputeAttachment[]
 
   @@index([submissionId, status])
   @@index([openedByUserId, status])
+}
+
+// أدلة النزاعات: تُخزن داخل قاعدة البيانات (bytea) بحدود صارمة في MVP —
+// لا تخزين خارجي قبل توفر credentials؛ مسار الترقية لاحقاً: Supabase Storage.
+model DisputeAttachment {
+  id               String   @id @default(cuid())
+  disputeId        String
+  uploadedByUserId String
+  fileName         String
+  mimeType         String
+  sizeBytes        Int
+  data             Bytes
+  createdAt        DateTime @default(now())
+
+  dispute    Dispute @relation(fields: [disputeId], references: [id])
+  uploadedBy User    @relation("DisputeAttachments", fields: [uploadedByUserId], references: [id])
+
+  @@index([disputeId, createdAt])
 }
 
 model DisputeMessage {
