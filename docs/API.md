@@ -75,6 +75,7 @@ GET /api/v1/account/following
 ```text
 GET    /api/v1/community/posts?feed=all|following|saved&search=
 POST   /api/v1/community/posts
+GET    /api/v1/community/posts/:id
 PATCH  /api/v1/community/posts/:id
 DELETE /api/v1/community/posts/:id
 POST   /api/v1/community/posts/:id/like
@@ -97,6 +98,11 @@ GET    /api/v1/account/sessions
 GET    /api/v1/admin/community-reports
 POST   /api/v1/admin/community-reports/:id/review
 ```
+
+- إنشاء/تعديل المنشور يقبل `imageUrls` بحد أقصى 4 روابط صور مرفوعة من صاحب الحساب؛ يبقى `imageUrl` مدعوماً للتوافق مع العملاء الأقدم.
+- إنشاء التعليق يقبل `parentId` اختيارياً للرد المباشر على تعليق أصلي في المنشور نفسه، ولا يسمح بأكثر من مستوى رد واحد.
+- المنشور المنفرد متاح على `/community/posts/:id`، وروابط الإشعارات والمشاركة تشير إليه مباشرة.
+- الروابط الخارجية تُفحص على السيرفر وتُستخرج معاينتها ضمن حد زمني وحجم محدودين، مع منع localhost والشبكات الخاصة والمنافذ غير المعتادة.
 
 ### Creator
 

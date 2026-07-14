@@ -229,16 +229,20 @@ enum MessagePermission {
 }
 
 model CommunityPost {
-  id        String              @id @default(cuid())
-  authorId  String
-  body      String?
-  imageUrl  String?
-  linkUrl   String?
-  status    CommunityPostStatus @default(ACTIVE)
-  createdAt DateTime            @default(now())
-  updatedAt DateTime            @updatedAt
+  id              String              @id @default(cuid())
+  authorId        String
+  body            String?
+  imageUrl        String?
+  linkUrl         String?
+  linkTitle       String?
+  linkDescription String?
+  linkImageUrl    String?
+  status          CommunityPostStatus @default(ACTIVE)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
 
-  author   User               @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  author   User                 @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  images   CommunityPostImage[]
   comments CommunityComment[]
   likes    CommunityLike[]
   saves    CommunitySave[]
@@ -249,21 +253,38 @@ model CommunityPost {
   @@index([authorId, createdAt])
 }
 
+model CommunityPostImage {
+  id        String   @id @default(cuid())
+  postId    String
+  url       String
+  sortOrder Int
+  createdAt DateTime @default(now())
+
+  post CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, sortOrder])
+  @@index([postId])
+}
+
 model CommunityComment {
   id        String                 @id @default(cuid())
   postId    String
   authorId  String
+  parentId  String?
   body      String
   status    CommunityCommentStatus @default(ACTIVE)
   createdAt DateTime               @default(now())
   updatedAt DateTime               @updatedAt
 
-  post    CommunityPost     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  author  User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  post    CommunityPost      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author  User               @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parent  CommunityComment?  @relation("CommunityCommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies CommunityComment[] @relation("CommunityCommentReplies")
   reports CommunityReport[]
 
   @@index([postId, status, createdAt])
   @@index([authorId, createdAt])
+  @@index([parentId, status, createdAt])
 }
 
 model CommunityLike {

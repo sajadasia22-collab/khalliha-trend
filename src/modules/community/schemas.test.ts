@@ -18,6 +18,16 @@ describe("community schemas", () => {
     ).toBe(false);
   });
 
+  it("accepts up to four post images", () => {
+    const image = (index: number) => `https://cdn.example.com/image-${index}.png`;
+    expect(
+      communityPostSchema.safeParse({ imageUrls: [1, 2, 3, 4].map(image) }).success,
+    ).toBe(true);
+    expect(
+      communityPostSchema.safeParse({ imageUrls: [1, 2, 3, 4, 5].map(image) }).success,
+    ).toBe(false);
+  });
+
   it("requires exactly one report target", () => {
     const base = { reason: "SPAM" as const };
     expect(communityReportSchema.safeParse(base).success).toBe(false);

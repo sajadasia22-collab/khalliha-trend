@@ -19,6 +19,7 @@ import type {
   privacySettingsSchema,
 } from "./schemas";
 import type { z } from "zod";
+import { getLinkPreview } from "./link-preview";
 
 type FeedQuery = z.infer<typeof communityFeedQuerySchema>;
 type PostInput = z.infer<typeof communityPostSchema>;
@@ -43,6 +44,11 @@ function validateOwnedCommunityImage(userId: string, imageUrl?: string | null) {
   }
 }
 
+function postImageUrls(input: PostInput) {
+  const values = input.imageUrls ?? (input.imageUrl ? [input.imageUrl] : []);
+  return [...new Set(values)];
+}
+
 function postInclude(viewerId: string | null) {
   return {
     author: {
@@ -52,6 +58,7 @@ function postInclude(viewerId: string | null) {
         creatorProfile: { select: { username: true, avatarUrl: true } },
       },
     },
+    images: { orderBy: { sortOrder: "asc" as const } },
     comments: {
       where: {
         status: CommunityCommentStatus.ACTIVE,
@@ -72,6 +79,7 @@ function postInclude(viewerId: string | null) {
         body: true,
         createdAt: true,
         authorId: true,
+        parentId: true,
         author: {
           select: {
             fullName: true,
@@ -167,6 +175,24 @@ export class CommunityService {
     };
   }
 
+  static async getPost(viewerId: string | null, postId: string) {
+    await this.requireVisiblePost(postId, viewerId);
+    const item = await prisma.communityPost.findFirst({
+      where: { id: postId, status: CommunityPostStatus.ACTIVE },
+      include: postInclude(viewerId),
+    });
+    if (!item) throw new Error("COMMUNITY_POST_NOT_FOUND");
+    return {
+      ...item,
+      isLiked: item.likes.length > 0,
+      isSaved: item.saves.length > 0,
+      isShared: item.shares.length > 0,
+      likes: undefined,
+      saves: undefined,
+      shares: undefined,
+    };
+  }
+
   static async createPost(userId: string, role: UserRole, input: PostInput) {
     if (role !== UserRole.CREATOR) throw new Error("COMMUNITY_CREATOR_ONLY");
     const profile = await prisma.creatorProfile.findFirst({
@@ -174,14 +200,24 @@ export class CommunityService {
       select: { id: true },
     });
     if (!profile) throw new Error("PUBLIC_CREATOR_PROFILE_REQUIRED");
-    validateOwnedCommunityImage(userId, input.imageUrl);
+    const imageUrls = postImageUrls(input);
+    imageUrls.forEach((url) => validateOwnedCommunityImage(userId, url));
+    const preview = input.linkUrl
+      ? await getLinkPreview(input.linkUrl)
+      : { title: null, description: null, imageUrl: null };
 
     return prisma.communityPost.create({
       data: {
         authorId: userId,
         body: input.body || null,
-        imageUrl: input.imageUrl || null,
+        imageUrl: imageUrls[0] || null,
         linkUrl: input.linkUrl || null,
+        linkTitle: preview.title,
+        linkDescription: preview.description,
+        linkImageUrl: preview.imageUrl,
+        images: {
+          create: imageUrls.map((url, sortOrder) => ({ url, sortOrder })),
+        },
       },
       include: postInclude(userId),
     });
@@ -190,21 +226,37 @@ export class CommunityService {
   static async updatePost(userId: string, postId: string, input: PostInput) {
     const post = await prisma.communityPost.findFirst({
       where: { id: postId, authorId: userId, status: CommunityPostStatus.ACTIVE },
-      select: { id: true, imageUrl: true },
+      select: { id: true, imageUrl: true, images: { select: { url: true } } },
     });
     if (!post) throw new Error("COMMUNITY_POST_NOT_FOUND");
-    validateOwnedCommunityImage(userId, input.imageUrl);
+    const imageUrls = postImageUrls(input);
+    imageUrls.forEach((url) => validateOwnedCommunityImage(userId, url));
+    const preview = input.linkUrl
+      ? await getLinkPreview(input.linkUrl)
+      : { title: null, description: null, imageUrl: null };
     const updated = await prisma.communityPost.update({
       where: { id: postId },
       data: {
         body: input.body || null,
-        imageUrl: input.imageUrl || null,
+        imageUrl: imageUrls[0] || null,
         linkUrl: input.linkUrl || null,
+        linkTitle: preview.title,
+        linkDescription: preview.description,
+        linkImageUrl: preview.imageUrl,
+        images: {
+          deleteMany: {},
+          create: imageUrls.map((url, sortOrder) => ({ url, sortOrder })),
+        },
       },
       include: postInclude(userId),
     });
-    if (post.imageUrl && post.imageUrl !== updated.imageUrl) {
-      const previousPath = getProfileImagePath(post.imageUrl);
+    const previousUrls = post.images.length
+      ? post.images.map((image) => image.url)
+      : post.imageUrl
+        ? [post.imageUrl]
+        : [];
+    for (const previousUrl of previousUrls.filter((url) => !imageUrls.includes(url))) {
+      const previousPath = getProfileImagePath(previousUrl);
       if (previousPath) await deleteProfileImage(previousPath).catch(() => null);
     }
     return updated;
@@ -213,7 +265,7 @@ export class CommunityService {
   static async deletePost(userId: string, postId: string) {
     const post = await prisma.communityPost.findFirst({
       where: { id: postId, authorId: userId, status: CommunityPostStatus.ACTIVE },
-      select: { imageUrl: true },
+      select: { imageUrl: true, images: { select: { url: true } } },
     });
     if (!post) throw new Error("COMMUNITY_POST_NOT_FOUND");
     const result = await prisma.communityPost.updateMany({
@@ -221,8 +273,15 @@ export class CommunityService {
       data: { status: CommunityPostStatus.REMOVED },
     });
     if (!result.count) throw new Error("COMMUNITY_POST_NOT_FOUND");
-    const imagePath = getProfileImagePath(post.imageUrl);
-    if (imagePath) await deleteProfileImage(imagePath).catch(() => null);
+    const imageUrls = post.images.length
+      ? post.images.map((image) => image.url)
+      : post.imageUrl
+        ? [post.imageUrl]
+        : [];
+    for (const url of imageUrls) {
+      const imagePath = getProfileImagePath(url);
+      if (imagePath) await deleteProfileImage(imagePath).catch(() => null);
+    }
     return { id: postId };
   }
 
@@ -263,7 +322,7 @@ export class CommunityService {
           NotificationType.COMMUNITY_ACTIVITY,
           "إعجاب جديد",
           "أعجب مستخدم بمنشورك في المجتمع.",
-          `/community?post=${postId}`,
+          `/community/posts/${postId}`,
         ).catch(() => null);
       }
     }
@@ -312,6 +371,7 @@ export class CommunityService {
         id: true,
         body: true,
         authorId: true,
+        parentId: true,
         createdAt: true,
         author: {
           select: {
@@ -327,12 +387,30 @@ export class CommunityService {
 
   static async createComment(userId: string, postId: string, input: CommentInput) {
     const post = await this.requireVisiblePost(postId, userId);
+    if (input.parentId) {
+      const parent = await prisma.communityComment.findFirst({
+        where: {
+          id: input.parentId,
+          postId,
+          parentId: null,
+          status: CommunityCommentStatus.ACTIVE,
+        },
+        select: { id: true },
+      });
+      if (!parent) throw new Error("COMMUNITY_COMMENT_PARENT_INVALID");
+    }
     const comment = await prisma.communityComment.create({
-      data: { postId, authorId: userId, body: input.body },
+      data: {
+        postId,
+        authorId: userId,
+        parentId: input.parentId || null,
+        body: input.body,
+      },
       select: {
         id: true,
         body: true,
         authorId: true,
+        parentId: true,
         createdAt: true,
         author: {
           select: {
@@ -348,7 +426,7 @@ export class CommunityService {
         NotificationType.COMMUNITY_ACTIVITY,
         "تعليق جديد",
         "أضاف مستخدم تعليقاً على منشورك.",
-        `/community?post=${postId}`,
+        `/community/posts/${postId}`,
       ).catch(() => null);
     }
     return comment;

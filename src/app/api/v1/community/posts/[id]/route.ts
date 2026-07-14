@@ -7,6 +7,17 @@ import { CommunityService } from "../../../../../../modules/community/service";
 
 type Context = { params: Promise<{ id: string }> };
 
+export async function GET(_request: Request, { params }: Context) {
+  const requestId = newRequestId();
+  try {
+    const user = await getCurrentUser();
+    const data = await CommunityService.getPost(user?.id ?? null, (await params).id);
+    return NextResponse.json({ data });
+  } catch (error) {
+    return communityErrorResponse(error, requestId);
+  }
+}
+
 export async function PATCH(request: Request, { params }: Context) {
   const requestId = newRequestId();
   const user = await getCurrentUser();

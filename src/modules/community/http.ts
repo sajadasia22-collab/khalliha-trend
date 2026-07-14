@@ -26,6 +26,16 @@ const knownErrors: Record<string, { code: string; message: string; status: numbe
     message: "التعليق غير موجود.",
     status: 404,
   },
+  COMMUNITY_COMMENT_PARENT_INVALID: {
+    code: "COMMUNITY_COMMENT_PARENT_INVALID",
+    message: "التعليق الذي تحاول الرد عليه غير موجود.",
+    status: 400,
+  },
+  UNSAFE_COMMUNITY_LINK: {
+    code: "UNSAFE_COMMUNITY_LINK",
+    message: "الرابط الخارجي غير متاح أو غير آمن.",
+    status: 400,
+  },
   COMMUNITY_REPORT_TARGET_NOT_FOUND: {
     code: "COMMUNITY_REPORT_TARGET_NOT_FOUND",
     message: "المحتوى المُبلّغ عنه غير موجود.",

@@ -22,6 +22,7 @@
 - CreatorPortfolioItem
 - UserFollow
 - CommunityPost
+- CommunityPostImage
 - CommunityComment
 - CommunityLike
 - CommunitySave
@@ -164,7 +165,9 @@ erDiagram
   User ||--o{ UserFollow : follows
   User ||--o{ UserFollow : followed_by
   User ||--o{ CommunityPost : publishes
+  CommunityPost ||--o{ CommunityPostImage : contains
   CommunityPost ||--o{ CommunityComment : receives
+  CommunityComment ||--o{ CommunityComment : replies
   CommunityPost ||--o{ CommunityLike : receives
   CommunityPost ||--o{ CommunitySave : saved_as
   CommunityPost ||--o{ CommunityShare : shared_as

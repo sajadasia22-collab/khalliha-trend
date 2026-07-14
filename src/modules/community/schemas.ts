@@ -9,9 +9,14 @@ const optionalBody = z.string().trim().max(2000).optional().nullable();
 const optionalUrl = z.string().trim().url().max(2048).optional().nullable();
 
 export const communityPostSchema = z
-  .object({ body: optionalBody, imageUrl: optionalUrl, linkUrl: optionalUrl })
+  .object({
+    body: optionalBody,
+    imageUrl: optionalUrl,
+    imageUrls: z.array(z.string().trim().url().max(2048)).max(4).optional(),
+    linkUrl: optionalUrl,
+  })
   .superRefine((value, context) => {
-    if (!value.body && !value.imageUrl && !value.linkUrl) {
+    if (!value.body && !value.imageUrl && !value.imageUrls?.length && !value.linkUrl) {
       context.addIssue({
         code: "custom",
         path: ["body"],
@@ -34,6 +39,7 @@ export const communityPostUpdateSchema = communityPostSchema;
 
 export const communityCommentSchema = z.object({
   body: z.string().trim().min(1).max(1000),
+  parentId: z.string().cuid().optional().nullable(),
 });
 
 export const communityFeedQuerySchema = z.object({

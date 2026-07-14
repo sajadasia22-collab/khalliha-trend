@@ -36,6 +36,26 @@ test("creator can publish and interact with a community post through real APIs",
     data: { body: "تعليق حقيقي على المنشور" },
   });
   expect(comment.status()).toBe(201);
+  const commentId = (await comment.json()).data.id as string;
+
+  const reply = await request.post(`/api/v1/community/posts/${postId}/comments`, {
+    data: { body: "رد حقيقي على التعليق", parentId: commentId },
+  });
+  expect(reply.status()).toBe(201);
+  expect((await reply.json()).data.parentId).toBe(commentId);
+
+  const permalink = await request.get(`/api/v1/community/posts/${postId}`);
+  expect(permalink.ok()).toBe(true);
+  expect((await permalink.json()).data.id).toBe(postId);
+
+  const comments = await request.get(`/api/v1/community/posts/${postId}/comments`);
+  expect(comments.ok()).toBe(true);
+  expect((await comments.json()).data).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ id: commentId, parentId: null }),
+      expect.objectContaining({ parentId: commentId }),
+    ]),
+  );
 
   const update = await request.patch(`/api/v1/community/posts/${postId}`, {
     data: { body: "منشور مجتمع معدل" },

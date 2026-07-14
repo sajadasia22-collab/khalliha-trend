@@ -7,6 +7,7 @@ import { useToast } from "../ui/Toast";
 import {
   BlockIcon,
   BookmarkIcon,
+  CloseIcon,
   CommentIcon,
   FlagIcon,
   HeartIcon,
@@ -23,21 +24,30 @@ import {
   UsersIcon,
 } from "../ui/icons";
 
-type CurrentUser = { id: string; fullName: string; role: string } | null;
+export type CommunityCurrentUser = {
+  id: string;
+  fullName: string;
+  role: string;
+} | null;
 type CreatorIdentity = { username: string | null; avatarUrl: string | null } | null;
 type CommunityComment = {
   id: string;
   body: string;
   authorId: string;
+  parentId: string | null;
   createdAt: string;
   author: { fullName: string; creatorProfile: CreatorIdentity };
 };
-type CommunityPost = {
+export type CommunityPost = {
   id: string;
   authorId: string;
   body: string | null;
   imageUrl: string | null;
   linkUrl: string | null;
+  linkTitle: string | null;
+  linkDescription: string | null;
+  linkImageUrl: string | null;
+  images: Array<{ id: string; url: string; sortOrder: number }>;
   createdAt: string;
   updatedAt: string;
   author: { id: string; fullName: string; creatorProfile: CreatorIdentity };
@@ -119,28 +129,49 @@ function avatar(identity: CreatorIdentity, name: string, size = "h-11 w-11") {
   );
 }
 
-function PostCard({
+export function PostCard({
   post,
   currentUser,
   onRemoved,
 }: {
   post: CommunityPost;
-  currentUser: CurrentUser;
+  currentUser: CommunityCurrentUser;
   onRemoved: (id: string) => void;
 }) {
   const { showToast } = useToast();
   const [item, setItem] = useState(post);
   const [menuOpen, setMenuOpen] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
-  const [comments, setComments] = useState(post.comments.slice().reverse());
+  const [comments, setComments] = useState<CommunityComment[]>([]);
   const [commentBody, setCommentBody] = useState("");
+  const [replyTo, setReplyTo] = useState<{ id: string; name: string } | null>(null);
   const [editing, setEditing] = useState(false);
   const [editBody, setEditBody] = useState(post.body ?? "");
   const [reporting, setReporting] = useState(false);
   const [reportReason, setReportReason] = useState("SPAM");
   const [busy, setBusy] = useState(false);
+  const [activeImage, setActiveImage] = useState<string | null>(null);
   const identity = item.author.creatorProfile;
   const own = currentUser?.id === item.authorId;
+  const postImages = item.images?.length
+    ? item.images.map((image) => image.url)
+    : item.imageUrl
+      ? [item.imageUrl]
+      : [];
+
+  useEffect(() => {
+    if (!activeImage) return;
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setActiveImage(null);
+    };
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [activeImage]);
 
   function requireLogin() {
     if (currentUser) return true;
@@ -172,7 +203,7 @@ function PostCard({
         isShared: true,
         _count: { ...current._count, shares: json.data.count },
       }));
-      const shareUrl = `${window.location.origin}/community?post=${item.id}`;
+      const shareUrl = `${window.location.origin}/community/posts/${item.id}`;
       if (navigator.share) {
         await navigator
           .share({ title: "منشور من خلّيها ترند", url: shareUrl })
@@ -199,7 +230,7 @@ function PostCard({
     const response = await fetch(`/api/v1/community/posts/${item.id}/comments`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ body: commentBody }),
+      body: JSON.stringify({ body: commentBody, parentId: replyTo?.id ?? null }),
     });
     const json = await response.json();
     setBusy(false);
@@ -211,6 +242,69 @@ function PostCard({
       _count: { ...current._count, comments: current._count.comments + 1 },
     }));
     setCommentBody("");
+    setReplyTo(null);
+  }
+
+  async function removeComment(commentId: string) {
+    const response = await fetch(`/api/v1/community/comments/${commentId}`, {
+      method: "DELETE",
+    });
+    if (!response.ok) {
+      showToast("تعذّر حذف التعليق.", "error");
+      return;
+    }
+    const removedIds = new Set([
+      commentId,
+      ...comments
+        .filter((comment) => comment.parentId === commentId)
+        .map((item) => item.id),
+    ]);
+    setComments((items) => items.filter((comment) => !removedIds.has(comment.id)));
+    setItem((current) => ({
+      ...current,
+      _count: {
+        ...current._count,
+        comments: Math.max(0, current._count.comments - removedIds.size),
+      },
+    }));
+  }
+
+  function renderComment(comment: CommunityComment, nested = false) {
+    return (
+      <div key={comment.id} className={`flex gap-2.5 ${nested ? "ms-10 mt-2" : ""}`}>
+        {avatar(comment.author.creatorProfile, comment.author.fullName, "h-8 w-8")}
+        <div className="min-w-0 flex-1">
+          <div className="rounded-[18px] bg-[var(--color-surface-muted)] px-3.5 py-2.5">
+            <strong className="text-xs">{comment.author.fullName}</strong>
+            <p className="mt-1 whitespace-pre-wrap text-sm leading-6">{comment.body}</p>
+          </div>
+          <div className="mt-1 flex items-center gap-3 px-2 text-[11px] font-bold text-[var(--color-text-muted)]">
+            {!nested && currentUser && (
+              <button
+                type="button"
+                onClick={() => {
+                  setReplyTo({ id: comment.id, name: comment.author.fullName });
+                  setCommentBody("");
+                }}
+                className="hover:text-[var(--color-text)]"
+              >
+                رد
+              </button>
+            )}
+            {currentUser?.id === comment.authorId && (
+              <button
+                type="button"
+                onClick={() => void removeComment(comment.id)}
+                className="hover:text-[var(--color-text)]"
+              >
+                حذف
+              </button>
+            )}
+            <time dateTime={comment.createdAt}>{formatPostTime(comment.createdAt)}</time>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   async function saveEdit() {
@@ -220,7 +314,7 @@ function PostCard({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         body: editBody,
-        imageUrl: item.imageUrl,
+        imageUrls: postImages,
         linkUrl: item.linkUrl,
       }),
     });
@@ -232,6 +326,7 @@ function PostCard({
       ...current,
       body: json.data.body,
       updatedAt: json.data.updatedAt,
+      images: json.data.images,
     }));
     setEditing(false);
   }
@@ -376,12 +471,26 @@ function PostCard({
         </p>
       ) : null}
 
-      {item.imageUrl && (
-        <img
-          src={item.imageUrl}
-          alt="صورة مرفقة بالمنشور"
-          className="max-h-[680px] w-full bg-[var(--color-surface-muted)] object-cover"
-        />
+      {postImages.length > 0 && (
+        <div
+          className={`grid gap-0.5 overflow-hidden bg-[var(--color-border)] ${postImages.length > 1 ? "grid-cols-2" : "grid-cols-1"}`}
+        >
+          {postImages.map((url, index) => (
+            <button
+              key={url}
+              type="button"
+              className={`group relative overflow-hidden bg-[var(--color-surface-muted)] ${postImages.length === 1 ? "max-h-[680px]" : "aspect-square"}`}
+              onClick={() => setActiveImage(url)}
+              aria-label={`فتح صورة المنشور ${index + 1} من ${postImages.length}`}
+            >
+              <img
+                src={url}
+                alt={`صورة المنشور ${index + 1}`}
+                className={`w-full object-cover transition duration-300 group-hover:scale-[1.02] ${postImages.length === 1 ? "max-h-[680px]" : "h-full"}`}
+              />
+            </button>
+          ))}
+        </div>
       )}
       {item.linkUrl && (
         <a
@@ -394,15 +503,56 @@ function PostCard({
           <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-[var(--color-surface)] text-[var(--color-brand-active)]">
             <LinkIcon size={18} aria-hidden="true" />
           </span>
-          <span className="min-w-0 text-start">
+          {item.linkImageUrl && (
+            <img
+              src={item.linkImageUrl}
+              alt=""
+              className="h-16 w-20 flex-none rounded-lg object-cover"
+            />
+          )}
+          <span className="min-w-0 flex-1 text-start">
             <span className="block text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)]">
               رابط خارجي
             </span>
             <span className="block truncate text-sm font-black text-[var(--color-text)]">
-              {linkHost(item.linkUrl)}
+              {item.linkTitle || linkHost(item.linkUrl)}
             </span>
+            {item.linkDescription && (
+              <span className="mt-0.5 line-clamp-2 block text-xs text-[var(--color-text-muted)]">
+                {item.linkDescription}
+              </span>
+            )}
           </span>
         </a>
+      )}
+
+      {activeImage && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-[rgba(2,17,11,.94)] p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="معاينة صورة المنشور"
+        >
+          <button
+            type="button"
+            className="absolute inset-0"
+            onClick={() => setActiveImage(null)}
+            aria-label="إغلاق معاينة الصورة"
+          />
+          <button
+            type="button"
+            className="absolute end-5 top-5 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-[var(--forest-600)] text-[var(--color-text-on-dark)]"
+            onClick={() => setActiveImage(null)}
+            aria-label="إغلاق معاينة الصورة"
+          >
+            <CloseIcon />
+          </button>
+          <img
+            src={activeImage}
+            alt="صورة المنشور بالحجم الكامل"
+            className="relative z-10 max-h-full max-w-full object-contain"
+          />
+        </div>
       )}
 
       {reporting && (
@@ -484,40 +634,51 @@ function PostCard({
       {commentsOpen && (
         <div className="bg-[var(--color-surface)] p-4 sm:px-5">
           <div className="space-y-3">
-            {comments.map((comment) => (
-              <div key={comment.id} className="flex gap-2.5">
-                {avatar(
-                  comment.author.creatorProfile,
-                  comment.author.fullName,
-                  "h-8 w-8",
-                )}
-                <div className="min-w-0 flex-1 rounded-[18px] bg-[var(--color-surface-muted)] px-3.5 py-2.5">
-                  <strong className="text-xs">{comment.author.fullName}</strong>
-                  <p className="mt-1 whitespace-pre-wrap text-sm leading-6">
-                    {comment.body}
-                  </p>
+            {comments
+              .filter((comment) => !comment.parentId)
+              .map((comment) => (
+                <div key={comment.id}>
+                  {renderComment(comment)}
+                  {comments
+                    .filter((reply) => reply.parentId === comment.id)
+                    .map((reply) => renderComment(reply, true))}
                 </div>
-              </div>
-            ))}
+              ))}
           </div>
           {currentUser ? (
-            <form onSubmit={addComment} className="mt-4 flex gap-2">
-              <input
-                className="min-w-0 flex-1 rounded-[var(--radius-pill)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2 text-sm"
-                placeholder="اكتب تعليقاً..."
-                value={commentBody}
-                onChange={(event) => setCommentBody(event.target.value)}
-                maxLength={1000}
-              />
-              <button
-                type="submit"
-                className="btn-icon bg-[var(--color-brand)]"
-                disabled={busy || !commentBody.trim()}
-                aria-label="إرسال التعليق"
-              >
-                <SendIcon size={18} />
-              </button>
-            </form>
+            <div className="mt-4">
+              {replyTo && (
+                <div className="mb-2 flex items-center justify-between rounded-xl bg-[var(--trend-100)] px-3 py-2 text-xs">
+                  <span>
+                    رد على <strong>{replyTo.name}</strong>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setReplyTo(null)}
+                    aria-label="إلغاء الرد"
+                  >
+                    <CloseIcon size={15} />
+                  </button>
+                </div>
+              )}
+              <form onSubmit={addComment} className="flex gap-2">
+                <input
+                  className="min-w-0 flex-1 rounded-[var(--radius-pill)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2 text-sm"
+                  placeholder={replyTo ? "اكتب ردك..." : "اكتب تعليقاً..."}
+                  value={commentBody}
+                  onChange={(event) => setCommentBody(event.target.value)}
+                  maxLength={1000}
+                />
+                <button
+                  type="submit"
+                  className="btn-icon bg-[var(--color-brand)]"
+                  disabled={busy || !commentBody.trim()}
+                  aria-label="إرسال التعليق"
+                >
+                  <SendIcon size={18} />
+                </button>
+              </form>
+            </div>
           ) : (
             <Link
               href="/login"
@@ -532,7 +693,7 @@ function PostCard({
   );
 }
 
-export function CommunityFeed({ currentUser }: { currentUser: CurrentUser }) {
+export function CommunityFeed({ currentUser }: { currentUser: CommunityCurrentUser }) {
   const { showToast } = useToast();
   const [feed, setFeed] = useState<"all" | "following" | "saved">("all");
   const [search, setSearch] = useState("");
@@ -540,30 +701,69 @@ export function CommunityFeed({ currentUser }: { currentUser: CurrentUser }) {
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
   const [body, setBody] = useState("");
   const [linkUrl, setLinkUrl] = useState("");
   const [linkOpen, setLinkOpen] = useState(false);
-  const [imageUrl, setImageUrl] = useState("");
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
-  const loadPosts = useCallback(async () => {
-    setLoading(true);
-    const params = new URLSearchParams({ feed, pageSize: "20" });
-    if (query) params.set("search", query);
-    const response = await fetch(`/api/v1/community/posts?${params}`);
-    const json = await response.json();
-    if (response.ok) setPosts(json.data);
-    else showToast(json.error?.message ?? "تعذّر تحميل المجتمع.", "error");
-    setLoading(false);
-  }, [feed, query, showToast]);
+  const loadPosts = useCallback(
+    async (
+      targetPage = 1,
+      append = false,
+      selectedFeed: "all" | "following" | "saved" = feed,
+    ) => {
+      if (append) setLoadingMore(true);
+      else setLoading(true);
+      const params = new URLSearchParams({
+        feed: selectedFeed,
+        page: String(targetPage),
+        pageSize: "10",
+      });
+      if (query) params.set("search", query);
+      const response = await fetch(`/api/v1/community/posts?${params}`);
+      const json = await response.json();
+      if (response.ok) {
+        setPosts((current) => {
+          if (!append) return json.data;
+          const existing = new Set(current.map((post) => post.id));
+          return [
+            ...current,
+            ...json.data.filter((post: CommunityPost) => !existing.has(post.id)),
+          ];
+        });
+        setPage(targetPage);
+        setHasMore(targetPage < json.pagination.pageCount);
+      } else showToast(json.error?.message ?? "تعذّر تحميل المجتمع.", "error");
+      setLoading(false);
+      setLoadingMore(false);
+    },
+    [feed, query, showToast],
+  );
 
   useEffect(() => {
     // Fetch completion updates the feed; this effect intentionally owns that synchronization.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    void loadPosts();
+    void loadPosts(1, false);
   }, [loadPosts]);
+  useEffect(() => {
+    const target = loadMoreRef.current;
+    if (!target || !hasMore || loading || loadingMore) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) void loadPosts(page + 1, true);
+      },
+      { rootMargin: "320px" },
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [hasMore, loadPosts, loading, loadingMore, page]);
   useEffect(() => {
     if (!currentUser) return;
     fetch("/api/v1/community/suggestions")
@@ -572,19 +772,31 @@ export function CommunityFeed({ currentUser }: { currentUser: CurrentUser }) {
       .catch(() => null);
   }, [currentUser]);
 
-  async function uploadImage(file: File) {
+  async function uploadImages(files: File[]) {
+    const available = Math.max(0, 4 - imageUrls.length);
+    const selected = files.slice(0, available);
+    if (!selected.length) return;
     setUploadingImage(true);
-    const form = new FormData();
-    form.set("file", file);
-    const response = await fetch("/api/v1/community/images", {
-      method: "POST",
-      body: form,
-    });
-    const json = await response.json();
-    setUploadingImage(false);
-    if (!response.ok)
-      return showToast(json.error?.message ?? "تعذّر رفع الصورة.", "error");
-    setImageUrl(json.data.url);
+    const uploaded: string[] = [];
+    try {
+      for (const file of selected) {
+        const form = new FormData();
+        form.set("file", file);
+        const response = await fetch("/api/v1/community/images", {
+          method: "POST",
+          body: form,
+        });
+        const json = await response.json();
+        if (!response.ok) {
+          showToast(json.error?.message ?? "تعذّر رفع الصورة.", "error");
+          break;
+        }
+        uploaded.push(json.data.url);
+      }
+      setImageUrls((current) => [...current, ...uploaded].slice(0, 4));
+    } finally {
+      setUploadingImage(false);
+    }
   }
 
   async function publish(event: React.FormEvent) {
@@ -595,7 +807,7 @@ export function CommunityFeed({ currentUser }: { currentUser: CurrentUser }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         body,
-        imageUrl: imageUrl || null,
+        imageUrls,
         linkUrl: linkUrl || null,
       }),
     });
@@ -604,11 +816,11 @@ export function CommunityFeed({ currentUser }: { currentUser: CurrentUser }) {
     if (!response.ok)
       return showToast(json.error?.message ?? "تعذّر نشر المنشور.", "error");
     setBody("");
-    setImageUrl("");
+    setImageUrls([]);
     setLinkUrl("");
     setLinkOpen(false);
     setFeed("all");
-    await loadPosts();
+    await loadPosts(1, false, "all");
     showToast("تم نشر المنشور.", "success");
   }
 
@@ -616,6 +828,20 @@ export function CommunityFeed({ currentUser }: { currentUser: CurrentUser }) {
     if (value !== "all" && !currentUser)
       return showToast("سجّل الدخول لهذه الخلاصة.", "error");
     setFeed(value);
+  }
+
+  async function followSuggestion(username: string) {
+    const response = await fetch(
+      `/api/v1/creators/${encodeURIComponent(username)}/follow`,
+      { method: "POST" },
+    );
+    const json = await response.json();
+    if (!response.ok) {
+      showToast(json.error?.message ?? "تعذّرت المتابعة.", "error");
+      return;
+    }
+    setSuggestions((items) => items.filter((item) => item.username !== username));
+    showToast("تمت المتابعة.", "success");
   }
 
   return (
@@ -737,25 +963,36 @@ export function CommunityFeed({ currentUser }: { currentUser: CurrentUser }) {
               </div>
               <div className="flex gap-5 overflow-x-auto pb-1">
                 {suggestions.map((suggestion) => (
-                  <Link
+                  <div
                     key={suggestion.username}
-                    href={`/creators/${suggestion.username}`}
-                    className="flex w-20 flex-none flex-col items-center text-center"
+                    className="flex w-24 flex-none flex-col items-center text-center"
                   >
-                    <span className="rounded-full border-2 border-[var(--color-brand)] p-0.5">
-                      {avatar(
-                        {
-                          username: suggestion.username,
-                          avatarUrl: suggestion.avatarUrl,
-                        },
-                        suggestion.user.fullName,
-                        "h-14 w-14",
-                      )}
-                    </span>
-                    <strong className="mt-2 w-full truncate text-xs">
-                      {suggestion.user.fullName}
-                    </strong>
-                  </Link>
+                    <Link
+                      href={`/creators/${suggestion.username}`}
+                      className="flex w-full flex-col items-center"
+                    >
+                      <span className="rounded-full border-2 border-[var(--color-brand)] p-0.5">
+                        {avatar(
+                          {
+                            username: suggestion.username,
+                            avatarUrl: suggestion.avatarUrl,
+                          },
+                          suggestion.user.fullName,
+                          "h-14 w-14",
+                        )}
+                      </span>
+                      <strong className="mt-2 w-full truncate text-xs">
+                        {suggestion.user.fullName}
+                      </strong>
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => void followSuggestion(suggestion.username)}
+                      className="mt-2 w-full rounded-lg bg-[var(--trend-100)] px-2 py-1.5 text-[10px] font-black"
+                    >
+                      متابعة
+                    </button>
+                  </div>
                 ))}
               </div>
             </section>
@@ -776,20 +1013,34 @@ export function CommunityFeed({ currentUser }: { currentUser: CurrentUser }) {
                   maxLength={2000}
                 />
               </div>
-              {imageUrl && (
-                <div className="relative mx-4 mb-4 overflow-hidden rounded-[var(--radius-lg)] sm:mx-5">
-                  <img
-                    src={imageUrl}
-                    alt="معاينة صورة المنشور"
-                    className="max-h-96 w-full object-cover"
-                  />
-                  <button
-                    type="button"
-                    className="absolute left-3 top-3 rounded-full bg-[var(--color-surface-dark)] px-3 py-1.5 text-xs font-bold text-[var(--color-text-on-dark)]"
-                    onClick={() => setImageUrl("")}
-                  >
-                    إزالة الصورة
-                  </button>
+              {imageUrls.length > 0 && (
+                <div
+                  className={`mx-4 mb-4 grid gap-1 overflow-hidden rounded-[var(--radius-lg)] sm:mx-5 ${imageUrls.length > 1 ? "grid-cols-2" : "grid-cols-1"}`}
+                >
+                  {imageUrls.map((url, index) => (
+                    <div
+                      key={url}
+                      className={`relative overflow-hidden bg-[var(--color-surface-muted)] ${imageUrls.length > 1 ? "aspect-square" : "max-h-96"}`}
+                    >
+                      <img
+                        src={url}
+                        alt={`معاينة صورة المنشور ${index + 1}`}
+                        className={`w-full object-cover ${imageUrls.length > 1 ? "h-full" : "max-h-96"}`}
+                      />
+                      <button
+                        type="button"
+                        className="absolute left-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-surface-dark)] text-[var(--color-text-on-dark)]"
+                        onClick={() =>
+                          setImageUrls((current) =>
+                            current.filter((image) => image !== url),
+                          )
+                        }
+                        aria-label={`إزالة الصورة ${index + 1}`}
+                      >
+                        <CloseIcon size={15} />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
               {linkOpen && (
@@ -821,10 +1072,12 @@ export function CommunityFeed({ currentUser }: { currentUser: CurrentUser }) {
                 ref={imageInputRef}
                 type="file"
                 className="hidden"
+                multiple
                 accept="image/jpeg,image/png,image/webp"
                 onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  if (file) void uploadImage(file);
+                  const files = Array.from(event.target.files ?? []);
+                  if (files.length) void uploadImages(files);
+                  event.target.value = "";
                 }}
               />
               <div className="mx-4 flex items-center gap-1 border-t border-[var(--color-border)] py-2 sm:mx-5">
@@ -832,10 +1085,14 @@ export function CommunityFeed({ currentUser }: { currentUser: CurrentUser }) {
                   type="button"
                   className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-black text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-surface-muted)]"
                   onClick={() => imageInputRef.current?.click()}
-                  disabled={uploadingImage}
+                  disabled={uploadingImage || imageUrls.length >= 4}
                 >
                   <ImageIcon size={19} className="text-[var(--color-brand-active)]" />
-                  {uploadingImage ? "جارٍ الرفع..." : "صورة"}
+                  {uploadingImage
+                    ? "جارٍ الرفع..."
+                    : imageUrls.length
+                      ? `صور ${imageUrls.length}/4`
+                      : "صور"}
                 </button>
                 <button
                   type="button"
@@ -850,7 +1107,7 @@ export function CommunityFeed({ currentUser }: { currentUser: CurrentUser }) {
                   disabled={
                     publishing ||
                     uploadingImage ||
-                    (!body.trim() && !imageUrl && !linkUrl)
+                    (!body.trim() && !imageUrls.length && !linkUrl)
                   }
                 >
                   {publishing ? "ينشر..." : "نشر"}
@@ -913,6 +1170,17 @@ export function CommunityFeed({ currentUser }: { currentUser: CurrentUser }) {
               </p>
             </div>
           )}
+          <div ref={loadMoreRef} className="h-2" aria-hidden="true" />
+          {loadingMore && (
+            <div className="flex items-center justify-center gap-2 py-4 text-xs font-bold text-[var(--color-text-muted)]">
+              <span className="btn-spinner" aria-hidden="true" /> تحميل منشورات أكثر...
+            </div>
+          )}
+          {!loading && posts.length > 0 && !hasMore && (
+            <p className="py-3 text-center text-xs text-[var(--color-text-muted)]">
+              وصلت لنهاية الخلاصة.
+            </p>
+          )}
         </section>
 
         <aside className="hidden space-y-4 lg:sticky lg:top-24 lg:block">
@@ -929,31 +1197,43 @@ export function CommunityFeed({ currentUser }: { currentUser: CurrentUser }) {
               </div>
               <div className="mt-4 space-y-4">
                 {suggestions.map((suggestion) => (
-                  <Link
+                  <div
                     key={suggestion.username}
-                    href={`/creators/${suggestion.username}`}
                     className="group flex items-center gap-3"
                   >
-                    {avatar(
-                      { username: suggestion.username, avatarUrl: suggestion.avatarUrl },
-                      suggestion.user.fullName,
-                      "h-11 w-11",
-                    )}
-                    <span className="min-w-0 flex-1">
-                      <strong className="block truncate text-sm group-hover:text-[var(--color-brand-active)]">
-                        {suggestion.user.fullName}
-                      </strong>
-                      <span
-                        className="block truncate text-[11px] text-[var(--color-text-muted)]"
-                        dir="ltr"
-                      >
-                        @{suggestion.username}
+                    <Link
+                      href={`/creators/${suggestion.username}`}
+                      className="flex min-w-0 flex-1 items-center gap-3"
+                    >
+                      {avatar(
+                        {
+                          username: suggestion.username,
+                          avatarUrl: suggestion.avatarUrl,
+                        },
+                        suggestion.user.fullName,
+                        "h-11 w-11",
+                      )}
+                      <span className="min-w-0 flex-1">
+                        <strong className="block truncate text-sm group-hover:text-[var(--color-brand-active)]">
+                          {suggestion.user.fullName}
+                        </strong>
+                        <span
+                          className="block truncate text-[11px] text-[var(--color-text-muted)]"
+                          dir="ltr"
+                        >
+                          @{suggestion.username}
+                        </span>
                       </span>
-                    </span>
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--trend-100)]">
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => void followSuggestion(suggestion.username)}
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--trend-100)] transition hover:bg-[var(--color-brand)]"
+                      aria-label={`متابعة ${suggestion.user.fullName}`}
+                    >
                       <PlusIcon size={16} aria-hidden="true" />
-                    </span>
-                  </Link>
+                    </button>
+                  </div>
                 ))}
               </div>
             </section>
