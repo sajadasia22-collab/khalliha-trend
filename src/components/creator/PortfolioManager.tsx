@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element -- portfolio media comes from the configured Supabase bucket; avoid an open image proxy. */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Platform } from "../../generated/prisma/enums";
 import { platformIcons, platformLabels } from "../../lib/campaigns";
 import {
@@ -42,10 +42,21 @@ function apiMessage(data: unknown, fallback: string) {
   return fallback;
 }
 
-export function PortfolioManager({ initialItems }: { initialItems: PortfolioItem[] }) {
+export function PortfolioManager({
+  initialItems,
+  onItemsChange,
+}: {
+  initialItems: PortfolioItem[];
+  // يُعلم الحاوية (مثل شبكة الأعمال في ترويسة الملف) بكل تغيير على العناصر.
+  onItemsChange?: (items: PortfolioItem[]) => void;
+}) {
   const { showToast } = useToast();
   const [items, setItems] = useState(initialItems);
   const [modalOpen, setModalOpen] = useState(false);
+
+  useEffect(() => {
+    onItemsChange?.(items);
+  }, [items, onItemsChange]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [platform, setPlatform] = useState<Platform>(Platform.TIKTOK);

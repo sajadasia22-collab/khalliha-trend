@@ -90,9 +90,9 @@ export function SocialAccountsManager({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-sm font-medium text-[var(--color-text-secondary)]">
-          يمكنك ربط أكثر من حساب — حتى أكثر من حساب على نفس المنصة.
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="min-w-0 flex-1 basis-52 text-sm font-medium text-[var(--color-text-secondary)]">
+          يمكنك ربط أكثر من حساب، حتى على نفس المنصة.
         </p>
         <Button
           type="button"

@@ -3,14 +3,23 @@
 import { ShareIcon } from "../ui/icons";
 import { useToast } from "../ui/Toast";
 
-export function ProfileShareButton({ fullName }: { fullName: string }) {
+export function ProfileShareButton({
+  fullName,
+  url,
+  iconOnly = false,
+}: {
+  fullName: string;
+  // مسار الصفحة العامة إن وجد؛ الافتراضي رابط الصفحة الحالية.
+  url?: string;
+  iconOnly?: boolean;
+}) {
   const { showToast } = useToast();
 
   async function share() {
     const data = {
       title: `${fullName} — خلّيها ترند`,
       text: `شاهد الملف المهني لـ ${fullName} على خلّيها ترند`,
-      url: window.location.href,
+      url: url ? new URL(url, window.location.origin).href : window.location.href,
     };
     try {
       if (navigator.share) await navigator.share(data);
@@ -22,6 +31,20 @@ export function ProfileShareButton({ fullName }: { fullName: string }) {
       if (error instanceof DOMException && error.name === "AbortError") return;
       showToast("تعذّرت مشاركة الرابط.", "error");
     }
+  }
+
+  if (iconOnly) {
+    return (
+      <button
+        type="button"
+        onClick={share}
+        title="مشاركة الملف"
+        className="inline-flex min-h-11 w-11 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] transition-colors hover:border-[var(--forest-200)]"
+      >
+        <ShareIcon size={17} aria-hidden="true" />
+        <span className="sr-only">مشاركة الملف</span>
+      </button>
+    );
   }
 
   return (
