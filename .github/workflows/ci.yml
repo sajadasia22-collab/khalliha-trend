@@ -82,5 +82,7 @@ jobs:
           # Scoped to this step only — see the note on job-level env above.
           AUTH_SECRET: "ci-only-signing-secret-not-used-anywhere-else-32"
 
+      # pnpm audit تعطلت نهائياً بعد إيقاف npm للـ endpoints القديمة (410, 2026-07)
+      # — السكربت يستعلم npm bulk advisory endpoint الجديد مباشرة.
       - name: Dependency audit
-        run: pnpm audit
+        run: node scripts/audit-deps.mjs
