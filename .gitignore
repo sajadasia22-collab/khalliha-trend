@@ -15,3 +15,6 @@ test-results
 
 # نسخ قاعدة البيانات الاحتياطية (تحتوي بيانات حساسة — لا تُرفع أبداً)
 backups/
+
+# TypeScript incremental build artifact — يتجدد مع كل typecheck ولا يُتتبع
+tsconfig.tsbuildinfo
